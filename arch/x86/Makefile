@@ -1,1 +1,1 @@
-obj-y := boot.o
+obj-y := boot/
