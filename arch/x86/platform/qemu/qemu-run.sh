@@ -1,7 +1,6 @@
 #!/bin/bash
-qemu-system-i386    -cpu qemu32 \
-                    -m size=4096M \
+qemu-system-i386    -fda lanthorn -boot a \
+                    -m 512 \
                     -nographic \
                     -gdb tcp::5555 \
-                    -fda lanthorn -boot a \
                     -S

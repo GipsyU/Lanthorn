@@ -1,9 +1,10 @@
-BOOTSEG		= 0x07C0
+BOOTSEG = 0x07C0
 
     .code16
-    .section ".boottext", "a"
+    .section ".boot_text", "ax"
+    .global start
+start:
+    jmp start
 
-    .global boottext_start
-
-boottext_start:
-    ljmp $BOOTSEG, $start
+    .section ".boot_flag", "a"
+    .word 0xAA55

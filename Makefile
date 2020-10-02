@@ -2,9 +2,6 @@ VERSION = 1
 PATCHLEVEL = 0
 SUBLEVEL = 0
 
-# o Do not use make's built-in rules and variables
-#   (this increases performance and avoids hard-to-debug behaviour);
-# o Look for make include files relative to root of kernel src
 MAKEFLAGS += -rR --include-dir=$(CURDIR)
 
 # Avoid funny character set dependencies
@@ -16,9 +13,6 @@ export LC_COLLATE LC_NUMERIC
 # Avoid interference with shell env settings
 unexport GREP_OPTIONS
 
-# We are using a recursive build, so we need to do a little thinking
-# to get the ordering right.
-#
 # Most importantly: sub-Makefiles should only ever modify files in
 # their own directory. If in some directory we have a dependency on
 # a file in another dir (which doesn't happen often, but it's often
@@ -31,32 +25,6 @@ unexport GREP_OPTIONS
 # effects are thus separated out and done before the recursive
 # descending is started. They are now explicitly listed as the
 # prepare rule.
-
-# Beautify output
-# ---------------------------------------------------------------------------
-#
-# Normally, we echo the whole command before executing it. By making
-# that echo $($(quiet)$(cmd)), we now have the possibility to set
-# $(quiet) to choose other forms of output instead, e.g.
-#
-#         quiet_cmd_cc_o_c = Compiling $(RELDIR)/$@
-#         cmd_cc_o_c       = $(CC) $(c_flags) -c -o $@ $<
-#
-# If $(quiet) is empty, the whole command will be printed.
-# If it is set to "quiet_", only the short version will be printed.
-# If it is set to "silent_", nothing will be printed at all, since
-# the variable $(silent_cmd_cc_o_c) doesn't exist.
-#
-# A simple variant is to prefix commands with $(Q) - that's useful
-# for commands that shall be hidden in non-verbose mode.
-#
-#	$(Q)ln $@ :<
-#
-# If KBUILD_VERBOSE equals 0 then the above command will be hidden.
-# If KBUILD_VERBOSE equals 1 then the above command is displayed.
-#
-# To put more focus on warnings, be less verbose as default
-# Use 'make V=1' to see the full commands
 
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
@@ -165,23 +133,12 @@ endif
 PHONY += all
 _all: all
 
-ifeq ($(KBUILD_SRC),)
-        # building in the source tree
-        srctree := .
-else
-        ifeq ($(KBUILD_SRC)/,$(dir $(CURDIR)))
-                # building in a subdirectory of the source tree
-                srctree := ..
-        else
-                srctree := $(KBUILD_SRC)
-        endif
-endif
-
-objtree		:= .
+srctree	:= $(if $(KBUILD_SRC),$(KBUILD_SRC),$(CURDIR))
+objtree := $(CURDIR)
 src		:= $(srctree)
 obj		:= $(objtree)
 
-VPATH		:= $(srctree)
+VPATH	:= $(srctree)
 
 export srctree objtree VPATH
 
@@ -368,7 +325,7 @@ ifeq ($(config-targets),1)
 # Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
--include arch/$(ARCH)/Makefile
+include $(srctree)/arch/$(ARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
@@ -415,16 +372,11 @@ endif # $(dot-config)
 
 # The all: target is the default when no target is given on the
 # command line.
+all: vmlanthorn
 # This allow a user to issue only 'make' to build the application
 # Defaults to lanthorn, but the arch makefile usually adds further targets
-all: lanthorn
 
-# The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
-# values of the respective KBUILD_* variables
-ARCH_CPPFLAGS :=
-ARCH_AFLAGS :=
-ARCH_CFLAGS :=
--include arch/$(ARCH)/Makefile
+include $(srctree)/arch/$(ARCH)/Makefile
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 
@@ -549,25 +501,24 @@ export KBUILD_IMAGE ?= lanthorn
 # images. Default is /boot, but you can set it to other values
 export	INSTALL_PATH ?= ./install
 
-
-objs-y		:= kernel arch/$(ARCH)
+objs-y		:= kernel
 libs-y		:= 
 
-lanthorn-dirs	:= $(objs-y) $(libs-y)
-lanthorn-objs	:= $(patsubst %,%/built-in.o, $(objs-y))
-lanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
-lanthorn-all	:= $(lanthorn-objs) $(lanthorn-libs)
+vmlanthorn-dirs	:= $(objs-y) $(libs-y)
+vmlanthorn-objs	:= $(patsubst %,%/built-in.o, $(objs-y))
+vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
+vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
-quiet_cmd_lanthorn = LD      $@
-      cmd_lanthorn = $(CC) $(LDFLAGS) -o $@                          \
-      -Wl,--start-group $(lanthorn-libs) $(lanthorn-objs) -Wl,--end-group
+quiet_cmd_vmlanthorn = LD      $@
+      cmd_vmlanthorn = $(CC) $(LDFLAGS) -o $@                          \
+      -Wl,--start-group $(vmlanthorn-all) -Wl,--end-group
 
-lanthorn: $(lanthorn-all) FORCE
-	+$(call if_changed,lanthorn)
+vmlanthorn: $(vmlanthorn-all) FORCE
+	+$(call if_changed,vmlanthorn)
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
-$(sort $(lanthorn-all)): $(lanthorn-dirs) ;
+$(sort $(vmlanthorn-all)): $(vmlanthorn-dirs) ;
 
 # Handle descending into subdirectories listed in $(lanthorn-dirs)
 # Preset locale variables to speed up the build process. Limit locale
@@ -575,8 +526,8 @@ $(sort $(lanthorn-all)): $(lanthorn-dirs) ;
 # make menuconfig etc.
 # Error messages still appears in the original language
 
-PHONY += $(lanthorn-dirs)
-$(lanthorn-dirs): prepare scripts
+PHONY += $(vmlanthorn-dirs)
+$(vmlanthorn-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
 
 
@@ -645,7 +596,7 @@ headerdep:
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  +=
-CLEAN_FILES +=	lanthorn
+CLEAN_FILES +=	vmlanthorn
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated .tmp_objdiff
@@ -656,7 +607,7 @@ MRPROPER_FILES += .config .config.old .version .old_version \
 #
 clean: rm-dirs  := $(CLEAN_DIRS)
 clean: rm-files := $(CLEAN_FILES)
-clean-dirs      := $(addprefix _clean_, . $(lanthorn-dirs))
+clean-dirs      := $(addprefix _clean_, . $(vmlanthorn-dirs))
 
 PHONY += $(clean-dirs) clean archclean
 $(clean-dirs):
@@ -669,6 +620,7 @@ clean: $(clean-dirs)
 		\( -name '*.[oas]' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' \
 		-o -name '.tmp_*.o.*' \
+		-o -name '*.elf' -o -name '*.bin' \
 		-o -name '*.gcno' \) -type f -print | xargs rm -f
 
 # mrproper - Delete all generated files, including .config
@@ -715,7 +667,7 @@ help:
 	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all targets marked with [*]'
-	@echo  '* lanthorn		  - Build the application'
+	@echo  '* vmlanthorn		- Build the application'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
@@ -752,15 +704,6 @@ includecheck:
 
 endif #ifeq ($(config-targets),1)
 endif #ifeq ($(mixed-targets),1)
-
-PHONY += kernelversion image_name
-
-kernelversion:
-	@echo $(KERNELVERSION)
-
-image_name:
-	@echo $(KBUILD_IMAGE)
-
 
 # Single targets
 # ---------------------------------------------------------------------------
