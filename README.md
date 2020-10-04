@@ -13,3 +13,14 @@ mkdir build && cd build
 make -C .. O=`pwd` virt_defconfig # config in qemu
 make -C .. O=`pwd` # compile
 ```
+
+### Run in qemu
+```bash
+make qemu
+```
+
+#### Debug in gdb
+```bash
+gdb
+> target remote localhost:5555
+```
