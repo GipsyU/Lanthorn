@@ -1,4 +1,4 @@
-VERSION = 1
+VERSION = 0
 PATCHLEVEL = 0
 SUBLEVEL = 0
 
@@ -20,11 +20,6 @@ unexport GREP_OPTIONS
 # turn into lanthorn), we will call a sub make in that other dir, and
 # after that we are sure that everything which is in that other dir
 # is now up to date.
-#
-# The only cases where we need to modify files which have global
-# effects are thus separated out and done before the recursive
-# descending is started. They are now explicitly listed as the
-# prepare rule.
 
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
@@ -45,21 +40,6 @@ endif
 # commands
 
 export quiet Q
-
-# kbuild supports saving output files in a separate directory.
-# To locate output files in a separate directory two syntaxes are supported.
-# In both cases the working directory must be the root of the kernel src.
-# 1) O=
-# Use "make O=dir/to/store/output/files/"
-#
-# 2) Set KBUILD_OUTPUT
-# Set the environment variable KBUILD_OUTPUT to point to the directory
-# where the output files shall be placed.
-# export KBUILD_OUTPUT=dir/to/store/output/files/
-# make
-#
-# The O= assignment takes precedence over the KBUILD_OUTPUT environment
-# variable.
 
 # KBUILD_SRC is set on invocation of make in OBJ directory
 # KBUILD_SRC is not intended to be used by the regular user (for now)
@@ -205,19 +185,19 @@ LANTHORNINCLUDE    := \
 		-I$(srctree)/arch/$(SRCARCH)/include \
 		-include include/generated/autoconf.h \
 		-Iinclude
-		# $(if $(KBUILD_SRC), -I$(srctree)/klibs/include) \
+		# $(if $(KBUILD_SRC), -I$(srctree)/klibs/include)
 
 KBUILD_CPPFLAGS := -D__LANTHORN__
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -std=gnu89
+KBUILD_CFLAGS := -Wall -Wundef \
+				-Wstrict-prototypes -Wno-trigraphs \
+				 -fno-strict-aliasing -fno-common \
+				 -Werror-implicit-function-declaration \
+				 -Wno-format-security
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS := -D__ASSEMBLY__
 
 KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))
 
@@ -380,39 +360,13 @@ include $(srctree)/arch/$(ARCH)/Makefile
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
-ifdef CONFIG_PROFILE_ALL_BRANCHES
-KBUILD_CFLAGS	+= -O2 $(call cc-disable-warning,maybe-uninitialized,)
-else
-KBUILD_CFLAGS   += -O2
-endif
-endif
-
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
-
-ifeq ($(cc-name),clang)
-KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
-KBUILD_CPPFLAGS += $(call cc-option,-Wno-unknown-warning-option,)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
-KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
-KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
-# Quiet clang warning: comparison of unsigned expression < 0 is always false
-KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
-# CLANG uses a _MergedGlobals as optimization, but this breaks modpost, as the
-# source of a reference will be _MergedGlobals and not on of the whitelisted names.
-# See modpost pattern 2
-KBUILD_CFLAGS += $(call cc-option, -mno-global-merge,)
-KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
-else
 
 # These warnings generated too much noise in a regular build.
 # Use make W=1 to enable them (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
-endif
 
 ifdef CONFIG_FRAME_POINTER
 KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
@@ -423,25 +377,8 @@ endif
 KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
 
 ifdef CONFIG_DEBUG_INFO
-ifdef CONFIG_DEBUG_INFO_SPLIT
-KBUILD_CFLAGS   += $(call cc-option, -gsplit-dwarf, -g)
-else
 KBUILD_CFLAGS	+= -g
-endif
 KBUILD_AFLAGS	+= -Wa,-gdwarf-2
-endif
-ifdef CONFIG_DEBUG_INFO_DWARF4
-KBUILD_CFLAGS	+= $(call cc-option, -gdwarf-4,)
-endif
-
-ifdef CONFIG_DEBUG_INFO_REDUCED
-KBUILD_CFLAGS 	+= $(call cc-option, -femit-struct-debug-baseonly) \
-		   $(call cc-option,-fno-var-tracking)
-endif
-
-# We trigger additional mismatches with less inlining
-ifdef CONFIG_DEBUG_SECTION_MISMATCH
-KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
@@ -475,12 +412,6 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
 
-# check for 'asm goto'
-ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
-	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
-	KBUILD_AFLAGS += -DCC_HAVE_ASM_GOTO
-endif
-
 include scripts/Makefile.extrawarn
 
 # Add any arch overrides and user supplied CPPFLAGS, AFLAGS and CFLAGS as the
@@ -496,11 +427,6 @@ KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 # this default value
 export KBUILD_IMAGE ?= lanthorn
 
-#
-# INSTALL_PATH specifies where to place the updated kernel and system map
-# images. Default is /boot, but you can set it to other values
-export	INSTALL_PATH ?= ./install
-
 objs-y		:= kernel
 libs-y		:= 
 
@@ -510,8 +436,8 @@ vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(CC) $(LDFLAGS) -o $@                          \
-      -Wl,--start-group $(vmlanthorn-all) -Wl,--end-group
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -o $@ \
+      --start-group $(vmlanthorn-all) --end-group
 
 vmlanthorn: $(vmlanthorn-all) FORCE
 	+$(call if_changed,vmlanthorn)
@@ -596,7 +522,7 @@ headerdep:
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  +=
-CLEAN_FILES +=	vmlanthorn
+CLEAN_FILES +=	vmlanthorn lanthorn
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated .tmp_objdiff
@@ -689,7 +615,6 @@ help:
 	@echo  '		Multiple levels can be combined with W=12 or W=123'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
-	@echo  'For further info see the ./README file'
 
 
 # Scripts to check various things for consistency
@@ -752,6 +677,10 @@ ifneq ($(cmd_files),)
 endif
 
 endif	# skip-makefile
+
+PHONY += qemu
+qemu:
+	$(shell arch/$(ARCH)/platform/qemu/qemu-run.sh)
 
 PHONY += FORCE
 FORCE:
