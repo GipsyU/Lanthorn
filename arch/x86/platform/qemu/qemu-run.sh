@@ -1,5 +1,5 @@
 #!/bin/bash
-qemu-system-i386    -fda lanthorn -boot a \
+qemu-system-i386    -kernel lanthorn \
                     -m 512 \
                     -nographic \
                     -gdb tcp::5555 \

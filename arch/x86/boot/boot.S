@@ -1,19 +1,14 @@
-BOOTSEG = 0x07C0
-
-    .code16
-    .section ".boot_text", "ax"
-bootsect_start:
-
-	ljmp	$BOOTSEG, $start2
-
-start2:
-	movw	%cs, %ax
-	movw	%ax, %ds
-	movw	%ax, %es
-	movw	%ax, %ss
-	xorw	%sp, %sp
-	sti
-	cld
-
-    .section ".boot_flag", "a"
-    .word 0xAA55
+MBOOT_HEADER_MAGIC = 0x1BADB002
+MBOOT_PAGE_ALIGN = 1 << 0
+MBOOT_MEM_INFO = 1 << 1
+MBOOT_HEADER_FLAGS = MBOOT_PAGE_ALIGN | MBOOT_MEM_INFO
+MBOOT_CHECKSUM = -(MBOOT_HEADER_MAGIC+MBOOT_HEADER_FLAGS)
+	.code32
+	.section ".mboot_header", "a"
+.long MBOOT_HEADER_MAGIC
+.long MBOOT_HEADER_FLAGS
+.long MBOOT_CHECKSUM
+	.section ".boot_text", "ax"
+	.global _start
+_start:
+	calll main

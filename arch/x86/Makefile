@@ -20,8 +20,8 @@ KBUILD_CFLAGS += -ffreestanding
 
 LDFLAGS := -m elf_i386
 
-all: vmlanthorn boot.bin
-	cat $(boot_dir)/boot.bin vmlanthorn > lanthorn
+all: vmlanthorn boot.elf
+	cat $(boot_dir)/boot.elf vmlanthorn > lanthorn
 
-boot.bin:
+boot.elf:
 	$(Q)$(MAKE) $(build)=$(boot_dir) $(boot_dir)/$@
