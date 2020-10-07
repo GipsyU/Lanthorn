@@ -1,23 +1,12 @@
 #include <drivers/console.h>
 #include <types.h>
+#include <error.h>
 int main(void){
+    const char *s = strerror(E_MAX);
     console_init();
-    console_put_char('h');
-    console_put_char('e');
-    console_put_char('l');
-    console_put_char('l');
-    console_put_char('o');
-    console_put_char(' ');
-    console_put_char('l');
-    console_put_char('a');
-    console_put_char('n');
-    console_put_char('t');
-    console_put_char('h');
-    console_put_char('o');
-    console_put_char('r');
-    console_put_char('n');
-    console_put_char('!');
-    console_put_char('\n');
+    for (int i = 0; i < 5; ++i) {
+        console_put_char(s[i]);
+    }
     // memory_init();
     // process_init();
     while(1);
