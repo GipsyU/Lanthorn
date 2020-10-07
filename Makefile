@@ -173,24 +173,21 @@ PERL		= perl
 PYTHON		= python
 CHECK		= sparse
 
-CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
-		  -Wbitwise -Wno-return-void $(CF)
+CHECKFLAGS := -Wbitwise -Wno-return-void $(CF)
 NOSTDINC_FLAGS  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 
 # Use lanthornINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
-LANTHORNINCLUDE    := \
-		-I$(srctree)/arch/$(SRCARCH)/include \
-		-include include/generated/autoconf.h \
-		-Iinclude
-		# $(if $(KBUILD_SRC), -I$(srctree)/klibs/include)
+LANTHORNINCLUDE := -I$(srctree)/arch/$(SRCARCH)/include \
+				   -include include/generated/autoconf.h \
+				   -Iinclude
 
-KBUILD_CPPFLAGS := -D__LANTHORN__
+KBUILD_CPPFLAGS := 
 
 KBUILD_CFLAGS := -Wall -Wundef \
-				-Wstrict-prototypes -Wno-trigraphs \
+				 -Wstrict-prototypes -Wno-trigraphs \
 				 -fno-strict-aliasing -fno-common \
 				 -Werror-implicit-function-declaration \
 				 -Wno-format-security
@@ -326,6 +323,9 @@ PHONY += scripts
 scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
+objs-y := kernel
+libs-y := 
+
 ifeq ($(dot-config),1)
 # Read in config
 -include include/config/auto.conf
@@ -427,16 +427,13 @@ KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 # this default value
 export KBUILD_IMAGE ?= lanthorn
 
-objs-y		:= kernel
-libs-y		:= 
-
 vmlanthorn-dirs	:= $(objs-y) $(libs-y)
 vmlanthorn-objs	:= $(patsubst %,%/built-in.o, $(objs-y))
 vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(LD) $(LDFLAGS) -o $@ \
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ \
       --start-group $(vmlanthorn-all) --end-group
 
 vmlanthorn: $(vmlanthorn-all) FORCE
@@ -680,7 +677,7 @@ endif	# skip-makefile
 
 PHONY += qemu
 qemu:
-	$(shell arch/$(ARCH)/platform/qemu/qemu-run.sh)
+	./arch/$(ARCH)/platform/qemu/qemu-run.sh
 
 PHONY += FORCE
 FORCE:
