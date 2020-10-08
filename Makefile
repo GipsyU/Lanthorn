@@ -675,9 +675,13 @@ endif
 
 endif	# skip-makefile
 
-PHONY += qemu
+PHONY += qemu gdb
 qemu:
 	./arch/$(ARCH)/platform/qemu/qemu-run.sh
+
+gdb:
+	./arch/$(ARCH)/platform/qemu/qemu-run.sh -gdb tcp::5555 -S &
+	gdb -x tools/gdbinit
 
 PHONY += FORCE
 FORCE:
