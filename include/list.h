@@ -9,17 +9,17 @@
             }
 
 #define list_init(head) \
-            head.p = &head; \
-            head.n = &head;
+            (head).p = &(head); \
+            (head).n = &(head);
 
 #define list_append(head, node) \
-            node.p = head.p; \
-            node.n = &head; \
-            ((typeof(head)*)head.p)->n = &node; \
-            head.p = &node;
+            (node).p = (head).p; \
+            (node).n = &(head); \
+            ((typeof(head)*)(head).p)->n = &(node); \
+            (head).p = &(node);
 
 #define list_rep(head, p) \
-            for (typeof(head) *p = head.n; p != &head; p = p->n)
+            for (typeof(head) *p = (head).n; p != &(head); p = p->n)
 
 // #define list_rep_s(head, p)
 
