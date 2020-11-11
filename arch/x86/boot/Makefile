@@ -1,3 +1,3 @@
 KBUILD_AFLAGS	:= $(KBUILD_CFLAGS) -D__ASSEMBLY__
 
-$(obj)/boot.o:
+obj-y := boot.o setup.o

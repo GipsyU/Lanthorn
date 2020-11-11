@@ -1,6 +1,6 @@
 #ifndef _BOOT_BOOT_H_
 #define _BOOT_BOOT_H_
-#include <types.h>
+#include <basic.h>
 
 #define cpu_relax()	asm volatile("rep; nop")
 
