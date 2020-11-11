@@ -40,6 +40,7 @@ static void serial_init(int port, int baud)
 	outb((divisor >> 8) & 0xff, port + DLH);
 	outb(c & ~DLAB, port + LCR);
 }
+
 static void serial_putchar(char ch)
 {
 	unsigned timeout = 0xffff;
@@ -55,6 +56,7 @@ int console_init(void)
     serial_init(DEFAULT_PORT, DEFAULT_BAUD);
     return 0;
 }
+
 int console_put_char(char c)
 {   
     serial_putchar(c);

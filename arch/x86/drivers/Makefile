@@ -1,1 +1,1 @@
-lib-y := console.o
+obj-y := console.o mmu.o

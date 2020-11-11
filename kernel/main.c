@@ -9,12 +9,10 @@
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
     int err = E_OK;
-    console_init();
-    info("init console success\n");
     
     err = memory_init();
     if (err != E_OK) {
-        info("init memory success\n");
+        info("init memory success %s\n",strerror(err));
     }
     // process_init();
     while(1);

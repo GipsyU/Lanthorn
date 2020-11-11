@@ -20,8 +20,8 @@ KBUILD_CFLAGS += -ffreestanding
 
 LDFLAGS := -m elf_i386
 
-libs-y += arch/x86/drivers
-objs-y += arch/x86/memory
+objs-y += arch/x86/drivers
+# objs-y += arch/x86/memory
 
 all: boot vmlanthorn
 	$(Q)$(LD) -m elf_i386 -T arch/x86/boot/boot.ld arch/x86/boot/built-in.o vmlanthorn -o lanthorn
