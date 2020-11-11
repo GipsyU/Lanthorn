@@ -1,1 +1,1 @@
-lib-y := log.o
+lib-y := log.o error.o
