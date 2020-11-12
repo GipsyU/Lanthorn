@@ -14,7 +14,7 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("%p %p\n", p->data.addr, p->data.size);
     }
 
-    err = memory_init();
+    err = memory_init(boot_arg.mm_list);
     
     if (err != E_OK) {
         info("init memory success %s\n",strerror(err));

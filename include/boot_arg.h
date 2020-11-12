@@ -8,8 +8,11 @@ struct boot_mm_t {
     size_t size;
 };
 
+typedef list_node(struct boot_mm_t) boot_mm_list_node_t;
+
 struct boot_arg_t {
-    list_node(struct boot_mm_t) *mm_list;
+    boot_mm_list_node_t *mm_list;
 };
+
 
 #endif

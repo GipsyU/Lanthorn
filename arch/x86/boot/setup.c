@@ -7,13 +7,11 @@ extern void __attribute__((noreturn)) main(struct boot_arg_t);
 extern int mmu_enable_4k_page(void);
 extern void console_init(void);
 
-typedef list_node(struct boot_mm_t) boot_mm_list_node;
-
 static list_node(struct boot_mm_t) boot_mm_cache[CONFIG_BOOT_MM_NR]; 
 
 static int boot_mm_num = 0;
 
-static int collect_memory(boot_mm_list_node **boot_mm_list_ptr)
+static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
 {
     int err = E_OK;
 
@@ -48,7 +46,7 @@ static int collect_memory(boot_mm_list_node **boot_mm_list_ptr)
         err = E_NOMEM;
     }
 
-    *boot_mm_list_ptr = (boot_mm_list_node *)boot_mm_cache;
+    *boot_mm_list_ptr = (boot_mm_list_node_t *)boot_mm_cache;
 
     return err;
 }
@@ -64,7 +62,7 @@ void __attribute__((noreturn)) setup(void)
 
     struct boot_arg_t boot_arg;
 
-    err = collect_memory((boot_mm_list_node **) &boot_arg.mm_list);
+    err = collect_memory((boot_mm_list_node_t **) &boot_arg.mm_list);
     
     if (err != E_OK) {
         error("collect memory failed, err = %s.\n", strerror(err));
