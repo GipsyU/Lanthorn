@@ -52,6 +52,12 @@
     (head).p = &(node); \
 }
 
+#define list_delete(node) \
+{ \
+    ((typeof(node))((node)->p))->n = (node)->n; \
+    ((typeof(node))((node)->n))->p = (node)->p; \
+}
+
 #define list_pop_front(head) ( \
 { \
     typeof(head) *front = (typeof(head) *)((head).n); \
@@ -74,8 +80,5 @@
     for (typeof(head) *p = (head).n; p != &(head); p = p->n)
 
 // #define list_rep_s(head, p)
-
-// #define list_delete()
-
 
 #endif
