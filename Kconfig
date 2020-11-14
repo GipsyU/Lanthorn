@@ -8,3 +8,7 @@ source "arch/$SRCARCH/Kconfig"
 config DEBUG_INFO
 	bool "Compile the application with debug info"
 	default y
+
+config NR_BUDDY_ORDER
+	int
+	default 21

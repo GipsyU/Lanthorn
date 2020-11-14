@@ -4,7 +4,7 @@
 #define ROUND_UP(x, y) ( \
 { \
     const typeof(y) _y = (y); \
-    ((x) + _y - 1)) / _y * _y; \
+    ((x) + _y - 1) / _y * _y; \
 } \
 )
 
