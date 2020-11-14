@@ -1,2 +1,2 @@
-file lanthorn
-target remote localhost:5555
+symbol-file lanthorn
+target remote localhost:1234

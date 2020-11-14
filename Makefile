@@ -178,20 +178,30 @@ NOSTDINC_FLAGS  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 
-# Use lanthornINCLUDE when you must reference the include/ directory.
-# Needed to be compatible with the O= option
 LANTHORNINCLUDE := -I$(srctree)/arch/$(SRCARCH)/include \
 				   -include include/generated/autoconf.h \
 				   -Iinclude
 
 KBUILD_CPPFLAGS := 
 
-KBUILD_CFLAGS := -Wall -Wundef \
-				 -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS := -static -nostdinc\
+				 -Wall -Wundef \
+				 -fno-stack-protector \
+				 -Wstrict-prototypes \
 				 -fno-strict-aliasing -fno-common \
-				 -Werror-implicit-function-declaration \
-				 -Wno-format-security
+				 -fno-pic \
+				 -fno-pie \
+				 -fno-builtin \
+				 -Werror-implicit-function-declaration
 
+KBUILD_CFLAGS += $(call cc-disable-warning, main)
+
+# require functions to have arguments in prototypes, not empty 'int foo()'
+KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
+
+# enforce correct pointer usage
+KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
+				 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS := -D__ASSEMBLY__
@@ -358,68 +368,21 @@ all: vmlanthorn
 
 include $(srctree)/arch/$(ARCH)/Makefile
 
-KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
-
-# Tell gcc to never replace conditional load with a non-conditional one
-KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
-
-# These warnings generated too much noise in a regular build.
-# Use make W=1 to enable them (see scripts/Makefile.build)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
-
-ifdef CONFIG_FRAME_POINTER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-else
-KBUILD_CFLAGS	+= -fomit-frame-pointer
-endif
-
-KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
-
 ifdef CONFIG_DEBUG_INFO
-KBUILD_CFLAGS	+= -g
-KBUILD_AFLAGS	+= -Wa,-gdwarf-2
+	KBUILD_CFLAGS	+= -ggdb
+	KBUILD_AFLAGS	+= -Wa,-gdwarf-2
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
-#NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
-# warn about C99 declaration after statement
-# KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 
-# disable pointer signed / unsigned warnings in gcc 4.0
-KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
-
-# disable invalid "can't wrap" optimizations for signed / pointers
-KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
-
-# conserve stack if available
-KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
-
-# disallow errors like 'EXPORT_GPL(foo);' with missing header
-KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
-
-# require functions to have arguments in prototypes, not empty 'int foo()'
-KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
-
-# Prohibit date/time macros, which would make the build non-deterministic
-KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
-
-# enforce correct pointer usage
-KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
 
 include scripts/Makefile.extrawarn
-
-# Add any arch overrides and user supplied CPPFLAGS, AFLAGS and CFLAGS as the
-# last assignments
-KBUILD_CPPFLAGS += $(ARCH_CPPFLAGS) $(KCPPFLAGS)
-KBUILD_AFLAGS   += $(ARCH_AFLAGS)   $(KAFLAGS)
-KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
 
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the command line or
@@ -681,7 +644,7 @@ qemu:
 	./arch/$(ARCH)/platform/qemu/qemu-run.sh
 
 qdb:
-	./arch/$(ARCH)/platform/qemu/qemu-run.sh -gdb tcp::5555 -S
+	./arch/$(ARCH)/platform/qemu/qemu-run.sh -s -S
 
 gdb:
 	gdb -x tools/gdbinit
