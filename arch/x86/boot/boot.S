@@ -8,8 +8,7 @@ KERN_BASE	=	0xC0000000
 CR0_PE		=	0x00000001	// Protection Enable
 CR0_WP		=	0x00010000	// Write Protect
 CR0_PG		=	0x80000000	// Paging
-KSTACKSIZE	=	0x00001000
-PGESP		=	0xC0200000
+
 	.code32
 	.section ".mboot_header", "a"
 .long MBOOT_HEADER_MAGIC
@@ -20,6 +19,7 @@ PGESP		=	0xC0200000
 	.global _start
 	.extern mboot_ptr
 	.extern PDE
+	.extern BOOTSTACK
 
 _start:
 
@@ -34,7 +34,7 @@ _start:
 	orl     $(CR0_PG|CR0_WP),	%eax
 	movl    %eax,	%cr0
 
-	movl 	$(PGESP),	%esp
+	movl 	$(BOOTSTACK),	%esp
 
 	movl	%ebx,	mboot_ptr
 	

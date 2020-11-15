@@ -12,6 +12,9 @@ SECTIONS
 	.text :  AT(ADDR(.text) - 0XC0000000) { *(.text .text*) }
 	.rodata : { *(.rodata) }
 	.bss : { *(.bss) }
+	. = ALIGN(0x1000);
+	. += 0x4000;
+	PROVIDE( BOOTSTACK = . );
 	PROVIDE( kern_end = . );
 	. = ASSERT(kern_end <= 0xC0400000, "kernal too big!");
 	/DISCARD/ : { *(.comment) *(.eh_frame) }

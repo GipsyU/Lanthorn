@@ -8,23 +8,13 @@
 #include <string.h>
 
 static void test(void){
-
 }
-int F(int y){
-  for(int i=1;i<=10;++i)
-    y+=i;
-  return y;
 
-}
-// void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
-void main(struct boot_arg_t boot_arg)
+void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
     int err = E_OK;
 
-    int x=4;
-    ++x;
-    F(x);
-    // test();
+    test();
 
     info("Hello Lanthorn.\n");
     err = memory_init(boot_arg.mm_list);
