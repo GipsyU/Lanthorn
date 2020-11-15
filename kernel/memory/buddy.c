@@ -49,11 +49,13 @@ BUDDY_TPX(STATE)
 
 static list_node(buddy_node_t) free_cache_head;
 
-static buddy_node_t buddy_cache[PAGE_SIZE / sizeof(buddy_node_t)];
+#define BUDDY_CACHE_NUM (PAGE_SIZE * CONFIG_NR_BUDDY_CACHE_PG / sizeof(buddy_node_t))
+
+static buddy_node_t buddy_cache[BUDDY_CACHE_NUM];
 
 static buddy_node_t buddy_head[CONFIG_NR_BUDDY_ORDER];
 
-static size_t free_cache_num = PAGE_SIZE / sizeof(buddy_node_t);
+static size_t free_cache_num = BUDDY_CACHE_NUM;
 
 /*
  * FIXME: no free cache of list node.
@@ -88,46 +90,62 @@ static int free_node(buddy_node_t *node)
     return E_OK;
 }
 
-static int get_buddy(int order, buddy_node_t **node)
+static int merge_node(buddy_node_t **f_node, buddy_node_t *node1, buddy_node_t *node2)
 {
     int err = E_OK;
 
-    if (order < 0 || order >= CONFIG_NR_BUDDY_ORDER)
+    if (f_node == NULL || node1 == NULL || node2 == NULL)
     {
         return E_INVAL;
     }
 
-    if (list_empty(buddy_head[order]))
-    {
-        return E_NOMEM;
-    }
-
-    *node = list_pop_front(buddy_head[order]);
-
-    SET_STATE(*node, BUDDY_ALLOCED);
-
-    return err;
-}
-
-static int put_buddy(buddy_node_t *node)
-{
-    int err = E_OK;
-
-    info("put memory into buddy sys, addr:%p, order:%d.\n", node->data.addr, node->data.order);
-
-    if (node->data.order < 0 || node->data.order >= CONFIG_NR_BUDDY_ORDER)
+    if ((GET_BUD(node1) != BUDDY_LEFT || GET_BUD(node2) != BUDDY_RIGHT) && (GET_BUD(node1) != BUDDY_RIGHT || GET_BUD(node2) != BUDDY_LEFT))
     {
         return E_INVAL;
     }
 
-    SET_STATE(node, BUDDY_FREE);
+    if (GET_STATE(node1) != BUDDY_ALLOCED || GET_STATE(node2) != BUDDY_ALLOCED)
+    {
+        return E_INVAL;
+    }
 
-    list_push_back(buddy_head[node->data.order], *node);
+    if (node1->data.b_node != node2 || node2->data.b_node != node1)
+    {
+        return E_INVAL;
+    }
+
+    if (node1->data.f_node != node2->data.f_node)
+    {
+        return E_INVAL;
+    }
+
+    *f_node = node1->data.f_node;
+
+    if (GET_ATTR(*f_node) != BUDDY_VIRT || GET_ATTR(node1) != BUDDY_REAL || GET_ATTR(node2) != BUDDY_REAL)
+    {
+        return E_INVAL;
+    }
+
+    err = free_node(node1);
+
+    if (err != E_OK)
+    {
+        return err;
+    }
+
+    err = free_node(node2);
+
+    if (err != E_OK)
+    {
+        return err;
+    }
+
+    SET_ATTR(*f_node, BUDDY_REAL);
+
+    SET_STATE(*f_node, BUDDY_ALLOCED);
 
     return err;
 }
-
-// static int merge_node()
 
 static int divide_node(buddy_node_t *f_node, buddy_node_t *l_node, buddy_node_t *r_node)
 {
@@ -170,6 +188,87 @@ static int divide_node(buddy_node_t *f_node, buddy_node_t *l_node, buddy_node_t 
     SET_STATE(r_node, BUDDY_ALLOCED);
 
     SET_ATTR(f_node, BUDDY_VIRT);
+
+    return err;
+}
+
+static int get_buddy(int order, buddy_node_t **node)
+{
+    int err = E_OK;
+
+    if (order < 0 || order >= CONFIG_NR_BUDDY_ORDER)
+    {
+        return E_INVAL;
+    }
+
+    if (list_empty(buddy_head[order]))
+    {
+        return E_NOMEM;
+    }
+
+    *node = list_pop_front(buddy_head[order]);
+
+    SET_STATE(*node, BUDDY_ALLOCED);
+
+    return err;
+}
+
+static int get_ptc_buddy(buddy_node_t *node)
+{
+    int err = E_OK;
+
+    if (node == NULL || GET_ATTR(node) != BUDDY_REAL || GET_STATE(node) != BUDDY_FREE)
+    {
+        return E_INVAL;
+    }
+
+    list_delete(node);
+
+    SET_STATE(node, BUDDY_ALLOCED);
+
+    return err;
+}
+
+static int put_buddy(buddy_node_t *node)
+{
+    int err = E_OK;
+
+    if (node->data.order < 0 || node->data.order >= CONFIG_NR_BUDDY_ORDER)
+    {
+        return E_INVAL;
+    }
+
+    if (GET_ATTR(node) != BUDDY_REAL || GET_STATE(node) != BUDDY_ALLOCED)
+    {
+        return E_INVAL;
+    }
+
+    info("put memory into buddy sys, addr:%p, order:%d.\n", node->data.addr, node->data.order);
+
+    for (buddy_node_t *f_node; GET_BUD(node) != BUDDY_NO_BUD; node = f_node)
+    {
+        err = get_ptc_buddy(node->data.b_node);
+
+        if (err != E_OK)
+        {
+            err = E_OK;
+
+            break;
+        }
+
+        err = merge_node(&f_node, node, node->data.b_node);
+
+        if (err != E_OK)
+        {
+            err = E_OK;
+
+            break;
+        }
+    }
+
+    SET_STATE(node, BUDDY_FREE);
+
+    list_push_back(buddy_head[node->data.order], *node);
 
     return err;
 }
@@ -269,9 +368,16 @@ int buddy_alloc(size_t page_num, struct page_t *page)
     return err;
 }
 
-// int buddy_free()
-// {
-// }
+int buddy_free(struct page_t *page)
+{
+    int err = E_OK;
+
+    buddy_node_t *buddy = (buddy_node_t *)(page->buddy);
+
+    err = put_buddy(buddy);
+
+    return err;
+}
 
 static int init_add_mm(addr_t addr, size_t buddy_num)
 {
@@ -286,6 +392,8 @@ static int init_add_mm(addr_t addr, size_t buddy_num)
     SET_BUD(buddy_node, BUDDY_NO_BUD);
 
     SET_ATTR(buddy_node, BUDDY_REAL);
+
+    SET_STATE(buddy_node, BUDDY_ALLOCED);
 
     put_buddy(buddy_node);
 
@@ -333,7 +441,7 @@ int buddy_init(boot_mm_list_node_t *mm_list)
 
     list_init(free_cache_head);
 
-    for (int i = 0; i < PAGE_SIZE / sizeof(buddy_node_t); ++i)
+    for (int i = 0; i < BUDDY_CACHE_NUM; ++i)
     {
         list_push_back(free_cache_head, buddy_cache[i]);
     }

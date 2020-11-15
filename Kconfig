@@ -12,3 +12,7 @@ config DEBUG_INFO
 config NR_BUDDY_ORDER
 	int
 	default 21
+
+config NR_BUDDY_CACHE_PG
+	int
+	default 128

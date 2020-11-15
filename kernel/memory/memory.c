@@ -5,7 +5,9 @@
 
 extern int buddy_init(boot_mm_list_node_t *list_node);
 
-int buddy_alloc(size_t page_num, struct page_t *page);
+extern int buddy_alloc(size_t page_num, struct page_t *page);
+
+extern int buddy_free(struct page_t *page);
 
 static int print_memory_info(boot_mm_list_node_t *mm_list_node)
 {
@@ -20,26 +22,27 @@ static int print_memory_info(boot_mm_list_node_t *mm_list_node)
     return err;
 }
 
+struct page_t page[200];
 int memory_init(boot_mm_list_node_t *mm_list_node)
 {
     int err = E_OK;
-    
+
     err = print_memory_info(mm_list_node);
 
     buddy_init(mm_list_node);
 
-    struct page_t page;
 
-    int test = 1000;
-
-    while (test --)
+    for (int i=1;i<=100;++i)
     {
-    err = buddy_alloc(1, &page);
-    info(" %d %p %d %s\n",test, page.addr, page.num,strerror(err));
+        err = buddy_alloc(11, &page[i]);
+        info("%d %p %d %s\n",i, page[i].addr, page[i].num,strerror(err));
     }
 
-    // slab_init();
-
+    for(int i=1;i<=100;++i)
+    {
+        err = buddy_free(&page[i]);
+        info("%s\n",strerror(err))
+    }
     return err;
 }
 
