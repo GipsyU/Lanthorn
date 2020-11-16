@@ -6,7 +6,7 @@
 enum ERRORS {
     E_OK,
     E_NOMEM,
-    E_NOPOS,
+    E_NOSLOT,
     E_NOCACHE,
     E_INVAL,
     E_MAX

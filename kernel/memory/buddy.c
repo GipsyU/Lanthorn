@@ -1,19 +1,10 @@
 #include <error.h>
-#include <boot_arg.h>
 #include <list.h>
 #include <log.h>
 #include <util.h>
 #include <memory.h>
 
-struct buddy_t
-{
-    addr_t addr;
-    size_t order;
-    void *f_node, *b_node;
-    u32 flag;
-};
-
-typedef list_node(struct buddy_t) buddy_node_t;
+#include "buddy.h"
 
 #define BUDDY_NO_BUD 0
 #define BUDDY_LEFT 1
@@ -47,50 +38,41 @@ BUDDY_TPX(ATTR)
 
 BUDDY_TPX(STATE)
 
-static list_node(buddy_node_t) free_cache_head;
-
-#define BUDDY_CACHE_NUM (PAGE_SIZE * CONFIG_NR_BUDDY_CACHE_PG / sizeof(buddy_node_t))
-
-static buddy_node_t buddy_cache[BUDDY_CACHE_NUM];
-
-static buddy_node_t buddy_head[CONFIG_NR_BUDDY_ORDER];
-
-static size_t free_cache_num = BUDDY_CACHE_NUM;
 
 /*
  * FIXME: no free cache of list node.
  */
 
-static int new_node(buddy_node_t **node)
+static int new_node(struct buddy_allocator_t *alct, buddy_node_t **node)
 {
-    if (list_empty(free_cache_head))
+    if (list_empty(alct->free_slot_head))
     {
         // TODO: FIX it
-        warn("NO CAche %d\n", free_cache_num);
+        warn("NO CAche %d\n", alct->free_slot_num);
         return E_NOCACHE;
     }
 
-    *node = (typeof(*node))list_pop_front(free_cache_head);
+    *node = (typeof(*node))list_pop_front(alct->free_slot_head);
 
     SET_BUD(*node, BUDDY_NO_BUD);
 
     SET_ATTR(*node, BUDDY_NO_USE);
 
-    --free_cache_num;
+    --(alct->free_slot_num);
 
     return E_OK;
 }
 
-static int free_node(buddy_node_t *node)
+static int free_node(struct buddy_allocator_t *alct, buddy_node_t *node)
 {
-    list_push_back(free_cache_head, *node);
+    list_push_back(alct->free_slot_head, *node);
 
-    ++free_cache_num;
+    ++(alct->free_slot_num);
 
     return E_OK;
 }
 
-static int merge_node(buddy_node_t **f_node, buddy_node_t *node1, buddy_node_t *node2)
+static int merge_node(struct buddy_allocator_t *alct, buddy_node_t **f_node, buddy_node_t *node1, buddy_node_t *node2)
 {
     int err = E_OK;
 
@@ -126,14 +108,18 @@ static int merge_node(buddy_node_t **f_node, buddy_node_t *node1, buddy_node_t *
         return E_INVAL;
     }
 
-    err = free_node(node1);
+    /*
+     * FIXME: here shouldn't free, just change it to unused.
+     */
+
+    err = free_node(alct, node1);
 
     if (err != E_OK)
     {
         return err;
     }
 
-    err = free_node(node2);
+    err = free_node(alct, node2);
 
     if (err != E_OK)
     {
@@ -192,21 +178,21 @@ static int divide_node(buddy_node_t *f_node, buddy_node_t *l_node, buddy_node_t 
     return err;
 }
 
-static int get_buddy(int order, buddy_node_t **node)
+static int get_buddy(struct buddy_allocator_t *alct, uint order, buddy_node_t **node)
 {
     int err = E_OK;
 
-    if (order < 0 || order >= CONFIG_NR_BUDDY_ORDER)
+    if (alct == NULL || order >= CONFIG_NR_BUDDY_ORDER || node == NULL)
     {
         return E_INVAL;
     }
 
-    if (list_empty(buddy_head[order]))
+    if (list_empty(alct->head[order]))
     {
         return E_NOMEM;
     }
 
-    *node = list_pop_front(buddy_head[order]);
+    *node = list_pop_front(alct->head[order]);
 
     SET_STATE(*node, BUDDY_ALLOCED);
 
@@ -229,7 +215,7 @@ static int get_ptc_buddy(buddy_node_t *node)
     return err;
 }
 
-static int put_buddy(buddy_node_t *node)
+static int put_buddy(struct buddy_allocator_t *alct, buddy_node_t *node)
 {
     int err = E_OK;
 
@@ -256,7 +242,7 @@ static int put_buddy(buddy_node_t *node)
             break;
         }
 
-        err = merge_node(&f_node, node, node->data.b_node);
+        err = merge_node(alct, &f_node, node, node->data.b_node);
 
         if (err != E_OK)
         {
@@ -268,12 +254,12 @@ static int put_buddy(buddy_node_t *node)
 
     SET_STATE(node, BUDDY_FREE);
 
-    list_push_back(buddy_head[node->data.order], *node);
+    list_push_back(alct->head[node->data.order], *node);
 
     return err;
 }
 
-static int buddy_node_alloc(int order, buddy_node_t **node)
+static int buddy_node_alloc(struct buddy_allocator_t *alct, uint order, buddy_node_t **node)
 {
     int err = E_OK;
 
@@ -282,37 +268,37 @@ static int buddy_node_alloc(int order, buddy_node_t **node)
         return E_NOMEM;
     }
 
-    err = get_buddy(order, node);
+    err = get_buddy(alct, order, node);
 
     if (err != E_OK)
     {
         buddy_node_t *f_node, *l_node, *r_node;
 
-        err = buddy_node_alloc(order + 1, &f_node);
+        err = buddy_node_alloc(alct, order + 1, &f_node);
 
         if (err != E_OK)
         {
             return err;
         }
 
-        new_node(&l_node);
+        new_node(alct, &l_node);
 
-        new_node(&r_node);
+        new_node(alct, &r_node);
 
         err = divide_node(f_node, l_node, r_node);
 
         if (err != E_OK)
         {
-            free_node(l_node);
+            free_node(alct, l_node);
 
-            free_node(r_node);
+            free_node(alct, r_node);
 
-            put_buddy(f_node);
+            put_buddy(alct, f_node);
 
             return err;
         }
 
-        err = put_buddy(r_node);
+        err = put_buddy(alct, r_node);
 
         *node = l_node;
     }
@@ -320,12 +306,68 @@ static int buddy_node_alloc(int order, buddy_node_t **node)
     return err;
 }
 
-int buddy_alloc(size_t page_num, struct page_t *page)
+int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page)
+{
+    int err = E_OK;
+
+    if (alct == NULL || page == NULL || page->num == 0)
+    {
+        return E_INVAL;
+    }
+
+    addr_t start = page->addr;
+
+    for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
+    {
+        if (page->num & (1 << i))
+        {
+            buddy_node_t *node;
+
+            err = new_node(alct, &node);
+
+            if (err != E_OK)
+            {
+                /*
+                 * FIXME: here need to release inserted before.
+                 */
+                return err;
+            }
+
+            node->data.addr = start;
+
+            node->data.order = i;
+
+            SET_BUD(node, BUDDY_NO_BUD);
+
+            SET_ATTR(node, BUDDY_REAL);
+
+            SET_STATE(node, BUDDY_ALLOCED);
+
+            int err = put_buddy(alct, node);
+            
+            if (err != E_OK)
+            {
+                /*
+                 * FIXME: here need to release inserted before.
+                 */
+                return err;
+            }
+
+            start += (1 << i) * PAGE_SIZE;
+        }
+    }
+
+    assert(start == page->addr + page->num * PAGE_SIZE, "buddy insert bug.\n");
+
+    return err;
+}
+
+int buddy_alloc(struct buddy_allocator_t *alct, size_t page_num, struct page_t *page)
 {
 
     int err = E_OK;
 
-    if (page_num == 0 || page == NULL)
+    if (alct == NULL || page_num == 0 || page == NULL)
     {
         return E_INVAL;
     }
@@ -352,7 +394,7 @@ int buddy_alloc(size_t page_num, struct page_t *page)
 
     buddy_node_t *node;
 
-    err = buddy_node_alloc(order, &node);
+    err = buddy_node_alloc(alct, order, &node);
 
     if (err != E_OK)
     {
@@ -368,96 +410,49 @@ int buddy_alloc(size_t page_num, struct page_t *page)
     return err;
 }
 
-int buddy_free(struct page_t *page)
+int buddy_free(struct buddy_allocator_t *alct, struct page_t *page)
 {
     int err = E_OK;
 
     buddy_node_t *buddy = (buddy_node_t *)(page->buddy);
 
-    err = put_buddy(buddy);
+    err = put_buddy(alct, buddy);
 
     return err;
 }
 
-static int init_add_mm(addr_t addr, size_t buddy_num)
-{
-    buddy_node_t *buddy_node;
-
-    new_node(&buddy_node);
-
-    buddy_node->data.addr = addr;
-
-    buddy_node->data.order = buddy_num;
-
-    SET_BUD(buddy_node, BUDDY_NO_BUD);
-
-    SET_ATTR(buddy_node, BUDDY_REAL);
-
-    SET_STATE(buddy_node, BUDDY_ALLOCED);
-
-    put_buddy(buddy_node);
-
-    return E_OK;
-}
-
-static int init_insert_mm(addr_t addr, size_t size)
+int buddy_init(struct buddy_allocator_t *alct, addr_t addr, size_t size)
 {
     int err = E_OK;
 
-    addr_t _start = ROUND_UP(addr, PAGE_SIZE);
-
-    addr_t _end = ROUND_DOWN(addr + size, PAGE_SIZE);
-
-    size_t _size = _end - _start;
-
-    assert(_size >= 0 && _size % PAGE_SIZE == 0, "insert _size error.\n");
-
-    if (_size == 0)
+    if (alct == NULL || addr == NULL || size == NULL || size % PAGE_SIZE != 0)
     {
-        warn("No aligned 4K memory.\n");
+        return E_INVAL;
+    }
 
+    alct->head = (buddy_node_t *)addr;
+
+    alct->slot = (buddy_node_t *)(addr + CONFIG_NR_BUDDY_ORDER * sizeof(buddy_node_t));
+
+    if ((addr_t)alct->slot >= addr + size)
+    {
         return E_NOMEM;
     }
 
-    size_t page_num = _size / PAGE_SIZE;
+    alct->max_slot_num = (addr + size - (addr_t)alct->slot) / sizeof(buddy_node_t);
 
-    for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
+    alct->free_slot_num = alct->max_slot_num;
+
+    list_init(alct->free_slot_head);
+
+    for (int i = 0; i < alct->max_slot_num; ++i)
     {
-        if (page_num & (1 << i))
-        {
-            err = init_add_mm(_start, i);
-
-            _start += (1 << i) * PAGE_SIZE;
-        }
-    }
-    assert(_start == _end, "buddy mm insert bug.\n");
-
-    return err;
-}
-
-int buddy_init(boot_mm_list_node_t *mm_list)
-{
-    int err = E_OK;
-
-    list_init(free_cache_head);
-
-    for (int i = 0; i < BUDDY_CACHE_NUM; ++i)
-    {
-        list_push_back(free_cache_head, buddy_cache[i]);
+        list_push_back(alct->free_slot_head, alct->slot[i]);
     }
 
     for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
     {
-        list_init(buddy_head[i]);
-    }
-
-    /*
-     * FIXME: ERR
-     */
-
-    list_rep(*mm_list, p)
-    {
-        init_insert_mm(p->data.addr, p->data.size);
+        list_init(alct->head[i]);
     }
 
     return err;

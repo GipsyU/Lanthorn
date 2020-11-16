@@ -4,7 +4,7 @@
 #include <boot_arg.h>
 struct page_t {
     addr_t addr;
-    size_t num;
+    uint num;
     void *buddy;
 };
 
