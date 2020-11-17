@@ -1,3 +1,4 @@
+#include <drivers/mmu.h>
 #include <memory.h>
 #include <boot_arg.h>
 #include <error.h>
@@ -8,9 +9,11 @@
 
 static struct buddy_allocator_t pmm_alct;
 
-// static struct buddy_allocator_t kvmm_alct;
+static struct buddy_allocator_t kvmm_alct;
 
 static u8 pmm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
+
+static u8 kvmm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static int print_memory_info(boot_mm_list_node_t *mm_list_node)
 {
@@ -26,10 +29,16 @@ static int print_memory_info(boot_mm_list_node_t *mm_list_node)
     return err;
 }
 
-struct page_t page[200];
-int memory_init(boot_mm_list_node_t *mm_list_node)
+struct page_t Page[200];
+
+int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t free_kvm_size)
 {
     int err = E_OK;
+
+    if (free_kvm_start % PAGE_SIZE != 0)
+    {
+        return E_INVAL;
+    }
 
     err = print_memory_info(mm_list_node);
 
@@ -47,20 +56,68 @@ int memory_init(boot_mm_list_node_t *mm_list_node)
 
         page.num = (end - start) / PAGE_SIZE;
 
-        buddy_insert(&pmm_alct, &page);
+        err = buddy_insert(&pmm_alct, &page);
+
+        if (err != E_OK)
+        {
+            /*
+             * FIXME
+             */
+            panic("bug\n");
+        }
     }
 
-    for (int i = 1; i <= 100; ++i)
+    info("pmm init finished.\n");
+
+    buddy_init(&kvmm_alct, (addr_t)kvmm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+
+    struct page_t page;
+
+    page.addr = free_kvm_start;
+
+    page.num = free_kvm_size / PAGE_SIZE;
+
+    err = buddy_insert(&kvmm_alct, &page);
+
+    if (err != E_OK)
     {
-        err = buddy_alloc(&pmm_alct, 11, &page[i]);
-        info("%d %p %d %s\n", i, page[i].addr, page[i].num, strerror(err));
+        panic("bug\n");
+    }
+    else
+    {
+        info("kvmm init finished.\n");
     }
 
-    for (int i = 1; i <= 100; ++i)
-    {
-        err = buddy_free(&pmm_alct, &page[i]);
-        info("%s\n", strerror(err))
-    }
+    err = buddy_alloc(&pmm_alct, 1, &Page[0]);
+    info("%d %p %d %s\n", 0, Page[0].addr, Page[0].num, strerror(err));
+
+    err = buddy_alloc(&kvmm_alct, 11, &Page[1]);
+    info("%d %p %d %s\n", 1, Page[1].addr, Page[1].num, strerror(err));
+
+    err = buddy_alloc(&pmm_alct, 1, &Page[2]);
+    info("%d %p %d %s\n", 2, Page[2].addr, Page[2].num, strerror(err));
+    
+    err = mmu_map(Page[0].addr, Page[1].addr, Page[2].addr);
+
+    debug("%s\n",strerror(err));
+
+    debug("OK\n");
+    int *x = Page[1].addr;
+    debug("OK %p\n",x);
+    *x = 1;
+    debug("OK %p %d\n", x, *x);
+    
+    // for (int i = 1; i <= 100; ++i)
+    // {
+    //     err = buddy_alloc(&kvmm_alct, 11, &Page[i]);
+    //     info("%d %p %d %s\n", i, Page[i].addr, Page[i].num, strerror(err));
+    // }
+
+    // for (int i = 1; i <= 100; ++i)
+    // {
+    //     err = buddy_free(&kvmm_alct, &Page[i]);
+    //     info("%s\n", strerror(err))
+    // }
     return err;
 }
 

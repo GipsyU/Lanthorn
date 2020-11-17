@@ -9,13 +9,13 @@ extern void console_init(void);
 extern u8 kern_start[];
 extern u8 kern_end[];
 
-static list_node(struct boot_mm_t) boot_mm_cache[CONFIG_BOOT_MM_NR];
+static list_node(struct boot_mm_t) boot_mm_cache[CONFIG_NR_BOOT_MM];
 
 static int boot_mm_num = 0;
 
 static int add_memory(addr_t addr, size_t size)
 {
-    if (++boot_mm_num >= CONFIG_BOOT_MM_NR)
+    if (++boot_mm_num >= CONFIG_NR_BOOT_MM)
     {
 
         warn("no enough boot mm info cache.\n");
@@ -94,6 +94,17 @@ void __attribute__((noreturn)) setup(void)
 
     err = collect_memory((boot_mm_list_node_t **)&boot_arg.mm_list);
 
+    boot_arg.kern_start = (addr_t)kern_start;
+    
+    boot_arg.kern_end = (addr_t)kern_end;
+
+    /*
+     * FIXME:1024
+     */
+    boot_arg.free_kvm_start = KERN_BASE + CONFIG_NR_BOOT_PTE * (1024) * PAGE_SIZE;
+    
+    boot_arg.free_kvm_size = 0 - boot_arg.free_kvm_start;
+    
     if (err != E_OK)
     {
         error("collect memory failed, err = %s.\n", strerror(err));

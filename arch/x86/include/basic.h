@@ -12,6 +12,7 @@ typedef long unsigned int size_t;
 typedef long unsigned int addr_t;
 typedef long unsigned int pde_t;
 typedef long unsigned int pte_t;
+typedef long unsigned int pxe_t;
 
 #define NULL 0
 

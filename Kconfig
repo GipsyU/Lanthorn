@@ -16,3 +16,7 @@ config NR_BUDDY_ORDER
 config NR_PMM_BUDDY_SLOT_PG
 	int
 	default 128
+
+config NR_KVMM_BUDDY_SLOT_PG
+	int
+	default 128
