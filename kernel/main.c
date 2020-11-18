@@ -3,7 +3,6 @@
 #include <log.h>
 #include <memory.h>
 #include <list.h>
-#include <rbt.h>
 #include <boot_arg.h>
 
 static void test(void){

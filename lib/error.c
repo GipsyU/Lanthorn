@@ -8,6 +8,7 @@ const char *strerror(int err) {
         ERRCASE(E_NOSLOT);
         ERRCASE(E_NOCACHE);
         ERRCASE(E_INVAL);
+        ERRCASE(E_AGAIN);
         default: return "E_UNKNOWN";
     }
     #undef ERRCASE
