@@ -16,6 +16,7 @@ struct boot_arg_t {
     addr_t kern_end;
     addr_t free_kvm_start;
     size_t free_kvm_size;
+    int ncpu;
 
 };
 

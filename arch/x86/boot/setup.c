@@ -82,6 +82,8 @@ static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
     return err;
 }
 
+extern int mp_init(int *num_cpu);
+
 void __attribute__((noreturn)) setup(void)
 {
     int err = E_OK;
@@ -123,6 +125,13 @@ void __attribute__((noreturn)) setup(void)
     else
     {
         info("enable 4K page success.\n");
+    }
+
+    err = mp_init(&boot_arg.ncpu);
+
+    if (err != E_OK)
+    {
+        error("mp init failed, err = %s.\n", strerror(err));
     }
 
     info("finish setup x86 arch.\n");

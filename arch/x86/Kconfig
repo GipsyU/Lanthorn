@@ -5,3 +5,7 @@ config NR_BOOT_MM
 config NR_BOOT_PTE
 	int
 	default 1
+
+config NR_CPU_MAX
+	int
+	default 8

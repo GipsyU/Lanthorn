@@ -1,1 +1,1 @@
-lib-y := log.o error.o string.o
+obj-y := log.o error.o string.o

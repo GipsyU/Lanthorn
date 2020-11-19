@@ -138,60 +138,92 @@ int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t
 
 // }
 
-// int kalloc(addr_t *addr, size_t size)
-// {
-//     int err = E_OK;
+static int kalloc_buddy(addr_t *addr, size_t size)
+{
+    int err = E_OK;
 
-//     if (addr == NULL || size == 0)
-//     {
-//         return E_INVAL;
-//     }
+    struct page_t *pp, *vp, *pte;
 
-//     if (size <= 128)
-//     {
+    err = buddy_alloc(&pmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pp);
 
-//     }
-//     else
-//     {
+    if (err != E_OK)
+    {
+        goto error0;
+    }
 
-//         /*
-//          * FIXME: Need to store to static.
-//          */
+    err = buddy_alloc(&kvmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &vp);
 
-//         struct page_t pp, vp;
+    if (err != E_OK)
+    {
+        goto error1;
+    }
 
-//         err = buddy_alloc(&pmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pp);
+    err = mmu_map(pp->addr, vp->addr, NULL);
 
-//         if (err != E_OK)
-//         {
-//             return err;
-//         }
+    if (err != E_OK)
+    {
+        if (err == E_AGAIN)
+        {
+            err = buddy_alloc(&kvmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pte);
 
-//         err = buddy_alloc(&kvmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &vp);
+            if (err != E_OK)
+            {
+                goto error2;
+            }
 
-//         if (err != E_OK)
-//         {
-//             buddy_free(&pmm_alct, &pp);
+            err = mmu_map(pp->addr, vp->addr, pte->addr);
 
-//             return err;
-//         }
+            if (err != E_OK)
+            {
+                goto error3;
+            }
+        }
+        else
+        {
+            goto error2;
+        }
+    }
 
-//         err = mmu_map(pp.addr, vp.addr, 0);
+    *addr = vp->addr;
 
-//         if (err == E_AGAIN)
-//         {
+    return err;
 
-//             err = mmu_map(pp.addr, vp.addr, )
-//         }
+error3:
+    buddy_free(&pmm_alct, pte);
 
-//     }
+error2:
+    buddy_free(&kvmm_alct, vp);
 
-//     return err;
-// }
+error1:
+    buddy_free(&pmm_alct, pp);
 
-// int kfree(addr_t addr)
-// {
-//     int err = E_OK;
+error0:
+    return err;
+}
 
-//     return err;
-// }
+int kalloc(addr_t *addr, size_t size)
+{
+    int err = E_OK;
+
+    if (addr == NULL || size == 0)
+    {
+        return E_INVAL;
+    }
+
+    if (size <= 128)
+    {
+    }
+    else
+    {
+        err = kalloc_buddy(addr, ROUND_UP(size, PAGE_SIZE));
+    }
+
+    return err;
+}
+
+int kfree(addr_t addr)
+{
+    int err = E_OK;
+
+    return err;
+}

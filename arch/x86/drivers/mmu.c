@@ -57,34 +57,30 @@ int mmu_enable_4k_page(void)
 int mmu_map(addr_t pp, addr_t vp, addr_t pte)
 {
     int err = E_OK;
+
     debug("%p %p\n", pp, vp);
+    
     if (pp % PAGE_SIZE != 0 || vp % PAGE_SIZE != 0)
     {
         return E_INVAL;
     }
 
-    debug("OK\n");
     if (vp < KERN_BASE)
     {
         return E_INVAL;
     }
-    debug("OK\n");
-
+    
     if (vp < KERN_BASE + CONFIG_NR_BOOT_PTE * NR_PXE * PAGE_SIZE)
     {
         assert(vp == (addr_t)TMP, "mmu bug.\n");
 
         PTE[PDE_IDX(vp - KERN_BASE)][PTE_IDX(vp)] = pp | PXE_P | PXE_W;
-        
-        debug("OK\n");
-    
+            
         return E_OK;
     }
-    debug("OK\n");
 
     addr_t _pte;
 
-    debug("OK\n");
     if ((PDE[PDE_IDX(vp)] & PXE_P) == 0)
     {
         debug("%p %p %p\n", pp, vp, pte);

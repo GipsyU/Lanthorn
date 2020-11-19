@@ -6,10 +6,12 @@
 enum ERRORS {
     E_OK,
     E_NOMEM,
+    E_FAULT,
     E_NOSLOT,
     E_NOCACHE,
     E_INVAL,
     E_AGAIN,
+    E_NOTFOUND,
     E_MAX
 };
 const char *strerror(int err);

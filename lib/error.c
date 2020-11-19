@@ -4,6 +4,8 @@ const char *strerror(int err) {
     switch (err) {
         ERRCASE(E_OK);
         ERRCASE(E_MAX);
+        ERRCASE(E_FAULT);
+        ERRCASE(E_NOTFOUND);
         ERRCASE(E_NOMEM);
         ERRCASE(E_NOSLOT);
         ERRCASE(E_NOCACHE);
