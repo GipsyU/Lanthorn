@@ -1,9 +1,6 @@
-#ifndef _BOOT_BOOT_H_
-#define _BOOT_BOOT_H_
+#ifndef _X86_SRC_IO_H_
+#define _X86_SRC_IO_H_
 #include <basic.h>
-
-#define cpu_relax() asm volatile("rep; nop")
-
 static inline void outb(u8 v, u16 port)
 {
 	asm volatile("outb %0,%1"

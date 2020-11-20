@@ -374,7 +374,7 @@ ifdef CONFIG_DEBUG_INFO
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
-NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
+NOSTDINC_FLAGS += -nostdinc
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
 

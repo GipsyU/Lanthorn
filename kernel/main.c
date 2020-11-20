@@ -6,13 +6,11 @@
 #include <boot_arg.h>
 #include <string.h>
 
-static void test(void){
-    addr_t addr;
-    for(int i=1;i<=100;++i)
-    {
-        int err = kalloc(&addr, 0x1000);
-        info("%p %s\n", addr, strerror(err));
-    }
+static void test(void)
+{
+    int *x = 0xFEE00000;
+    debug("%d\n",*x)
+    debug("test over\n");
 }
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
@@ -21,14 +19,14 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     info("Hello Lanthorn.\n");
 
-    int x;
-    memset(x, 0, sizeof(x));
-
     err = memory_init(boot_arg.mm_list, boot_arg.free_kvm_start, boot_arg.free_kvm_size);
 
-    if (err != E_OK) {
-        panic("init memory failed, err = %s.\n",strerror(err));
-    } else {
+    if (err != E_OK)
+    {
+        panic("init memory failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
         info("kernal memory init success.\n");
     }
 
@@ -36,5 +34,4 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     // process_init();
 
-    while(1);
 }

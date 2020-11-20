@@ -112,12 +112,12 @@ int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t
 
     // debug("OK %p %d\n", x, *x);
 
-    for (int i = 1; i <= 100; ++i)
-    {
-        struct page_t *p;
-        err = buddy_alloc(&kvmm_alct, 11, &p);
-        info("%d %p %d %s\n", i, p->addr, p->num, strerror(err));
-    }
+    // for (int i = 1; i <= 100; ++i)
+    // {
+    //     struct page_t *p;
+    //     err = buddy_alloc(&kvmm_alct, 11, &p);
+    //     info("%d %p %d %s\n", i, p->addr, p->num, strerror(err));
+    // }
 
     // for (int i = 1; i <= 100; ++i)
     // {

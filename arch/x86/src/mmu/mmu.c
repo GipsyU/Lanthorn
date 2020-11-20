@@ -16,6 +16,8 @@
 #define PDE_IDX(addr) (((addr) & PDE_MASK) >> 22)
 #define PTE_IDX(addr) (((addr) & PTE_MASK) >> 12)
 
+#define DEV_BASE 0xFE000000
+
 __attribute__((__aligned__(PAGE_SIZE))) pde_t PDE[NR_PXE] =
     {
         [0] = (0) | PXE_P | PXE_W | PDE_PS,
@@ -25,6 +27,16 @@ __attribute__((__aligned__(PAGE_SIZE))) pde_t PDE[NR_PXE] =
 __attribute__((__aligned__(PAGE_SIZE))) pte_t PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
 __attribute__((__aligned__(PAGE_SIZE))) pxe_t TMP[NR_PXE]; // virtual memory sapce
+
+int mmu_map_dev(void)
+{
+    for (addr_t addr = DEV_BASE; addr != 0; addr += NR_PXE * PAGE_SIZE)
+    {
+        PDE[addr >> 22] = addr | PXE_P | PXE_W | PDE_PS;
+    }
+
+    return E_OK;
+}
 
 int mmu_enable_4k_page(void)
 {

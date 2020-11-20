@@ -83,6 +83,7 @@ static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
 }
 
 extern int mp_init(int *num_cpu);
+extern int mmu_map_dev(void);
 
 void __attribute__((noreturn)) setup(void)
 {
@@ -125,6 +126,17 @@ void __attribute__((noreturn)) setup(void)
     else
     {
         info("enable 4K page success.\n");
+    }
+
+    err = mmu_map_dev();
+
+    if (err != E_OK)
+    {
+        error("mmu map dev failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("mmu map dev success.\n");
     }
 
     err = mp_init(&boot_arg.ncpu);

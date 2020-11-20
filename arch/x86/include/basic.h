@@ -19,4 +19,7 @@ typedef long unsigned int pxe_t;
 #define PAGE_SIZE   0x1000
 #define KERN_BASE   0xC0000000
 
+#define NR_INTR 256
+
+
 #endif
