@@ -1,11 +1,12 @@
 #include <drivers/intr.h>
 #include <error.h>
 #include <basic.h>
-#include <x86.h>
+#include <log.h>
+#include <cpu.h>
 
-#define STS_T32A    0x9     // Available 32-bit TSS
-#define STS_IG32    0xE     // 32-bit Interrupt Gate
-#define STS_TG32    0xF     // 32-bit Trap Gate
+#define STS_T32A 0x9 // Available 32-bit TSS
+#define STS_IG32 0xE // 32-bit Interrupt Gate
+#define STS_TG32 0xF // 32-bit Trap Gate
 
 struct gate_t
 {
@@ -21,6 +22,42 @@ struct gate_t
 };
 
 #define SEG_KCODE 8
+
+struct intr_regs_t
+{
+    // registers as pushed by pusha
+    u32 edi;
+    u32 esi;
+    u32 ebp;
+    u32 oesp; // useless & ignored
+    u32 ebx;
+    u32 edx;
+    u32 ecx;
+    u32 eax;
+
+    // rest of trap frame
+    u16 gs;
+    u16 padding1;
+    u16 fs;
+    u16 padding2;
+    u16 es;
+    u16 padding3;
+    u16 ds;
+    u16 padding4;
+    u32 intrno;
+
+    // below here defined by x86 hardware
+    u32 err;
+    u32 eip;
+    u16 cs;
+    u16 padding5;
+    u32 eflags;
+
+    // below here only when crossing rings, such as from user to kernel
+    u32 esp;
+    u16 ss;
+    u16 padding6;
+};
 
 struct gate_t idt[NR_INTR];
 
@@ -43,26 +80,49 @@ static void set_gate(struct gate_t *gate, int istrap, u32 sel, u32 off, u32 dpl)
     gate->p = 1;
 
     gate->off_31_16 = off >> 16;
-} 
+}
+
+static int inline lidt(addr_t addr, size_t size)
+{
+    volatile u16 pd[3];
+
+    pd[0] = size - 1;
+
+    pd[1] = addr;
+
+    pd[2] = addr >> 16;
+
+    asm volatile("lidt (%0)"
+                 :
+                 : "r"(pd));
+}
+
+void intr_hdl(struct intr_regs_t *regs)
+{
+    info("intrno: %d\n", regs->intrno);
+
+    return;
+}
 
 int intr_register(int cpuid, int intrid, void *hdl)
 {
-
+    return E_OK;
 }
 
 int intr_unregister(int cpuid, int intrid)
 {
-
+    return E_OK;
 }
 
-int intr_init()
-{
+extern addr_t intrx[];
+
+int intr_init(void)
+{   
     int err = E_OK;
 
-    for (int i = 0; i <  NR_GATE; ++i)
+    for (int i = 0; i < NR_INTR; ++i)
     {
-
-        set_gate(&idt[i], 0, SEG_KCODE, ,)
+        set_gate(&idt[i], 0, SEL_KCODE, intrx[i], 0);
     }
 
     return err;

@@ -1,0 +1,552 @@
+#define SEL_KDATA (4<<3)
+
+.globl intr_etr
+intr_etr:
+    pushl %ds
+    pushl %es
+    pushl %fs
+    pushl %gs
+    pushal
+    
+    movw $(SEL_KDATA), %ax
+    movw %ax, %ds
+    movw %ax, %es
+
+    pushl %esp
+    call intr_hdl
+    addl $4, %esp
+
+.globl intr_ret
+intr_ret:
+    popal
+    popl %gs
+    popl %fs
+    popl %es
+    popl %ds
+    addl $0x8, %esp  # intrno and errcode
+    iret
+
+.macro intr, no
+    intr\no:
+    .if \no != 8 && (\no < 10 || \no > 14) && \no != 17
+        pushl $0
+    .endif
+    pushl $\no
+    jmp intr_etr
+.endm
+
+intr 0
+intr 1
+intr 2
+intr 3
+intr 4
+intr 5
+intr 6
+intr 7
+intr 8
+intr 9
+intr 10
+intr 11
+intr 12
+intr 13
+intr 14
+intr 15
+intr 16
+intr 17
+intr 18
+intr 19
+intr 20
+intr 21
+intr 22
+intr 23
+intr 24
+intr 25
+intr 26
+intr 27
+intr 28
+intr 29
+intr 30
+intr 31
+intr 32
+intr 33
+intr 34
+intr 35
+intr 36
+intr 37
+intr 38
+intr 39
+intr 40
+intr 41
+intr 42
+intr 43
+intr 44
+intr 45
+intr 46
+intr 47
+intr 48
+intr 49
+intr 50
+intr 51
+intr 52
+intr 53
+intr 54
+intr 55
+intr 56
+intr 57
+intr 58
+intr 59
+intr 60
+intr 61
+intr 62
+intr 63
+intr 64
+intr 65
+intr 66
+intr 67
+intr 68
+intr 69
+intr 70
+intr 71
+intr 72
+intr 73
+intr 74
+intr 75
+intr 76
+intr 77
+intr 78
+intr 79
+intr 80
+intr 81
+intr 82
+intr 83
+intr 84
+intr 85
+intr 86
+intr 87
+intr 88
+intr 89
+intr 90
+intr 91
+intr 92
+intr 93
+intr 94
+intr 95
+intr 96
+intr 97
+intr 98
+intr 99
+intr 100
+intr 101
+intr 102
+intr 103
+intr 104
+intr 105
+intr 106
+intr 107
+intr 108
+intr 109
+intr 110
+intr 111
+intr 112
+intr 113
+intr 114
+intr 115
+intr 116
+intr 117
+intr 118
+intr 119
+intr 120
+intr 121
+intr 122
+intr 123
+intr 124
+intr 125
+intr 126
+intr 127
+intr 128
+intr 129
+intr 130
+intr 131
+intr 132
+intr 133
+intr 134
+intr 135
+intr 136
+intr 137
+intr 138
+intr 139
+intr 140
+intr 141
+intr 142
+intr 143
+intr 144
+intr 145
+intr 146
+intr 147
+intr 148
+intr 149
+intr 150
+intr 151
+intr 152
+intr 153
+intr 154
+intr 155
+intr 156
+intr 157
+intr 158
+intr 159
+intr 160
+intr 161
+intr 162
+intr 163
+intr 164
+intr 165
+intr 166
+intr 167
+intr 168
+intr 169
+intr 170
+intr 171
+intr 172
+intr 173
+intr 174
+intr 175
+intr 176
+intr 177
+intr 178
+intr 179
+intr 180
+intr 181
+intr 182
+intr 183
+intr 184
+intr 185
+intr 186
+intr 187
+intr 188
+intr 189
+intr 190
+intr 191
+intr 192
+intr 193
+intr 194
+intr 195
+intr 196
+intr 197
+intr 198
+intr 199
+intr 200
+intr 201
+intr 202
+intr 203
+intr 204
+intr 205
+intr 206
+intr 207
+intr 208
+intr 209
+intr 210
+intr 211
+intr 212
+intr 213
+intr 214
+intr 215
+intr 216
+intr 217
+intr 218
+intr 219
+intr 220
+intr 221
+intr 222
+intr 223
+intr 224
+intr 225
+intr 226
+intr 227
+intr 228
+intr 229
+intr 230
+intr 231
+intr 232
+intr 233
+intr 234
+intr 235
+intr 236
+intr 237
+intr 238
+intr 239
+intr 240
+intr 241
+intr 242
+intr 243
+intr 244
+intr 245
+intr 246
+intr 247
+intr 248
+intr 249
+intr 250
+intr 251
+intr 252
+intr 253
+intr 254
+intr 255
+
+.globl intrx
+intrx:
+    .long intr0
+    .long intr1
+    .long intr2
+    .long intr3
+    .long intr4
+    .long intr5
+    .long intr6
+    .long intr7
+    .long intr8
+    .long intr9
+    .long intr10
+    .long intr11
+    .long intr12
+    .long intr13
+    .long intr14
+    .long intr15
+    .long intr16
+    .long intr17
+    .long intr18
+    .long intr19
+    .long intr20
+    .long intr21
+    .long intr22
+    .long intr23
+    .long intr24
+    .long intr25
+    .long intr26
+    .long intr27
+    .long intr28
+    .long intr29
+    .long intr30
+    .long intr31
+    .long intr32
+    .long intr33
+    .long intr34
+    .long intr35
+    .long intr36
+    .long intr37
+    .long intr38
+    .long intr39
+    .long intr40
+    .long intr41
+    .long intr42
+    .long intr43
+    .long intr44
+    .long intr45
+    .long intr46
+    .long intr47
+    .long intr48
+    .long intr49
+    .long intr50
+    .long intr51
+    .long intr52
+    .long intr53
+    .long intr54
+    .long intr55
+    .long intr56
+    .long intr57
+    .long intr58
+    .long intr59
+    .long intr60
+    .long intr61
+    .long intr62
+    .long intr63
+    .long intr64
+    .long intr65
+    .long intr66
+    .long intr67
+    .long intr68
+    .long intr69
+    .long intr70
+    .long intr71
+    .long intr72
+    .long intr73
+    .long intr74
+    .long intr75
+    .long intr76
+    .long intr77
+    .long intr78
+    .long intr79
+    .long intr80
+    .long intr81
+    .long intr82
+    .long intr83
+    .long intr84
+    .long intr85
+    .long intr86
+    .long intr87
+    .long intr88
+    .long intr89
+    .long intr90
+    .long intr91
+    .long intr92
+    .long intr93
+    .long intr94
+    .long intr95
+    .long intr96
+    .long intr97
+    .long intr98
+    .long intr99
+    .long intr100
+    .long intr101
+    .long intr102
+    .long intr103
+    .long intr104
+    .long intr105
+    .long intr106
+    .long intr107
+    .long intr108
+    .long intr109
+    .long intr110
+    .long intr111
+    .long intr112
+    .long intr113
+    .long intr114
+    .long intr115
+    .long intr116
+    .long intr117
+    .long intr118
+    .long intr119
+    .long intr120
+    .long intr121
+    .long intr122
+    .long intr123
+    .long intr124
+    .long intr125
+    .long intr126
+    .long intr127
+    .long intr128
+    .long intr129
+    .long intr130
+    .long intr131
+    .long intr132
+    .long intr133
+    .long intr134
+    .long intr135
+    .long intr136
+    .long intr137
+    .long intr138
+    .long intr139
+    .long intr140
+    .long intr141
+    .long intr142
+    .long intr143
+    .long intr144
+    .long intr145
+    .long intr146
+    .long intr147
+    .long intr148
+    .long intr149
+    .long intr150
+    .long intr151
+    .long intr152
+    .long intr153
+    .long intr154
+    .long intr155
+    .long intr156
+    .long intr157
+    .long intr158
+    .long intr159
+    .long intr160
+    .long intr161
+    .long intr162
+    .long intr163
+    .long intr164
+    .long intr165
+    .long intr166
+    .long intr167
+    .long intr168
+    .long intr169
+    .long intr170
+    .long intr171
+    .long intr172
+    .long intr173
+    .long intr174
+    .long intr175
+    .long intr176
+    .long intr177
+    .long intr178
+    .long intr179
+    .long intr180
+    .long intr181
+    .long intr182
+    .long intr183
+    .long intr184
+    .long intr185
+    .long intr186
+    .long intr187
+    .long intr188
+    .long intr189
+    .long intr190
+    .long intr191
+    .long intr192
+    .long intr193
+    .long intr194
+    .long intr195
+    .long intr196
+    .long intr197
+    .long intr198
+    .long intr199
+    .long intr200
+    .long intr201
+    .long intr202
+    .long intr203
+    .long intr204
+    .long intr205
+    .long intr206
+    .long intr207
+    .long intr208
+    .long intr209
+    .long intr210
+    .long intr211
+    .long intr212
+    .long intr213
+    .long intr214
+    .long intr215
+    .long intr216
+    .long intr217
+    .long intr218
+    .long intr219
+    .long intr220
+    .long intr221
+    .long intr222
+    .long intr223
+    .long intr224
+    .long intr225
+    .long intr226
+    .long intr227
+    .long intr228
+    .long intr229
+    .long intr230
+    .long intr231
+    .long intr232
+    .long intr233
+    .long intr234
+    .long intr235
+    .long intr236
+    .long intr237
+    .long intr238
+    .long intr239
+    .long intr240
+    .long intr241
+    .long intr242
+    .long intr243
+    .long intr244
+    .long intr245
+    .long intr246
+    .long intr247
+    .long intr248
+    .long intr249
+    .long intr250
+    .long intr251
+    .long intr252
+    .long intr253
+    .long intr254
+    .long intr255

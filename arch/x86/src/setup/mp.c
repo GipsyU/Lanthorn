@@ -2,7 +2,7 @@
 #include <error.h>
 #include <string.h>
 #include <log.h>
-#include <x86.h>
+#include <cpu.h>
 
 struct mp
 {                    // floating pointer
@@ -86,7 +86,7 @@ static int _mpsearch(addr_t addr, size_t size, struct mp **mp)
 
     addr += KERN_BASE;
 
-    for (*mp = addr; *mp < addr + size; (*mp)++)
+    for (*mp = (struct mp *)addr; *mp < (struct mp *)(addr + size); (*mp)++)
     {
         if (memcmp((u8 *)(*mp), "_MP_", 4) == 0 && sum((u8 *)(*mp), sizeof(struct mp)) == 0 && (*mp)->physaddr != NULL)
         {
@@ -157,9 +157,13 @@ static int mpconfig(struct mp *mp, struct mpconf **conf)
     return err;
 }
 
+extern u32 *lapic;
+
 int mp_init(int *num_cpu)
 {
     int err = E_OK;
+
+    *num_cpu = 0;
 
     struct mp *mp;
 
@@ -179,7 +183,7 @@ int mp_init(int *num_cpu)
         return err;
     }
 
-    volatile uint *apic = mpconf->lapicaddr;
+    lapic = mpconf->lapicaddr;
 
     for (addr_t addr = (addr_t)(mpconf + 1); addr < (addr_t)mpconf + mpconf->length;)
     {
@@ -189,17 +193,23 @@ int mp_init(int *num_cpu)
         {
             struct mpproc *mppproc = addr;
 
-            if (ncpu == CONFIG_NR_CPU_MAX)
+            struct cpu *cpu;
+
+            err = cpu_new(&cpu);
+            
+            if (err != E_OK)
             {
-                error("overflow config of max cpu number\n");
+                error("new cpu error, err = %s.\n", strerror(err));
             }
             else
             {
-                cpus[ncpu].apicid = mppproc->apicid; 
-                
-                ++ncpu;
-            }
+                cpu->apicid = mppproc->apicid;
 
+                debug("%d %d\n",cpu->cpuid,cpu->apicid);
+
+                (*num_cpu) ++;
+            }
+            
             addr += sizeof(struct mpproc);
         }
 
@@ -225,8 +235,6 @@ int mp_init(int *num_cpu)
             addr += 8;
         }        
     }
-
-    *num_cpu = ncpu;
     
     return err;
 }

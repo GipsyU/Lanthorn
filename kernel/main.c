@@ -5,12 +5,13 @@
 #include <list.h>
 #include <boot_arg.h>
 #include <string.h>
+#include <drivers/intr.h>
 
 static void test(void)
 {
-    int *x = 0xFEE00000;
-    debug("%d\n",*x)
+
     debug("test over\n");
+    return;
 }
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
@@ -29,9 +30,21 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     {
         info("kernal memory init success.\n");
     }
+    
+
+    err = intr_init();
+
+    if (err != E_OK)
+    {
+        panic("init interrupt failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init interrupt success.\n");
+    }
 
     test();
 
     // process_init();
-
+    while(1);
 }

@@ -84,7 +84,7 @@ static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
 
 extern int mp_init(int *num_cpu);
 extern int mmu_map_dev(void);
-
+extern int lapic_init(void);
 void __attribute__((noreturn)) setup(void)
 {
     int err = E_OK;
@@ -145,6 +145,25 @@ void __attribute__((noreturn)) setup(void)
     {
         error("mp init failed, err = %s.\n", strerror(err));
     }
+    else
+    {
+        {
+            info("mp init success.\n");
+        }
+    }
+    
+
+    err = lapic_init();
+
+    if (err != E_OK)
+    {
+        error("lapic init failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("lapic init success.\n");
+    }
+    
 
     info("finish setup x86 arch.\n");
 

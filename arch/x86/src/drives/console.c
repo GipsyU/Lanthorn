@@ -1,5 +1,6 @@
 #include <drivers/console.h>
-#include <x86.h>
+#include <io.h>
+#include <cpu.h>
 
 #define DEFAULT_PORT 0x3f8 /* ttyS0 */
 #define DEFAULT_BAUD 9600

@@ -1,0 +1,1 @@
+obj-y := int.o intr.o lapic.o

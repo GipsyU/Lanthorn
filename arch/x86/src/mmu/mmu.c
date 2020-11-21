@@ -28,6 +28,10 @@ __attribute__((__aligned__(PAGE_SIZE))) pte_t PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
 __attribute__((__aligned__(PAGE_SIZE))) pxe_t TMP[NR_PXE]; // virtual memory sapce
 
+/**
+ * FIXME
+ */
+
 int mmu_map_dev(void)
 {
     for (addr_t addr = DEV_BASE; addr != 0; addr += NR_PXE * PAGE_SIZE)
