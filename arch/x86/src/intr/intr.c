@@ -1,4 +1,4 @@
-#include <drivers/intr.h>
+#include <arch/intr.h>
 #include <error.h>
 #include <basic.h>
 #include <log.h>
@@ -124,6 +124,10 @@ int intr_init(void)
     {
         set_gate(&idt[i], 0, SEL_KCODE, intrx[i], 0);
     }
+
+    set_gate(&idt[128], 1, SEL_KCODE, intrx[128], 0);
+
+    lidt(idt, sizeof(idt));
 
     return err;
 }

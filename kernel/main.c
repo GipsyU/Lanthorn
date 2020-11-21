@@ -5,7 +5,8 @@
 #include <list.h>
 #include <boot_arg.h>
 #include <string.h>
-#include <drivers/intr.h>
+#include <arch/intr.h>
+#include <arch/sysctrl.h>
 
 static void test(void)
 {
@@ -31,20 +32,11 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("kernal memory init success.\n");
     }
     
-
-    err = intr_init();
-
-    if (err != E_OK)
-    {
-        panic("init interrupt failed, err = %s.\n", strerror(err));
-    }
-    else
-    {
-        info("init interrupt success.\n");
-    }
-
     test();
 
     // process_init();
-    while(1);
+
+    info("Lanthorn kernel init finished.\n");
+
+    sysctrl_shutdown();
 }

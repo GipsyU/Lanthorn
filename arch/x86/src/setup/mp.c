@@ -60,7 +60,7 @@ struct mpioapic
 #define MPIOINTR 0x03 // One per bus interrupt source
 #define MPLINTR 0x04  // One per system interrupt source
 
-extern struct cpu cpus[];
+extern struct cpu_t cpus[];
 
 int ncpu = 0;
 
@@ -193,7 +193,7 @@ int mp_init(int *num_cpu)
         {
             struct mpproc *mppproc = addr;
 
-            struct cpu *cpu;
+            struct cpu_t *cpu;
 
             err = cpu_new(&cpu);
             
@@ -204,8 +204,6 @@ int mp_init(int *num_cpu)
             else
             {
                 cpu->apicid = mppproc->apicid;
-
-                debug("%d %d\n",cpu->cpuid,cpu->apicid);
 
                 (*num_cpu) ++;
             }

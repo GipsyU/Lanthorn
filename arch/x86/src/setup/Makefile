@@ -1,1 +1,1 @@
-obj-y := setup.o mp.o
+obj-y := setup.o mp.o gdt.o

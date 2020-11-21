@@ -9,4 +9,6 @@
 #define IRQ_ERROR (IRQ_BASE + 19)
 #define IRQ_MAX (IRQ_BASE + 31)
 
+uint lapic_id(void);
+
 #endif

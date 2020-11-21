@@ -2,6 +2,7 @@
 #include <log.h>
 #include <error.h>
 #include <intr.h>
+#include <io.h>
 
 #define ID (0x0020 / 4)    // ID
 #define VER (0x0030 / 4)   // Version
@@ -42,7 +43,7 @@ static void lapicw(uint index, u32 value)
     lapic[ID]; // wait for write to finish, by reading
 }
 
-int lapicid(void)
+uint lapic_id(void)
 {
     return lapic[ID] >> 24;
 }
@@ -51,6 +52,62 @@ void lapic_eoi(void)
 {
     lapicw(EOI, 0);
 }
+
+// int lapic_startap(uint apicid, addr_t addr)
+// {
+//     int err = E_OK;
+    
+//     u16 *wrv;
+
+//     // "The BSP must initialize CMOS shutdown code to 0AH
+//     // and the warm reset vector (DWORD based at 40:67) to point at
+//     // the AP startup code prior to the [universal startup algorithm]."
+//     outb(CMOS_PORT, 0xF);  // offset 0xF is shutdown code
+    
+//     outb(CMOS_PORT+1, 0x0A);
+    
+//     wrv = (u16 *)((0x40<<4 | 0x67)+KERN_BASE);  // Warm reset vector
+    
+//     wrv[0] = 0;
+    
+//     wrv[1] = addr >> 4;
+
+//     // "Universal startup algorithm."
+//     // Send INIT (level-triggered) interrupt to reset other CPU.
+//     lapicw(ICRHI, apicid<<24);
+//     lapicw(ICRLO, INIT | LEVEL | ASSERT);
+//     microdelay(200);
+//     lapicw(ICRLO, INIT | LEVEL);
+//     microdelay(100);    // should be 10ms, but too slow in Bochs!
+
+//     // Send startup IPI (twice!) to enter code.
+//     // Regular hardware is supposed to only accept a STARTUP
+//     // when it is in the halted state due to an INIT.  So the second
+//     // should be ignored, but it is part of the official Intel algorithm.
+//     // Bochs complains about the second one.  Too bad for Bochs.
+//     for(int i = 0; i < 2; i++){
+//         lapicw(ICRHI, apicid<<24);
+
+//         lapicw(ICRLO, STARTUP | (addr>>12));
+
+//         microdelay(200);
+//     }
+
+//     return err;
+// }
+
+#define IO_PIC1 0x20 // Master (IRQs 0-7)
+#define IO_PIC2 0xA0 // Slave (IRQs 8-15)
+
+static int disable_pic(void)
+{
+    outb(IO_PIC1 + 1, 0xFF);
+
+    outb(IO_PIC2 + 1, 0xFF);
+
+    return E_OK;
+}
+
 
 int lapic_init(void)
 {
@@ -99,4 +156,8 @@ int lapic_init(void)
 
     // Enable interrupts on the APIC (but not on the processor).
     lapicw(TPR, 0);
+
+    disable_pic();
+
+    return err;
 }

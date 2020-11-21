@@ -1,6 +1,6 @@
 #include <log.h>
 #include <basic.h>
-#include <drivers/console.h>
+#include <arch/console.h>
 
 #define _INTSIZEOF(n) ( (sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1) )
 #define va_start(ap, v)  (ap = (char*)&v + _INTSIZEOF(v))

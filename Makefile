@@ -647,7 +647,7 @@ qdb:
 	./arch/$(ARCH)/platform/qemu/qemu-run.sh -s -S
 
 gdb:
-	gdb -x tools/gdbinit
+	gdb -tui -x tools/gdbinit
 
 PHONY += FORCE
 FORCE:

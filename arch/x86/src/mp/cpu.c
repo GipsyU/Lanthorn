@@ -1,12 +1,16 @@
 #include <basic.h>
 #include <cpu.h>
 #include <error.h>
+#include <intr.h>
+#include <log.h>
+#include <io.h>
+#include <arch/sysctrl.h>
 
-static struct cpu cpus[CONFIG_NR_CPU_MAX];
+static struct cpu_t cpus[CONFIG_NR_CPU_MAX];
 
 static uint ncpu = 0;
 
-int cpu_new(struct cpu **cpu)
+int cpu_new(struct cpu_t **cpu)
 {
     int err = E_OK;
     
@@ -29,7 +33,7 @@ int cpu_new(struct cpu **cpu)
     return err;
 }
 
-int cpu_get(struct cpu **cpu, uint id)
+int cpu_get(struct cpu_t **cpu, uint id)
 {
     int err = E_OK;
 
@@ -46,4 +50,24 @@ int cpu_get(struct cpu **cpu, uint id)
     *cpu = &cpus[id];
 
     return err;
+}
+
+uint cpu_id(void)
+{
+    uint lapicid = lapic_id();
+
+    for (uint cpuid = 0; cpuid < ncpu; ++cpuid)
+    {
+        if (lapicid == cpus[cpuid].apicid)
+        {
+            return cpuid;
+        }
+    }
+    
+    panic("cpu bug.\n");
+}
+
+void sysctrl_shutdown(void)
+{
+    outw(0x2000,0x604);
 }

@@ -1,4 +1,4 @@
-#include <drivers/console.h>
+#include <arch/console.h>
 #include <io.h>
 #include <cpu.h>
 

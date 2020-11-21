@@ -1,4 +1,4 @@
-#include <drivers/mmu.h>
+#include <arch/mmu.h>
 #include <memory.h>
 #include <boot_arg.h>
 #include <error.h>

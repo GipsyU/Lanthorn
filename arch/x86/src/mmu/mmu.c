@@ -1,5 +1,5 @@
 #include <basic.h>
-#include <drivers/mmu.h>
+#include <arch/mmu.h>
 #include <log.h>
 #include <error.h>
 #include <memory.h>
@@ -18,6 +18,7 @@
 
 #define DEV_BASE 0xFE000000
 
+
 __attribute__((__aligned__(PAGE_SIZE))) pde_t PDE[NR_PXE] =
     {
         [0] = (0) | PXE_P | PXE_W | PDE_PS,
@@ -32,17 +33,7 @@ __attribute__((__aligned__(PAGE_SIZE))) pxe_t TMP[NR_PXE]; // virtual memory sap
  * FIXME
  */
 
-int mmu_map_dev(void)
-{
-    for (addr_t addr = DEV_BASE; addr != 0; addr += NR_PXE * PAGE_SIZE)
-    {
-        PDE[addr >> 22] = addr | PXE_P | PXE_W | PDE_PS;
-    }
-
-    return E_OK;
-}
-
-int mmu_enable_4k_page(void)
+static int enable_4k_page(void)
 {
     for (int i = 0; i < CONFIG_NR_BOOT_PTE; ++i)
     {
@@ -66,6 +57,52 @@ int mmu_enable_4k_page(void)
     return E_OK;
 }
 
+static int disable_low_map(void)
+{
+    PDE[0] = 0;
+
+    return E_OK;
+} 
+
+int map_dev(void)
+{
+    for (addr_t addr = DEV_BASE; addr != 0; addr += NR_PXE * PAGE_SIZE)
+    {
+        PDE[addr >> 22] = addr | PXE_P | PXE_W | PDE_PS;
+    }
+
+    return E_OK;
+}
+
+int mmu_init(void)
+{
+    int err = E_OK;
+
+    err = enable_4k_page();
+
+    if (err != E_OK)
+    {
+        return err;
+    }
+
+    err = disable_low_map();
+
+    if (err != E_OK)
+    {
+        return err;
+    }
+
+    err = map_dev();
+
+    if(err != E_OK)
+    {
+        return err;
+    }
+
+    return err;
+
+}
+
 /*
  * FIXME: just sup kernel space map
  */
@@ -74,8 +111,6 @@ int mmu_map(addr_t pp, addr_t vp, addr_t pte)
 {
     int err = E_OK;
 
-    debug("%p %p\n", pp, vp);
-    
     if (pp % PAGE_SIZE != 0 || vp % PAGE_SIZE != 0)
     {
         return E_INVAL;

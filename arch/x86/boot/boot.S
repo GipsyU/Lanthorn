@@ -36,6 +36,8 @@ _start:
 
 	movl 	$(BOOTSTACK),	%esp
 
+	addl	$KERN_BASE,	%ebx
+
 	movl	%ebx,	mboot_ptr
 	
 	calll	setup
