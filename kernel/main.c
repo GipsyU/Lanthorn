@@ -5,14 +5,21 @@
 #include <list.h>
 #include <boot_arg.h>
 #include <string.h>
+#include <proc.h>
 #include <arch/intr.h>
 #include <arch/sysctrl.h>
 
 static void test(void)
 {
-
     debug("test over\n");
     return;
+}
+
+static int F(void)
+{
+    debug("F\n");
+
+    return E_OK;
 }
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
@@ -34,9 +41,20 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     
     test();
 
-    // process_init();
+    // proc_init();
 
     info("Lanthorn kernel init finished.\n");
 
+
+    asm volatile("sti");
+
+    intr_register(128, F);
+
+    asm volatile("int $128");
+
+    intr_unregister(128);
+
+    asm volatile("int $128");
+    
     sysctrl_shutdown();
 }

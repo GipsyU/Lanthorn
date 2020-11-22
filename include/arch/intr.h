@@ -2,8 +2,12 @@
 
 #define _ARCH_INTR_H_
 
-// int intr_register(int cpuid, int intrid, void* hdl);
+#define INTR_TIMER 32
 
-// int intr_unregister(int cpuid, int intrid);
+#define INTR_KBD 33
+
+int intr_register(int intrno, int (*hdl)(void));
+
+int intr_unregister(int intrno);
 
 #endif

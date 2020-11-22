@@ -21,8 +21,6 @@ struct gate_t
     u32 off_31_16 : 16; // high bits of offset in segment
 };
 
-#define SEG_KCODE 8
-
 struct intr_regs_t
 {
     // registers as pushed by pusha
@@ -61,6 +59,10 @@ struct intr_regs_t
 
 struct gate_t idt[NR_INTR];
 
+static int (*intr_table[NR_INTR])(void);
+
+static int islog[NR_INTR];
+
 static void set_gate(struct gate_t *gate, int istrap, u32 sel, u32 off, u32 dpl)
 {
     gate->off_15_0 = off & 0xffff;
@@ -97,20 +99,39 @@ static int inline lidt(addr_t addr, size_t size)
                  : "r"(pd));
 }
 
+extern void lapic_eoi(void);
+
 void intr_hdl(struct intr_regs_t *regs)
 {
-    info("intrno: %d\n", regs->intrno);
+    if (islog[regs->intrno])
+    {
+        info("intrno: %d\n", regs->intrno);
+    }
+
+    int (*handler)(void) = intr_table[regs->intrno];
+
+    if (handler != NULL)
+    {
+        handler();
+    }
+
+    lapic_eoi();
 
     return;
 }
 
-int intr_register(int cpuid, int intrid, void *hdl)
+int intr_register(int intrno, int (*hdl)(void))
 {
-    return E_OK;
-}
+    int err = E_OK;
 
-int intr_unregister(int cpuid, int intrid)
+    intr_table[intrno] = hdl;
+    
+    return err;
+}
+int intr_unregister(int intrno)
 {
+    intr_table[intrno] = NULL;
+
     return E_OK;
 }
 
@@ -128,6 +149,15 @@ int intr_init(void)
     set_gate(&idt[128], 1, SEL_KCODE, intrx[128], 0);
 
     lidt(idt, sizeof(idt));
+
+    for (int  i = 0; i < NR_INTR; ++i)
+    {
+        intr_table[i] = NULL;
+
+        islog[i] = 1;
+    }
+
+    islog[INTR_TIMER] = 0;
 
     return err;
 }
