@@ -1,7 +1,3 @@
-config NR_BOOT_MM
-	int
-	default 8
-
 config NR_BOOT_PTE
 	int
 	default 1

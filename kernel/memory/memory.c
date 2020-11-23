@@ -16,78 +16,61 @@ static u8 pmm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static u8 kvmm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
-static int print_memory_info(boot_mm_list_node_t *mm_list_node)
+int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
 {
     int err = E_OK;
 
-    info("available memory:\n");
-
-    list_rep(*mm_list_node, p)
-    {
-        info("free memory start addr: %p, end addr: %p.\n", p->data.addr, p->data.addr + p->data.size - 1);
-    }
-
-    return err;
-}
-
-struct page_t Page[200];
-
-int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t free_kvm_size)
-{
-    int err = E_OK;
-
-    if (free_kvm_start % PAGE_SIZE != 0)
-    {
-        return E_INVAL;
-    }
-
-    err = print_memory_info(mm_list_node);
+    info("free pmm start addr: %p, end addr: %p.\n", free_pmm_start, free_pmm_start + free_pmm_size);
 
     buddy_init(&pmm_alct, (addr_t)pmm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
-    list_rep(*mm_list_node, p)
-    {
-        struct page_t page;
+    addr_t start = ROUND_UP(free_pmm_start, PAGE_SIZE);
 
-        addr_t start = ROUND_UP(p->data.addr, PAGE_SIZE);
-
-        addr_t end = ROUND_DOWN(p->data.addr + p->data.size, PAGE_SIZE);
-
-        page.addr = start;
-
-        page.num = (end - start) / PAGE_SIZE;
-
-        err = buddy_insert(&pmm_alct, &page);
-
-        if (err != E_OK)
-        {
-            /*
-             * FIXME
-             */
-            panic("bug\n");
-        }
-    }
-
-    info("pmm init finished.\n");
-
-    buddy_init(&kvmm_alct, (addr_t)kvmm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+    addr_t end = ROUND_DOWN(free_pmm_start + free_pmm_size, PAGE_SIZE);
 
     struct page_t page;
 
-    page.addr = free_kvm_start;
+    page.addr = start;
 
-    page.num = free_kvm_size / PAGE_SIZE;
+    page.num = (end - start) / PAGE_SIZE;
+
+    err = buddy_insert(&pmm_alct, &page);
+
+    if (err != E_OK)
+    {
+        error("init pmm failed, err = %s.\n", strerror(err));
+
+        return err;
+    }
+    else
+    {
+        info("init pmm success.\n")
+    }
+
+    info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
+    
+    buddy_init(&kvmm_alct, (addr_t)kvmm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+
+    start = ROUND_UP(free_kvm_start, PAGE_SIZE);
+
+    end = ROUND_DOWN(free_pmm_start + free_kvm_size, PAGE_SIZE);
+
+    page.addr = start;
+
+    page.num = (end - start) / PAGE_SIZE;
 
     err = buddy_insert(&kvmm_alct, &page);
 
-    // if (err != E_OK)
-    // {
-    //     panic("bug\n");
-    // }
-    // else
-    // {
-    //     info("kvmm init finished.\n");
-    // }
+    if (err != E_OK)
+    {
+        error("init kvm failed, err = %s.\n", strerror(err));
+
+        return err;
+    }
+    else
+    {
+        info("init kvm success.\n");
+    }
 
     // err = buddy_alloc(&pmm_alct, 1, &Page[0]);
     // info("%d %p %d %s\n", 0, Page[0].addr, Page[0].num, strerror(err));
@@ -115,7 +98,7 @@ int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t
     // for (int i = 1; i <= 100; ++i)
     // {
     //     struct page_t *p;
-    //     err = buddy_alloc(&kvmm_alct, 11, &p);
+    //     err = buddy_alloc(&pmm_alct, 11, &p);
     //     info("%d %p %d %s\n", i, p->addr, p->num, strerror(err));
     // }
 

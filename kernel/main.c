@@ -2,24 +2,17 @@
 #include <basic.h>
 #include <log.h>
 #include <memory.h>
-#include <list.h>
 #include <boot_arg.h>
 #include <string.h>
 #include <proc.h>
 #include <arch/intr.h>
 #include <arch/sysctrl.h>
+#include <slot.h>
 
 static void test(void)
 {
     debug("test over\n");
     return;
-}
-
-static int F(void)
-{
-    debug("F\n");
-
-    return E_OK;
 }
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
@@ -28,11 +21,11 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     info("Hello Lanthorn.\n");
 
-    err = memory_init(boot_arg.mm_list, boot_arg.free_kvm_start, boot_arg.free_kvm_size);
+    err = memory_init(boot_arg.free_pmm_start, boot_arg.free_pmm_size, boot_arg.free_kvm_start, boot_arg.free_kvm_size);
 
     if (err != E_OK)
     {
-        panic("init memory failed, err = %s.\n", strerror(err));
+        error("init memory failed, err = %s.\n", strerror(err));
     }
     else
     {
@@ -45,16 +38,7 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     info("Lanthorn kernel init finished.\n");
 
-
     asm volatile("sti");
-
-    intr_register(128, F);
-
-    asm volatile("int $128");
-
-    intr_unregister(128);
-
-    asm volatile("int $128");
     
     sysctrl_shutdown();
 }

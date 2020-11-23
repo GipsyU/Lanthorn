@@ -3,7 +3,7 @@
 #include <basic.h>
 #include <boot_arg.h>
 
-int memory_init(boot_mm_list_node_t *mm_list_node, addr_t free_kvm_start, size_t free_kvm_size);
+int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size);
 
 int kalloc(addr_t *addr, size_t size);
 

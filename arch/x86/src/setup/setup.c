@@ -4,6 +4,7 @@
 #include <io.h>
 #include <cpu.h>
 #include "mboot.h"
+#include <slot.h>
 
 extern void __attribute__((noreturn)) main(struct boot_arg_t);
 extern void console_init(void);
@@ -15,37 +16,40 @@ extern int mp_init(int *num_cpu);
 extern int lapic_init(void);
 extern int gdt_init(struct seg_t *gdt);
 
-static list_node(struct boot_mm_t) boot_mm_cache[CONFIG_NR_BOOT_MM];
-
-static int boot_mm_num = 0;
+static struct boot_arg_t boot_arg;
 
 static int add_memory(addr_t addr, size_t size)
 {
-    if (++boot_mm_num >= CONFIG_NR_BOOT_MM)
-    {
+    boot_arg.free_pmm_start = addr;
 
-        warn("no enough boot mm info cache.\n");
-        return E_NOCACHE;
-    }
-
-    boot_mm_cache[boot_mm_num].data.addr = addr;
-    boot_mm_cache[boot_mm_num].data.size = size;
-
-    list_push_back(boot_mm_cache[0], boot_mm_cache[boot_mm_num]);
-
+    boot_arg.free_pmm_size = size;
+    
     return E_OK;
 }
 
-static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
+static int collect_mm_info(void)
 {
     int err = E_OK;
 
-    list_init(boot_mm_cache[0]);
+    boot_arg.kern_start = (addr_t)kern_start;
+
+    boot_arg.kern_end = (addr_t)kern_end;
 
     addr_t kstart = (addr_t)kern_start - KERN_BASE;
+    
     addr_t kend = (addr_t)kern_end - KERN_BASE;
 
     info("kern start physical addr: %p, kern end physical addr: %p.\n", kstart, kend);
+
+    /**
+     * FIXME:1024
+     */
+
+    #define DEV_BASE 0xFE000000
+
+    boot_arg.free_kvm_start = KERN_BASE + CONFIG_NR_BOOT_PTE * (1024) * PAGE_SIZE;
+
+    boot_arg.free_kvm_size = DEV_BASE - boot_arg.free_kvm_start;
 
     for (struct mmap_entry_t *mmap_entry = (struct mmap_entry_t *)(mboot_ptr->mmap_addr + KERN_BASE);
          mmap_entry < (struct mmap_entry_t *)(mboot_ptr->mmap_addr + mboot_ptr->mmap_length + KERN_BASE);
@@ -76,14 +80,6 @@ static int collect_memory(boot_mm_list_node_t **boot_mm_list_ptr)
             }
         }
     }
-
-    if (boot_mm_num == 0)
-    {
-        error("no memory can be collected.\n");
-        err = E_NOMEM;
-    }
-
-    *boot_mm_list_ptr = (boot_mm_list_node_t *)boot_mm_cache;
 
     return err;
 }
@@ -126,8 +122,6 @@ static int setup_lp(void)
 void __attribute__((noreturn)) setup(void)
 {
     int err = E_OK;
-
-    struct boot_arg_t boot_arg;
 
     console_init();
 
@@ -177,32 +171,18 @@ void __attribute__((noreturn)) setup(void)
         info("setup cpu%d success.\n", cpu_id());
     }
 
-    err = collect_memory((boot_mm_list_node_t **)&boot_arg.mm_list);
-
-    boot_arg.kern_start = (addr_t)kern_start;
-
-    boot_arg.kern_end = (addr_t)kern_end;
-
-    /*
-     * FIXME:1024
-     */
-
-    #define DEV_BASE 0xFE000000
-    boot_arg.free_kvm_start = KERN_BASE + CONFIG_NR_BOOT_PTE * (1024) * PAGE_SIZE;
-
-    boot_arg.free_kvm_size = DEV_BASE - boot_arg.free_kvm_start;
+    err = collect_mm_info();
 
     if (err != E_OK)
     {
-        error("collect memory failed, err = %s.\n", strerror(err));
+        error("collect mm info failed, err = %s.\n", strerror(err));
     }
     else
     {
-        info("collect memory success.\n");
+        info("collect mm info success.\n");
     }
     
     info("finish setup x86 arch.\n");
-
 
     main(boot_arg);
 }
