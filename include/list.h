@@ -1,80 +1,44 @@
-#ifndef _LIST_H_
-#define _LIST_H_
+#ifndef _list_H_
 
-#define list_node(data_t) \
-    struct                \
-    {                     \
-        void *p;          \
-        void *n;          \
-        data_t data;      \
-    }
+#define _list_H_
 
-#define list_init(head)     \
-    {                       \
-        (head).p = &(head); \
-        (head).n = &(head); \
-    }
+#include <basic.h>
 
-#define list_empty(head) (     \
-    {                          \
-        ((head).n == &(head)); \
+struct list_node_t
+{
+    struct list_node_t *p, *n;
+};
+
+void list_init(struct list_node_t *head);
+
+addr_t list_data(struct list_node_t *node);
+
+int list_isempty(struct list_node_t *head);
+
+struct list_node_t *list_front(struct list_node_t *head);
+
+struct list_node_t *list_back(struct list_node_t *head);
+
+void list_push_front(struct list_node_t *head, struct list_node_t *node);
+
+void list_push_back(struct list_node_t *head, struct list_node_t *node);
+
+void list_delete(struct list_node_t *node);
+
+struct list_node_t *list_pop_front(struct list_node_t *head);
+
+struct list_node_t *list_pop_back(struct list_node_t *head);
+
+#define list_node_size(type) (                    \
+    {                                              \
+        sizeof(type) + sizeof(struct list_node_t); \
     })
 
-#define list_front(head) (          \
-    {                               \
-        (typeof(head) *)((head).n); \
-    })
-
-#define list_back(head) (           \
-    {                               \
-        (typeof(head) *)((head).p); \
-    })
-
-/*
- * WARNING: Avoid insert one node twice, it's very dangerous.
+/**
+ * WARNING: head should be a ptr
  */
 
-#define list_push_front(head, node)                \
-    {                                              \
-        (node).n = (head).n;                       \
-        (node).p = &(head);                        \
-        ((typeof(head) *)((head).n))->p = &(node); \
-        (head).n = &(node);                        \
-    }
-
-#define list_push_back(head, node)                 \
-    {                                              \
-        (node).p = (head).p;                       \
-        (node).n = &(head);                        \
-        ((typeof(head) *)((head).p))->n = &(node); \
-        (head).p = &(node);                        \
-    }
-
-#define list_delete(node)                           \
-    {                                               \
-        ((typeof(node))((node)->p))->n = (node)->n; \
-        ((typeof(node))((node)->n))->p = (node)->p; \
-    }
-
-#define list_pop_front(head) (                            \
-    {                                                     \
-        typeof(head) *front = (typeof(head) *)((head).n); \
-        (head).n = front->n;                              \
-        ((typeof(head) *)(front->n))->p = &(head);        \
-        front;                                            \
-    })
-
-#define list_pop_back(head) (                            \
-    {                                                    \
-        typeof(head) *back = (typeof(head) *)((head).p); \
-        (head).p = back->p;                              \
-        ((typeof(head) *)(back->p))->n = &(head);        \
-        back;                                            \
-    })
-
 #define list_rep(head, p) \
-    for (typeof(head) *p = (head).n; p != &(head); p = p->n)
-
-// #define list_rep_s(head, p)
+    for (struct list_node_t * (p) = (head)->n; (p) != head; (p) = (p)->n)
 
 #endif
