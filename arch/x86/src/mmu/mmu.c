@@ -3,7 +3,7 @@
 #include <log.h>
 #include <error.h>
 #include <memory.h>
-#include <process.h>
+#include <proc.h>
 
 #define PXE_P 1    // Present
 #define PXE_W 2    // Writeable

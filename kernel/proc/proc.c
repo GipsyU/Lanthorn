@@ -1,7 +1,8 @@
-#include <process.h>
+#include <proc.h>
 #include <error.h>
+#include <memory.h>
 
-int process_init()
+int proc_init()
 {
     int err = E_OK;
 
