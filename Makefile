@@ -333,7 +333,7 @@ PHONY += scripts
 scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
 
-objs-y := kernel lib
+objs-y := kernel lib test
 libs-y := 
 
 ifeq ($(dot-config),1)

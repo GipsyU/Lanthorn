@@ -5,15 +5,9 @@
 #include <boot_arg.h>
 #include <string.h>
 #include <proc.h>
-#include <arch/intr.h>
 #include <arch/sysctrl.h>
-#include <slot.h>
 
-static void test(void)
-{
-    debug("test over\n");
-    return;
-}
+extern void test(void);
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
