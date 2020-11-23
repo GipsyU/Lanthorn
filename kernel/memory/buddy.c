@@ -23,18 +23,18 @@
  * FIXME
  */
 
-#define BUDDY_TPX(TPX)                                       \
-                                                             \
-    static inline u32 GET_##TPX(page_node_t *node)           \
-    {                                                        \
-        return (node)->data.buddy.flag & BUDDY_##TPX##_MASK; \
-    }                                                        \
-                                                             \
-    static inline int SET_##TPX(page_node_t *node, u32 val)  \
-    {                                                        \
-        (node)->data.buddy.flag &= (~BUDDY_##TPX##_MASK);    \
-        (node)->data.buddy.flag |= val;                      \
-        return E_OK;                                         \
+#define BUDDY_TPX(TPX)                                        \
+                                                              \
+    static inline u32 GET_##TPX(struct page_t *page)          \
+    {                                                         \
+        return page->flag & BUDDY_##TPX##_MASK;               \
+    }                                                         \
+                                                              \
+    static inline int SET_##TPX(struct page_t *page, u32 val) \
+    {                                                         \
+        page->flag &= (~BUDDY_##TPX##_MASK);                  \
+        page->flag |= val;                                    \
+        return E_OK;                                          \
     }
 
 BUDDY_TPX(BUD)
@@ -47,36 +47,36 @@ BUDDY_TPX(STATE)
  * FIXME: no free cache of list node.
  */
 
-static int new_node(struct buddy_allocator_t *alct, page_node_t **node)
+static int new_node(struct buddy_allocator_t *alct, struct list_node_t **node)
 {
-    if (list_empty(alct->free_slot_head))
+
+
+    int err = E_OK;
+
+    err = slot_new(&(alct->slot_alct), (addr_t *)node);
+
+    if (err != E_OK)
     {
-        // TODO: FIX it
-        warn("NO CAche %d\n", alct->free_slot_num);
-        return E_NOCACHE;
+        /**
+         * FIXME
+         */
+        error("buddy slot not enough\n");
+
+        return err;
     }
 
-    *node = list_pop_front(alct->free_slot_head);
+    SET_BUD(list_data(*node), BUDDY_NO_BUD);
 
-    SET_BUD(*node, BUDDY_NO_BUD);
-
-    SET_ATTR(*node, BUDDY_NO_USE);
-
-    --(alct->free_slot_num);
-
-    return E_OK;
+    SET_ATTR(list_data(*node), BUDDY_NO_USE);
+    return err;
 }
 
-static int free_node(struct buddy_allocator_t *alct, page_node_t *node)
+static int free_node(struct buddy_allocator_t *alct, struct list_node_t *node)
 {
-    list_push_back(alct->free_slot_head, *node);
-
-    ++(alct->free_slot_num);
-
-    return E_OK;
+    return slot_free(&(alct->slot_alct), (addr_t)node);
 }
 
-static int merge_node(struct buddy_allocator_t *alct, page_node_t **f_node, page_node_t *node1, page_node_t *node2)
+static int merge_node(struct buddy_allocator_t *alct, struct list_node_t **f_node, struct list_node_t *node1, struct list_node_t *node2)
 {
     int err = E_OK;
 
@@ -85,29 +85,36 @@ static int merge_node(struct buddy_allocator_t *alct, page_node_t **f_node, page
         return E_INVAL;
     }
 
-    if ((GET_BUD(node1) != BUDDY_LEFT || GET_BUD(node2) != BUDDY_RIGHT) && (GET_BUD(node1) != BUDDY_RIGHT || GET_BUD(node2) != BUDDY_LEFT))
+    struct page_t *page1 = (struct page_t *)list_data(node1);
+
+    struct page_t *page2 = (struct page_t *)list_data(node2);
+
+
+    if ((GET_BUD(page1) != BUDDY_LEFT || GET_BUD(page2) != BUDDY_RIGHT) && (GET_BUD(page1) != BUDDY_RIGHT || GET_BUD(page2) != BUDDY_LEFT))
     {
         return E_INVAL;
     }
 
-    if (GET_STATE(node1) != BUDDY_ALLOCED || GET_STATE(node2) != BUDDY_ALLOCED)
+    if (GET_STATE(page1) != BUDDY_ALLOCED || GET_STATE(page2) != BUDDY_ALLOCED)
     {
         return E_INVAL;
     }
 
-    if (node1->data.buddy.b_node != node2 || node2->data.buddy.b_node != node1)
+    if (page1->buddy.b_node != node2 || page2->buddy.b_node != node1)
     {
         return E_INVAL;
     }
 
-    if (node1->data.buddy.f_node != node2->data.buddy.f_node)
+    if (page1->buddy.f_node != page2->buddy.f_node)
     {
         return E_INVAL;
     }
 
-    *f_node = node1->data.buddy.f_node;
+    *f_node = page1->buddy.f_node;
 
-    if (GET_ATTR(*f_node) != BUDDY_VIRT || GET_ATTR(node1) != BUDDY_REAL || GET_ATTR(node2) != BUDDY_REAL)
+    struct page_t *f_page = (struct page_t *)list_data(*f_node);
+
+    if (GET_ATTR(f_page) != BUDDY_VIRT || GET_ATTR(page1) != BUDDY_REAL || GET_ATTR(page2) != BUDDY_REAL)
     {
         return E_INVAL;
     }
@@ -130,14 +137,14 @@ static int merge_node(struct buddy_allocator_t *alct, page_node_t **f_node, page
         return err;
     }
 
-    SET_ATTR(*f_node, BUDDY_REAL);
+    SET_ATTR(f_page, BUDDY_REAL);
 
-    SET_STATE(*f_node, BUDDY_ALLOCED);
+    SET_STATE(f_page, BUDDY_ALLOCED);
 
     return err;
 }
 
-static int divide_node(page_node_t *f_node, page_node_t *l_node, page_node_t *r_node)
+static int divide_node(struct list_node_t *f_node, struct list_node_t *l_node, struct list_node_t *r_node)
 {
     int err = E_OK;
 
@@ -146,47 +153,53 @@ static int divide_node(page_node_t *f_node, page_node_t *l_node, page_node_t *r_
         return E_INVAL;
     }
 
-    if (GET_ATTR(f_node) != BUDDY_REAL || f_node->data.buddy.order == 0)
+    struct page_t *f_page = list_data(f_node);
+
+    struct page_t *l_page = list_data(l_node); 
+    
+    struct page_t *r_page = list_data(r_node); 
+
+    if (GET_ATTR(f_page) != BUDDY_REAL || f_page->buddy.order == 0)
     {
         return E_INVAL;
     }
 
-    l_node->data.addr = f_node->data.addr;
+    l_page->addr = f_page->addr;
 
-    l_node->data.buddy.order = f_node->data.buddy.order - 1;
+    l_page->buddy.order = f_page->buddy.order - 1;
 
-    l_node->data.num = f_node->data.num / 2;
+    l_page->num = f_page->num / 2;
 
-    r_node->data.addr = l_node->data.addr + (1 << l_node->data.buddy.order) * PAGE_SIZE;
+    r_page->addr = l_page->addr + (1 << l_page->buddy.order) * PAGE_SIZE;
 
-    r_node->data.buddy.order = l_node->data.buddy.order;
+    r_page->buddy.order = l_page->buddy.order;
 
-    r_node->data.num = f_node->data.num / 2;
+    r_page->num = f_page->num / 2;
 
-    l_node->data.buddy.f_node = r_node->data.buddy.f_node = f_node;
+    l_page->buddy.f_node = r_page->buddy.f_node = f_node;
 
-    l_node->data.buddy.b_node = r_node;
+    l_page->buddy.b_node = r_node;
 
-    r_node->data.buddy.b_node = l_node;
+    r_page->buddy.b_node = l_node;
 
-    SET_BUD(l_node, BUDDY_LEFT);
+    SET_BUD(l_page, BUDDY_LEFT);
 
-    SET_BUD(r_node, BUDDY_RIGHT);
+    SET_BUD(r_page, BUDDY_RIGHT);
 
-    SET_ATTR(l_node, BUDDY_REAL);
+    SET_ATTR(l_page, BUDDY_REAL);
 
-    SET_ATTR(r_node, BUDDY_REAL);
+    SET_ATTR(r_page, BUDDY_REAL);
 
-    SET_STATE(l_node, BUDDY_ALLOCED);
+    SET_STATE(l_page, BUDDY_ALLOCED);
 
-    SET_STATE(r_node, BUDDY_ALLOCED);
+    SET_STATE(r_page, BUDDY_ALLOCED);
 
-    SET_ATTR(f_node, BUDDY_VIRT);
+    SET_ATTR(f_page, BUDDY_VIRT);
 
     return err;
 }
 
-static int get_buddy(struct buddy_allocator_t *alct, uint order, page_node_t **node)
+static int get_buddy(struct buddy_allocator_t *alct, uint order, struct list_node_t **node)
 {
     int err = E_OK;
 
@@ -195,53 +208,59 @@ static int get_buddy(struct buddy_allocator_t *alct, uint order, page_node_t **n
         return E_INVAL;
     }
 
-    if (list_empty(alct->head[order]))
+    if (list_isempty(&alct->head[order]))
     {
         return E_NOMEM;
     }
 
-    *node = list_pop_front(alct->head[order]);
+    *node = list_pop_front(&alct->head[order]);
 
-    SET_STATE(*node, BUDDY_ALLOCED);
+    SET_STATE(list_data(*node), BUDDY_ALLOCED);
 
     return err;
 }
 
-static int get_ptc_buddy(page_node_t *node)
+static int get_ptc_buddy(struct list_node_t *node)
 {
     int err = E_OK;
 
-    if (node == NULL || GET_ATTR(node) != BUDDY_REAL || GET_STATE(node) != BUDDY_FREE)
+    struct page_t *page = list_data(node);
+
+    if (node == NULL || GET_ATTR(page) != BUDDY_REAL || GET_STATE(page) != BUDDY_FREE)
     {
         return E_INVAL;
     }
 
     list_delete(node);
 
-    SET_STATE(node, BUDDY_ALLOCED);
+    SET_STATE(page, BUDDY_ALLOCED);
 
     return err;
 }
 
-static int put_buddy(struct buddy_allocator_t *alct, page_node_t *node)
+static int put_buddy(struct buddy_allocator_t *alct, struct list_node_t *node)
 {
     int err = E_OK;
 
-    if (node->data.buddy.order < 0 || node->data.buddy.order >= CONFIG_NR_BUDDY_ORDER)
+    struct page_t * page = list_data(node);
+
+    if (page->buddy.order >= CONFIG_NR_BUDDY_ORDER)
     {
         return E_INVAL;
     }
 
-    if (GET_ATTR(node) != BUDDY_REAL || GET_STATE(node) != BUDDY_ALLOCED)
+    if (GET_ATTR(page) != BUDDY_REAL || GET_STATE(page) != BUDDY_ALLOCED)
     {
         return E_INVAL;
     }
 
-    info("put memory into buddy sys, addr:%p, order:%d.\n", node->data.addr, node->data.buddy.order);
+    info("put memory into buddy sys, addr:%p, order:%d.\n", page->addr, page->buddy.order);
 
-    for (page_node_t *f_node; GET_BUD(node) != BUDDY_NO_BUD; node = f_node)
+    for (struct list_node_t *f_node; GET_BUD(page) != BUDDY_NO_BUD; node = f_node)
     {
-        err = get_ptc_buddy(node->data.buddy.b_node);
+        page = list_data(node);
+
+        err = get_ptc_buddy(page->buddy.b_node);
 
         if (err != E_OK)
         {
@@ -250,7 +269,7 @@ static int put_buddy(struct buddy_allocator_t *alct, page_node_t *node)
             break;
         }
 
-        err = merge_node(alct, &f_node, node, node->data.buddy.b_node);
+        err = merge_node(alct, &f_node, node, page->buddy.b_node);
 
         if (err != E_OK)
         {
@@ -260,14 +279,14 @@ static int put_buddy(struct buddy_allocator_t *alct, page_node_t *node)
         }
     }
 
-    SET_STATE(node, BUDDY_FREE);
+    SET_STATE(page, BUDDY_FREE);
 
-    list_push_back(alct->head[node->data.buddy.order], *node);
+    list_push_back(&alct->head[page->buddy.order], node);
 
     return err;
 }
 
-static int buddy_node_alloc(struct buddy_allocator_t *alct, uint order, page_node_t **node)
+static int buddy_node_alloc(struct buddy_allocator_t *alct, uint order, struct list_node_t **node)
 {
     int err = E_OK;
 
@@ -280,7 +299,7 @@ static int buddy_node_alloc(struct buddy_allocator_t *alct, uint order, page_nod
 
     if (err != E_OK)
     {
-        page_node_t *f_node, *l_node, *r_node;
+        struct list_node_t *f_node, *l_node, *r_node;
 
         err = buddy_node_alloc(alct, order + 1, &f_node);
 
@@ -329,7 +348,7 @@ int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page)
     {
         if (page->num & (1 << i))
         {
-            page_node_t *node;
+            struct list_node_t *node;
 
             err = new_node(alct, &node);
 
@@ -341,17 +360,19 @@ int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page)
                 return err;
             }
 
-            node->data.addr = start;
+            struct page_t *page = list_data(node);
 
-            node->data.num = (1 << i);
+            page->addr = start;
 
-            node->data.buddy.order = i;
+            page->num = (1 << i);
 
-            SET_BUD(node, BUDDY_NO_BUD);
+            page->buddy.order = i;
 
-            SET_ATTR(node, BUDDY_REAL);
+            SET_BUD(page, BUDDY_NO_BUD);
 
-            SET_STATE(node, BUDDY_ALLOCED);
+            SET_ATTR(page, BUDDY_REAL);
+
+            SET_STATE(page, BUDDY_ALLOCED);
 
             int err = put_buddy(alct, node);
 
@@ -402,7 +423,7 @@ int buddy_alloc(struct buddy_allocator_t *alct, size_t page_num, struct page_t *
         }
     }
 
-    page_node_t *node;
+    struct list_node_t *node;
 
     err = buddy_node_alloc(alct, order, &node);
 
@@ -411,7 +432,7 @@ int buddy_alloc(struct buddy_allocator_t *alct, size_t page_num, struct page_t *
         return err;
     }
 
-    *page = &node->data;
+    *page = list_data(node);
 
     return err;
 }
@@ -420,7 +441,7 @@ int buddy_free(struct buddy_allocator_t *alct, struct page_t *page)
 {
     int err = E_OK;
 
-    page_node_t *node = container_of(page, page_node_t, data);
+    struct list_node_t *node = ((addr_t)page - sizeof(struct list_node_t));
 
     err = put_buddy(alct, node);
 
@@ -431,34 +452,30 @@ int buddy_init(struct buddy_allocator_t *alct, addr_t addr, size_t size)
 {
     int err = E_OK;
 
-    if (alct == NULL || addr == NULL || size == NULL || size % PAGE_SIZE != 0)
+    if (alct == NULL || addr == NULL || size == NULL)
     {
         return E_INVAL;
     }
 
-    alct->head = (page_node_t *)addr;
+    alct->head = (struct list_node_t *)addr;
 
-    alct->slot = (page_node_t *)(addr + CONFIG_NR_BUDDY_ORDER * sizeof(page_node_t));
+    addr_t slot_addr = addr + CONFIG_NR_BUDDY_ORDER * sizeof(struct page_t);
+    ;
 
-    if ((addr_t)alct->slot >= addr + size)
+    if (slot_addr > addr + size)
     {
         return E_NOMEM;
     }
 
-    alct->max_slot_num = (addr + size - (addr_t)alct->slot) / sizeof(page_node_t);
+    size_t slot_size = addr + size - slot_addr;
 
-    alct->free_slot_num = alct->max_slot_num;
+    slot_init(&(alct->slot_alct), sizeof(struct page_t) + sizeof(struct list_node_t));
 
-    list_init(alct->free_slot_head);
-
-    for (int i = 0; i < alct->max_slot_num; ++i)
-    {
-        list_push_back(alct->free_slot_head, alct->slot[i]);
-    }
+    slot_insert(&(alct->slot_alct), slot_addr, slot_size);
 
     for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
     {
-        list_init(alct->head[i]);
+        list_init(&alct->head[i]);
     }
 
     return err;

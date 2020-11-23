@@ -1,7 +1,6 @@
 #ifndef _KERNEL_MEMORY_PAGE_H_
 #define _KERNEL_MEMORY_PAGE_H_
 #include <basic.h>
-#include <list.h>
 
 #define PAGE_PMM 1
 #define PAGE_VMM 2
@@ -20,7 +19,5 @@ struct page_t
         u32 flag;
     } buddy;
 };
-
-typedef list_node(struct page_t) page_node_t;
 
 #endif

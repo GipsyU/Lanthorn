@@ -3,22 +3,14 @@
 
 #include <basic.h>
 #include <list.h>
-
+#include <slot.h>
 #include "page.h"
 
 struct buddy_allocator_t
 {
-    uint max_slot_num;
+    struct slot_alct_t slot_alct;
 
-    int free_slot_num;
-
-    page_node_t *slot;
-
-    page_node_t *head;
-
-    // fixme
-
-    page_node_t free_slot_head;
+    struct list_node_t *head;
 };
 
 int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page);
