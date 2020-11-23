@@ -53,48 +53,57 @@ void lapic_eoi(void)
     lapicw(EOI, 0);
 }
 
-// int lapic_startap(uint apicid, addr_t addr)
-// {
-//     int err = E_OK;
+
+void
+microdelay(int us)
+{
+}
+
+#define CMOS_PORT    0x70
+#define CMOS_RETURN  0x71
+
+int lapic_startap(uint apicid, addr_t addr)
+{
+    int err = E_OK;
     
-//     u16 *wrv;
+    u16 *wrv;
 
-//     // "The BSP must initialize CMOS shutdown code to 0AH
-//     // and the warm reset vector (DWORD based at 40:67) to point at
-//     // the AP startup code prior to the [universal startup algorithm]."
-//     outb(CMOS_PORT, 0xF);  // offset 0xF is shutdown code
+    // "The BSP must initialize CMOS shutdown code to 0AH
+    // and the warm reset vector (DWORD based at 40:67) to point at
+    // the AP startup code prior to the [universal startup algorithm]."
+    outb(CMOS_PORT, 0xF);  // offset 0xF is shutdown code
     
-//     outb(CMOS_PORT+1, 0x0A);
+    outb(CMOS_PORT+1, 0x0A);
     
-//     wrv = (u16 *)((0x40<<4 | 0x67)+KERN_BASE);  // Warm reset vector
+    wrv = (u16 *)((0x40<<4 | 0x67)+KERN_BASE);  // Warm reset vector
     
-//     wrv[0] = 0;
+    wrv[0] = 0;
     
-//     wrv[1] = addr >> 4;
+    wrv[1] = addr >> 4;
 
-//     // "Universal startup algorithm."
-//     // Send INIT (level-triggered) interrupt to reset other CPU.
-//     lapicw(ICRHI, apicid<<24);
-//     lapicw(ICRLO, INIT | LEVEL | ASSERT);
-//     microdelay(200);
-//     lapicw(ICRLO, INIT | LEVEL);
-//     microdelay(100);    // should be 10ms, but too slow in Bochs!
+    // "Universal startup algorithm."
+    // Send INIT (level-triggered) interrupt to reset other CPU.
+    lapicw(ICRHI, apicid<<24);
+    lapicw(ICRLO, INIT | LEVEL | ASSERT);
+    microdelay(200);
+    lapicw(ICRLO, INIT | LEVEL);
+    microdelay(100);    // should be 10ms, but too slow in Bochs!
 
-//     // Send startup IPI (twice!) to enter code.
-//     // Regular hardware is supposed to only accept a STARTUP
-//     // when it is in the halted state due to an INIT.  So the second
-//     // should be ignored, but it is part of the official Intel algorithm.
-//     // Bochs complains about the second one.  Too bad for Bochs.
-//     for(int i = 0; i < 2; i++){
-//         lapicw(ICRHI, apicid<<24);
+    // Send startup IPI (twice!) to enter code.
+    // Regular hardware is supposed to only accept a STARTUP
+    // when it is in the halted state due to an INIT.  So the second
+    // should be ignored, but it is part of the official Intel algorithm.
+    // Bochs complains about the second one.  Too bad for Bochs.
+    for(int i = 0; i < 2; i++){
+        lapicw(ICRHI, apicid<<24);
 
-//         lapicw(ICRLO, STARTUP | (addr>>12));
+        lapicw(ICRLO, STARTUP | (addr>>12));
 
-//         microdelay(200);
-//     }
+        microdelay(200);
+    }
 
-//     return err;
-// }
+    return err;
+}
 
 #define IO_PIC1 0x20 // Master (IRQs 0-7)
 #define IO_PIC2 0xA0 // Slave (IRQs 8-15)
