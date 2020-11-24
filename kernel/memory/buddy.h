@@ -8,6 +8,8 @@
 
 struct buddy_allocator_t
 {
+    char name[10];
+
     struct slot_alct_t slot_alct;
 
     struct list_node_t *head;

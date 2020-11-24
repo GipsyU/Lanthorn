@@ -254,7 +254,7 @@ static int put_buddy(struct buddy_allocator_t *alct, struct list_node_t *node)
         return E_INVAL;
     }
 
-    info("put memory into buddy sys, addr:%p, order:%d.\n", page->addr, page->buddy.order);
+    info("%s: put memory into buddy sys, addr:%p, order:%d.\n", alct->name, page->addr, page->buddy.order);
 
     for (struct list_node_t *f_node; GET_BUD(page) != BUDDY_NO_BUD; node = f_node)
     {

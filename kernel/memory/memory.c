@@ -4,6 +4,7 @@
 #include <error.h>
 #include <log.h>
 #include <util.h>
+#include <string.h>
 
 #include "buddy.h"
 #include "page.h"
@@ -23,6 +24,8 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     info("free pmm start addr: %p, end addr: %p.\n", free_pmm_start, free_pmm_start + free_pmm_size);
 
     buddy_init(&pmm_alct, (addr_t)pmm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
+
+    memcpy(pmm_alct.name, "pmm alct", 8);
 
     addr_t start = ROUND_UP(free_pmm_start, PAGE_SIZE);
 
@@ -50,6 +53,8 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
     
     buddy_init(&kvmm_alct, (addr_t)kvmm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+
+    memcpy(kvmm_alct.name, "kvm alct", 8);
 
     start = ROUND_UP(free_kvm_start, PAGE_SIZE);
 
