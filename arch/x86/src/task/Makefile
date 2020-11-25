@@ -1,0 +1,1 @@
+obj-y := switch.o task.o
