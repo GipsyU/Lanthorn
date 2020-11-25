@@ -1,4 +1,5 @@
 #ifndef _X86_BASIC_H_
+
 #define _X86_BASIC_H_
 
 typedef char s8;
@@ -17,9 +18,13 @@ typedef long unsigned int pxe_t;
 #define NULL 0
 
 #define PAGE_SIZE   0x1000
+
 #define KERN_BASE   0xC0000000
 
 #define NR_INTR 256
 
+#define INTR_TIMER 32
+
+#define INTR_KBD 33
 
 #endif

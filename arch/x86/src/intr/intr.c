@@ -157,7 +157,14 @@ int intr_init(void)
         islog[i] = 1;
     }
 
-    islog[INTR_TIMER] = 0;
+    // islog[INTR_TIMER] = 0;
 
     return err;
+}
+
+void intr_end(void)
+{
+    lapic_eoi();
+    
+    asm volatile("sti");
 }
