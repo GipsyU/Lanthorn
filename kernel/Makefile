@@ -1,1 +1,1 @@
-obj-y := main.o memory/
+obj-y := main.o memory/ proc/

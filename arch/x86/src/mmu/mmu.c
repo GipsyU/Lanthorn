@@ -145,7 +145,7 @@ int mmu_map(addr_t pp, addr_t vp, addr_t pte)
         /*
          * FIXME
          */
-        debug("%p %p", pp, vp);
+        debug("%p %p\n", pp, vp);
 
         _pte = PDE[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
     }

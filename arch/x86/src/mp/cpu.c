@@ -67,6 +67,21 @@ uint cpu_id(void)
     panic("cpu bug.\n");
 }
 
+struct task_t *cpu_get_task(uint cpuid)
+{
+    return cpus[cpuid].task;
+}
+
+void cpu_set_task(uint cpuid, struct task_t *task)
+{
+    cpus[cpuid].task = task;
+}
+
+struct task_t *cpu_schd(uint cpuid)
+{
+    return &cpus[cpuid].schd;
+}
+
 void sysctrl_shutdown(void)
 {
     outw(0x2000,0x604);
