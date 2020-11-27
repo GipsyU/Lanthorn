@@ -86,7 +86,7 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     // err = buddy_alloc(&pmm_alct, 1, &Page[2]);
     // info("%d %p %d %s\n", 2, Page[2].addr, Page[2].num, strerror(err));
 
-    // err = mmu_map(Page[0].addr, Page[1].addr, Page[2].addr);
+    // err = mmu_kern_map(Page[0].addr, Page[1].addr, Page[2].addr);
 
     // debug("%s\n",strerror(err));
 
@@ -146,20 +146,20 @@ static int kalloc_buddy(addr_t *addr, size_t size)
         goto error1;
     }
 
-    err = mmu_map(pp->addr, vp->addr, NULL);
+    err = mmu_kern_map(pp->addr, vp->addr, NULL);
 
     if (err != E_OK)
     {
         if (err == E_AGAIN)
         {
-            err = buddy_alloc(&kvmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pte);
+            err = buddy_alloc(&pmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pte);
 
             if (err != E_OK)
             {
                 goto error2;
             }
 
-            err = mmu_map(pp->addr, vp->addr, pte->addr);
+            err = mmu_kern_map(pp->addr, vp->addr, pte->addr);
 
             if (err != E_OK)
             {
@@ -186,6 +186,22 @@ error1:
     buddy_free(&pmm_alct, pp);
 
 error0:
+    return err;
+}
+
+int page_alloc(addr_t *addr)
+{
+    int err = E_OK;
+
+    struct page_t *pp;
+
+    err = buddy_alloc(&pmm_alct, 1, &pp);
+
+    if (err == E_OK)
+    {
+        *addr = pp->addr;
+    }
+
     return err;
 }
 

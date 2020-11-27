@@ -9,4 +9,6 @@ int kalloc(addr_t *addr, size_t size);
 
 int kfree(addr_t addr);
 
+int page_alloc(addr_t *addr);
+
 #endif
