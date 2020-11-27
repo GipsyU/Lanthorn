@@ -1,6 +1,6 @@
 #include <string.h>
 
-void *memset(void *s, char c, size_t size)
+void *memset(const void *s, char c, size_t size)
 {
     char *sc = s;
     

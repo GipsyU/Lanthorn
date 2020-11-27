@@ -1,1 +1,1 @@
-obj-y := test.o
+obj-y := test.o thread_test.o mmu_test.o

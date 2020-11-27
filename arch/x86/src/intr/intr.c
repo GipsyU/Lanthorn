@@ -115,6 +115,12 @@ void intr_hdl(struct intr_regs_t *regs)
         handler();
     }
 
+    if (regs->intrno == 14)
+    {
+        debug("%d\n", regs->err);
+        while(1);
+    }
+
     lapic_eoi();
 
     return;
