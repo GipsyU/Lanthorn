@@ -17,6 +17,7 @@ int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte);
 int mmu_pde_init(addr_t pde);
 
 int mmu_pde_switch(addr_t pde);
-// int mmu_unmap();
+
+int mmu_v2p(addr_t pde, addr_t v, addr_t *p);
 
 #endif
