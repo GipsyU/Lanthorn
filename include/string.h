@@ -1,6 +1,6 @@
 #ifndef _STRING_H_
 #define _STRING_H_
-#include <basic.h>
+#include <arch/basic.h>
 
 void *memset(const void *s, char c, size_t size);
 

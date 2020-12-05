@@ -9,13 +9,13 @@
 
 extern void __attribute__((noreturn)) main(struct boot_arg_t);
 extern void console_init(void);
-extern int mmu_init(void);
+extern int mmu_init(addr_t *pde);
 extern int intr_init(void);
 extern u8 kern_start[];
 extern u8 kern_end[];
 extern int mp_init(int *num_cpu);
 extern int lapic_init(void);
-extern int gdt_init(struct seg_t *gdt);
+extern int gdt_init(struct seg_t *gdt, struct tss_t *tss);
 
 static struct boot_arg_t boot_arg;
 
@@ -95,7 +95,7 @@ static int setup_lp(void)
 
     cpu_get(&cpu, cpuid);
     
-    err = gdt_init(cpu->gdt);
+    err = gdt_init(cpu->gdt, &cpu->tss);
 
     if (err != E_OK)
     {
@@ -128,7 +128,7 @@ void __attribute__((noreturn)) setup(void)
 
     info("start setup x86 arch.\n");
 
-    err = mmu_init();
+    err = mmu_init(&boot_arg.pde);
 
     if (err != E_OK)
     {

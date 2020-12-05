@@ -1,6 +1,6 @@
 #ifndef _X86_SRC_IO_H_
 #define _X86_SRC_IO_H_
-#include <basic.h>
+#include <arch/basic.h>
 static inline void outb(u8 v, u16 port)
 {
 	asm volatile("outb %0,%1"

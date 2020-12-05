@@ -8,7 +8,7 @@
 
 #define mmu_kern_map_STATE_MASK 3
 
-#include <basic.h>
+#include <arch/basic.h>
 
 int mmu_kern_map(addr_t pp, addr_t vp, addr_t pte);
 

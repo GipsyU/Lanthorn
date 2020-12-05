@@ -213,14 +213,8 @@ int kalloc(addr_t *addr, size_t size)
     {
         return E_INVAL;
     }
-
-    if (size <= 128)
-    {
-    }
-    else
-    {
-        err = kalloc_buddy(addr, ROUND_UP(size, PAGE_SIZE));
-    }
+    
+    err = kalloc_buddy(addr, ROUND_UP(size, PAGE_SIZE));
 
     return err;
 }

@@ -7,6 +7,7 @@
 
 extern int thread_test(void);
 extern int mmu_test(void);
+extern int proc_test(void);
 
 int test(void)
 {
@@ -15,7 +16,9 @@ int test(void)
 
     // thread_test();
 
-    mmu_test();
+    // mmu_test();
+
+    proc_test();
 
     debug("test over.\n");
 

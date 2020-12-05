@@ -8,9 +8,9 @@
 
 #include <list.h>
 
-#include <basic.h>
+#include <arch/basic.h>
 
-#include <task.h>
+#include <arch/task.h>
 
 enum T_STATE {RUNNABEL, RUNNING, SLEEPING};
 

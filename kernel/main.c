@@ -1,5 +1,5 @@
 #include <error.h>
-#include <basic.h>
+#include <arch/basic.h>
 #include <log.h>
 #include <memory.h>
 #include <boot_arg.h>
@@ -26,13 +26,20 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("kernal memory init success.\n");
     }
     
-    test();
+    err = proc_init(boot_arg.pde);
+    
+    if (err != E_OK)
+    {
+        error("init proc failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init proc success.\n");
+    }
 
-    // proc_init();
+    test();
 
     info("Lanthorn kernel init finished.\n");
 
-    asm volatile("sti");
-    
     sysctrl_shutdown();
 }

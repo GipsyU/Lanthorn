@@ -1,7 +1,7 @@
 #ifndef _KERNEL_MEMORY_BUDDY_H_
 #define _KERNEL_MEMORY_BUDDY_H_
 
-#include <basic.h>
+#include <arch/basic.h>
 #include <list.h>
 #include <slot.h>
 #include "page.h"

@@ -1,6 +1,6 @@
 #ifndef _X86_BOOT_MBOOT_H_
 #define _X86_BOOT_MBOOT_H_
-#include <basic.h>
+#include <arch/basic.h>
 
 struct multiboot_t {
 	u32 flags;

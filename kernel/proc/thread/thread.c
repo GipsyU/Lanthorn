@@ -58,6 +58,37 @@ int thread_new(struct thread_t **thread, addr_t run)
     return err;
 }
 
+int thread_user_new(struct thread_t **thread, addr_t run)
+{
+    int err = E_OK;
+
+    err = slot_new(&alct, (addr_t *)thread);
+
+    if (err != E_OK)
+    {
+        return err;
+    }
+
+    addr_t stack;
+
+    err = kalloc(&stack, PAGE_SIZE);
+
+    if (err != E_OK)
+    {
+        slot_free(&alct, *thread);
+
+        return err;
+    }
+
+    task_user_init(&(*thread)->task, stack, PAGE_SIZE, 0, PAGE_SIZE, pre, run);
+
+    (*thread)->state = RUNNABEL;
+
+    list_push_back(&runnable, &(*thread)->schd_ln);
+
+    return err;
+}
+
 static int thread_intr(void)
 {
     uint cpuid = cpu_id();
@@ -74,7 +105,7 @@ static int thread_intr(void)
 
     return E_OK;
 }
-
+extern pde_t volatile PDE[];
 int thread_schd(void)
 {
     uint cpuid = cpu_id();
@@ -90,6 +121,10 @@ int thread_schd(void)
             thread->cpuid = cpu_id;
 
             cpu_set_task(cpuid, &thread->task);
+
+            debug("%p\n", thread->proc->pde);
+
+            // proc_switch(thread->proc);
 
             task_switch(cpu_schd(cpuid), &thread->task);
         }

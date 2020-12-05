@@ -8,4 +8,4 @@ config NR_CPU_MAX
 
 config NR_SEG
 	int
-	default 5
+	default 6

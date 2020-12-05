@@ -1,7 +1,7 @@
 #ifndef _ARCH_CPU_H_
 #define _ARCH_CPU_H_
-#include <basic.h>
-#include <task.h>
+#include <arch/basic.h>
+#include <arch/task.h>
 
 uint cpu_id(void);
 

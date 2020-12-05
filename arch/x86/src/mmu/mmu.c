@@ -1,4 +1,4 @@
-#include <basic.h>
+#include <arch/basic.h>
 #include <arch/mmu.h>
 #include <log.h>
 #include <error.h>
@@ -83,7 +83,7 @@ int map_dev(void)
     return E_OK;
 }
 
-int mmu_init(void)
+int mmu_init(addr_t *pde)
 {
     int err = E_OK;
 
@@ -107,6 +107,8 @@ int mmu_init(void)
     {
         return err;
     }
+
+    *pde = PDE;
 
     return err;
 }
@@ -137,8 +139,6 @@ int mmu_kern_map(addr_t pp, addr_t vp, addr_t pte)
 
         return E_OK;
     }
-
-    debug("OK\n");
 
     addr_t _pte;
 

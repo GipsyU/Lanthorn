@@ -1,6 +1,6 @@
 #ifndef _MEMORY_H_
 #define _MEMORY_H_
-#include <basic.h>
+#include <arch/basic.h>
 #include <boot_arg.h>
 
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size);

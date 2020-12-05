@@ -2,7 +2,7 @@
 
 #define __SLOT_H_
 
-#include <basic.h>
+#include <arch/basic.h>
 
 #include <list.h>
 

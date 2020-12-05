@@ -1,5 +1,5 @@
 #include <log.h>
-#include <basic.h>
+#include <arch/basic.h>
 #include <arch/console.h>
 
 #define _INTSIZEOF(n) ( (sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1) )

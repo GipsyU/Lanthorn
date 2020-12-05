@@ -4,7 +4,7 @@
 
 #include <log.h>
 
-#include <basic.h>
+#include <arch/basic.h>
 
 void list_init(struct list_node_t *head)
 {

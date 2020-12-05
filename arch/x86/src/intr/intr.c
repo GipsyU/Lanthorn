@@ -1,6 +1,6 @@
 #include <arch/intr.h>
 #include <error.h>
-#include <basic.h>
+#include <arch/basic.h>
 #include <log.h>
 #include <cpu.h>
 
@@ -115,10 +115,11 @@ void intr_hdl(struct intr_regs_t *regs)
         handler();
     }
 
-    if (regs->intrno == 14)
+    if (regs->intrno == 14 || regs->intrno == 13)
     {
         debug("%d\n", regs->err);
-        while(1);
+        while (1)
+            ;
     }
 
     lapic_eoi();
@@ -131,9 +132,10 @@ int intr_register(int intrno, int (*hdl)(void))
     int err = E_OK;
 
     intr_table[intrno] = hdl;
-    
+
     return err;
 }
+
 int intr_unregister(int intrno)
 {
     intr_table[intrno] = NULL;
@@ -144,7 +146,7 @@ int intr_unregister(int intrno)
 extern addr_t intrx[];
 
 int intr_init(void)
-{   
+{
     int err = E_OK;
 
     for (int i = 0; i < NR_INTR; ++i)
@@ -156,7 +158,7 @@ int intr_init(void)
 
     lidt(idt, sizeof(idt));
 
-    for (int  i = 0; i < NR_INTR; ++i)
+    for (int i = 0; i < NR_INTR; ++i)
     {
         intr_table[i] = NULL;
 
@@ -171,6 +173,28 @@ int intr_init(void)
 void intr_end(void)
 {
     lapic_eoi();
-    
+
     asm volatile("sti");
+}
+
+addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
+{
+    struct intr_regs_t *regs = (ksp - sizeof(struct intr_regs_t));
+    
+    regs->cs = SEL_UCODE;
+    
+    regs->ds = regs->es = regs->fs = regs->gs = regs->ss = SEL_UDATA;
+    
+    regs->eip = run;
+    
+    /**
+     * FIXME:enable intr
+     */
+    // regs->eflags
+    
+    regs->esp = usp;
+    
+    regs->ebp = ubp;
+
+    return (addr_t)regs;
 }

@@ -1,4 +1,4 @@
-#include <basic.h>
+#include <arch/basic.h>
 #include <cpu.h>
 #include <error.h>
 #include <intr.h>
@@ -72,9 +72,19 @@ struct task_t *cpu_get_task(uint cpuid)
     return cpus[cpuid].task;
 }
 
+extern void lgdt(struct seg_t *seg, size_t size);
+
+extern void ltr(u32 sel);
+
 void cpu_set_task(uint cpuid, struct task_t *task)
 {
     cpus[cpuid].task = task;
+
+    cpus[cpuid].tss.ss0 = SEL_KDATA;
+
+    cpus[cpuid].tss.esp0 = task->saddr + task->ssize;
+
+    cpus[cpuid].tss.iomb = 0xffff;
 }
 
 struct task_t *cpu_schd(uint cpuid)

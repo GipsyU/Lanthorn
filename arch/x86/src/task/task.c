@@ -1,4 +1,4 @@
-#include <task.h>
+#include <arch/task.h>
 
 #include <error.h>
 
@@ -34,6 +34,32 @@ int task_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t pre, addr_
     context->eip = pre;
 
     context->ebp = saddr + ssize;
+
+    return E_OK;
+}
+
+extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp);
+extern void intr_ret(void);
+
+int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size_t uss, addr_t pre, addr_t run)
+{
+    task->saddr = ksa;
+
+    task->ssize = kss;
+
+    task->sp = ksa + kss;
+
+    task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss);
+
+    addr_t *_sp = (task->sp -= sizeof(addr_t));
+
+    *_sp = intr_ret;
+
+    struct context_t *context = (task->sp -= sizeof(struct context_t));
+
+    context->eip = pre;
+
+    context->ebp = ksa + kss;
 
     return E_OK;
 }

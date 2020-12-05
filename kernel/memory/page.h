@@ -1,6 +1,6 @@
 #ifndef _KERNEL_MEMORY_PAGE_H_
 #define _KERNEL_MEMORY_PAGE_H_
-#include <basic.h>
+#include <arch/basic.h>
 
 #define PAGE_PMM 1
 #define PAGE_VMM 2
