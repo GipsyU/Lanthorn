@@ -32,7 +32,7 @@ void P2(void)
         if(i%100000000==0){
             debug("P2\n");
         }
-        if(i%200000000==0){
+        if(i%1000000000==0){
             spin_lock(&spinlock);
             debug("P2 get lock\n");
             int t = 1000000000;

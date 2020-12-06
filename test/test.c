@@ -15,7 +15,7 @@ int test(void)
 
     info("begin test.\n");
 
-    // thread_test();
+    thread_test();
 
     // mmu_test();
 

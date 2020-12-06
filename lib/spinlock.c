@@ -26,15 +26,9 @@ int spin_init(struct spinlock_t *spinlock)
 
 int spin_lock(struct spinlock_t *spinlock)
 {
-    while (1)
-    {
-        if (try_lock(spinlock))
-        {
-            lock(spinlock);
+    lock(spinlock);
 
-            return E_OK;
-        }
-    }
+    return E_OK;
 }
 
 int spin_unlock(struct spinlock_t *spinlock)
@@ -45,8 +39,6 @@ int spin_unlock(struct spinlock_t *spinlock)
     }
 
     atomic_set(&spinlock->lock, 0);
-
-    intr_enable();
 
     return E_OK;
 }
