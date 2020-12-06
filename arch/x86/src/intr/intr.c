@@ -198,3 +198,14 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 
     return (addr_t)regs;
 }
+
+int intr_enable(void)
+{
+    asm volatile("sti": : :"memory");
+}
+
+int intr_disable(void)
+{
+    asm volatile("cli": : :"memory");
+
+}
