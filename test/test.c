@@ -4,6 +4,7 @@
 #include <arch/cpu.h>
 #include <log.h>
 #include <thread.h>
+#include <arch/atomic.h>
 
 extern int thread_test(void);
 extern int mmu_test(void);
@@ -18,7 +19,19 @@ int test(void)
 
     // mmu_test();
 
-    proc_test();
+    // proc_test();
+
+    struct atomic_t atomic = ATOMIC_INIT(1);
+
+    debug("%d\n",atomic_read(&atomic));
+    atomic_cmpxchg(&atomic, 2, 2);
+    debug("%d\n",atomic_read(&atomic));
+    atomic_cmpxchg(&atomic, 1, 2);
+    debug("%d\n",atomic_read(&atomic));
+    atomic_xchg(&atomic, 3);
+    debug("%d\n",atomic_read(&atomic));
+
+
 
     debug("test over.\n");
 
