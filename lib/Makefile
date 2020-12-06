@@ -1,1 +1,1 @@
-obj-y := log.o error.o string.o list.o slot.o
+obj-y := log.o error.o string.o list.o slot.o spinlock.o

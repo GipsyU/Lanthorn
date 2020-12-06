@@ -21,15 +21,7 @@ int test(void)
 
     // proc_test();
 
-    struct atomic_t atomic = ATOMIC_INIT(1);
 
-    debug("%d\n",atomic_read(&atomic));
-    atomic_cmpxchg(&atomic, 2, 2);
-    debug("%d\n",atomic_read(&atomic));
-    atomic_cmpxchg(&atomic, 1, 2);
-    debug("%d\n",atomic_read(&atomic));
-    atomic_xchg(&atomic, 3);
-    debug("%d\n",atomic_read(&atomic));
 
 
 

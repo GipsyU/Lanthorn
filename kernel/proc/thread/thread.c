@@ -122,7 +122,7 @@ int thread_schd(void)
 
             cpu_set_task(cpuid, &thread->task);
 
-            debug("%p\n", thread->proc->pde);
+            // debug("%p\n", thread->proc->pde);
 
             // proc_switch(thread->proc);
 
