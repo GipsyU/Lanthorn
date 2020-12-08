@@ -4,7 +4,6 @@
 #include <util.h>
 #include <memory.h>
 
-#include "page.h"
 #include "buddy.h"
 
 #define BUDDY_NO_BUD 0

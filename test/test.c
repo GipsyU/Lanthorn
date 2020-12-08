@@ -9,13 +9,14 @@
 extern int thread_test(void);
 extern int mmu_test(void);
 extern int proc_test(void);
+extern int rbt_test(void);
 
 int test(void)
 {
 
     info("begin test.\n");
 
-    thread_test();
+    rbt_test();
 
     // mmu_test();
 

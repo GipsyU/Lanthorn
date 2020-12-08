@@ -30,7 +30,7 @@ static void rotate_left(struct rbt_t *rbt, struct rbt_node_t *node)
     }
     else
     {
-        rbt->root->f = r;
+        rbt->root = r;
     }
 }
 
@@ -64,7 +64,7 @@ static void rotate_right(struct rbt_t *rbt, struct rbt_node_t *node)
     }
     else
     {
-        rbt->root->f = l;
+        rbt->root = l;
     }
 }
 
@@ -111,7 +111,7 @@ int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
 
             g->color = RED;
 
-            rotate_right(g, rbt);
+            rotate_right(rbt, g);
         }
         else
         {
@@ -141,14 +141,13 @@ int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
                 f = node;
 
                 node = tmp;
-                
             }
 
             f->color = BLACK;
 
             g->color = RED;
 
-            rotate_left(g, rbt);
+            rotate_left(rbt, g);
         }
     }
 

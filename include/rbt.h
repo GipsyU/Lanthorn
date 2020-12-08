@@ -18,8 +18,17 @@ struct rbt_node_t
     struct rbt_node_t *f, *l, *r;
 };
 
-// int rbt_init()
+static inline void rb_link_node(struct rbt_node_t *node, struct rbt_node_t *parent,
+				struct rbt_node_t **link)
+{
+	node->f = parent;
+	node->l = node->r = NULL;
+	*link = node;
+}
 
+int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node);
+
+// int rbt_init()
 
 // int rbt_insert(struct rbt_t *rbt, struct rbt_node_t *node);
 

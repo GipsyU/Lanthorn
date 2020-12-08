@@ -4,13 +4,14 @@
 #include <arch/basic.h>
 #include <list.h>
 #include <slot.h>
-#include "page.h"
-
+#include <spinlock.h>
 struct buddy_allocator_t
 {
     char name[10];
 
     struct slot_alct_t slot_alct;
+
+    struct spinlock_t lock;
 
     struct list_node_t *head;
 };

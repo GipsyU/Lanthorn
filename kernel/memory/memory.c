@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "buddy.h"
-#include "page.h"
 
 static struct buddy_allocator_t pmm_alct;
 
