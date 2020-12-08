@@ -13,7 +13,7 @@
         (x) / _y *_y;             \
     })
 
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 
 /**
  * container_of - cast a member of a structure out to the containing structure
@@ -25,5 +25,15 @@
 #define container_of(ptr, type, member) ({			\
 	const typeof(((type *)0)->member) * __mptr = (ptr);	\
 	(type *)((char *)__mptr - offsetof(type, member)); })
+
+#define max(a, b) (      \
+    {                    \
+        (a > b ? a : b); \
+    })
+
+#define min(a, b) (      \
+    {                    \
+        (a < b ? a : b); \
+    })
 
 #endif
