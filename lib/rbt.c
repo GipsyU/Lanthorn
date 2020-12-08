@@ -1,3 +1,6 @@
+/**
+ * REFER FROM LINUX
+ */
 #include <rbt.h>
 
 static void rotate_left(struct rbt_t *rbt, struct rbt_node_t *node)
@@ -68,14 +71,14 @@ static void rotate_right(struct rbt_t *rbt, struct rbt_node_t *node)
     }
 }
 
-int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
+void rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
 {
     struct rbt_node_t *f, *g;
 
     while ((f = node->f) && f->color == RED)
     {
         g = f->f;
-        
+
         if (f == g->l)
         {
             struct rbt_node_t *u = g->r;
@@ -104,7 +107,6 @@ int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
                 f = node;
 
                 node = tmp;
-                
             }
 
             f->color = BLACK;
@@ -152,4 +154,229 @@ int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
     }
 
     rbt->root->color = BLACK;
+}
+
+static void rbt_delete_color(struct rbt_t *rbt, struct rbt_node_t *node, struct rbt_node_t *parent)
+{
+    struct rbt_node_t *other;
+
+    while ((!node || node->color == BLACK) && node != rbt->root)
+    {
+        if (parent->l == node)
+        {
+            other = parent->r;
+            if (other->color == RED)
+            {
+                other->color = BLACK;
+                parent->color = RED;
+                rotate_left(rbt, parent);
+                other = parent->r;
+            }
+            if ((!other->l || other->l->color == BLACK) && (!other->r || other->r->color == BLACK))
+            {
+                other->color = RED;
+                node = parent;
+                parent = node->f;
+            }
+            else
+            {
+                if (!other->r || other->r->color == BLACK)
+                {
+                    other->l->color = BLACK;
+                    other->color = BLACK;
+                    rotate_right(rbt, other);
+                    other = parent->r;
+                }
+                other->color = parent->color;
+                parent->color = BLACK;
+                other->r->color = BLACK;
+                rotate_left(rbt, parent);
+                node = rbt->root;
+                break;
+            }
+        }
+        else
+        {
+            other = parent->l;
+            if (other->color == RED)
+            {
+                other->color = BLACK;
+                parent->color = RED;
+                rotate_right(rbt, parent);
+                other = parent->l;
+            }
+            if ((!other->l || other->l->color == BLACK) && (!other->r || other->r->color == BLACK))
+            {
+                other->color = RED;
+                node = parent;
+                parent = node->f;
+            }
+            else
+            {
+                if (!other->l || other->l->color == BLACK)
+                {
+                    other->r->color = BLACK;
+                    other->color = RED;
+                    rotate_left(rbt, other);
+                    other = parent->l;
+                }
+                other->color = parent->color;
+                parent->color = BLACK;
+                other->l->color = BLACK;
+                rotate_right(rbt, parent);
+                node = rbt->root;
+                break;
+            }
+        }
+    }
+    if (node)
+        node->color = BLACK;
+}
+
+void rbt_delete(struct rbt_t *rbt, struct rbt_node_t *node)
+{
+    struct rbt_node_t *s, *f;
+
+    enum COLOR color;
+
+    if (node->l == NULL)
+    {
+        s = node->r;
+    }
+    else if (node->r == NULL)
+    {
+        s = node->l;
+    }
+    else
+    {
+        struct rbt_node_t *old = node;
+
+        node = node->r;
+
+        while (node->l)
+        {
+            node = node->l;
+        }
+
+        if (old->f)
+        {
+            if (old->f->l == old)
+            {
+                old->f->l = node;
+            }
+            else
+            {
+                old->f->r = node;
+            }
+        }
+        else
+        {
+            rbt->root = node;
+        }
+
+        s = node->r;
+
+        f = node->f;
+
+        color = node->color;
+
+        if (f == old)
+        {
+            f = node;
+        }
+        else
+        {
+            if (s)
+            {
+                s->f = f;
+            }
+
+            f->l = s;
+
+            node->r = old->r;
+
+            old->r->f = node;
+        }
+
+        node->f = old->f;
+
+        node->color = old->color;
+
+        node->l = old->l;
+
+        old->l->f = node;
+
+        goto color;
+    }
+
+    f = node->f;
+
+    color = node->color;
+
+    if (s)
+    {
+        s->f = f;
+    }
+
+    if (f)
+    {
+        if (f->l == node)
+        {
+            f->l = s;
+        }
+        else
+        {
+            f->r = s;
+        }
+    }
+    else
+    {
+        rbt->root = s;
+    }
+
+color:
+    if (color == BLACK)
+    {
+        rbt_delete_color(rbt, s, f);
+    }
+}
+
+void rbt_update(struct rbt_node_t *node, rbt_update_func func)
+{
+    struct rbt_node_t *f;
+
+    while (1)
+    {
+        func(node);
+
+        if ((f = node->f) == NULL)
+        {
+            return;
+        }
+
+        if (node == f->l && f->r)
+        {
+            func(f->r);
+        }
+        else if (f->l)
+        {
+            func(f->l);
+        }
+
+        node = f;
+    }
+}
+
+void rbt_insert_update(struct rbt_node_t *node, rbt_update_func func)
+{
+    if (node->l)
+    {
+        node = node->l;
+    }
+    else if (node->r)
+    {
+        node = node->r;
+    }
+
+    rbt_update(node, func);
 }

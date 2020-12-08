@@ -97,5 +97,27 @@ int rbt_test(void)
 
 	debug("%p\n", v);
 
+	rbt_delete(&rbt, &v1.rbt_node);
+
+	rbt_delete(&rbt, &v2.rbt_node);
+	
+	rbt_delete(&rbt, &v3.rbt_node);
+	
+	v = rbt_search(&rbt, 0*PAGE_SIZE);
+	
+	debug("%p\n", v);
+
+	v = rbt_search(&rbt, 1*PAGE_SIZE);
+	
+	debug("%p\n", v);
+	
+	v = rbt_search(&rbt, 2*PAGE_SIZE);
+
+	debug("%p\n", v);
+
+	v = rbt_search(&rbt, 3*PAGE_SIZE);
+
+	debug("%p\n", v);
+
     return E_OK;
 }

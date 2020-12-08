@@ -18,6 +18,8 @@ struct rbt_node_t
     struct rbt_node_t *f, *l, *r;
 };
 
+typedef void (*rbt_update_func)(struct rbt_node_t *node);
+
 static inline void rb_link_node(struct rbt_node_t *node, struct rbt_node_t *parent,
 				struct rbt_node_t **link)
 {
@@ -26,9 +28,13 @@ static inline void rb_link_node(struct rbt_node_t *node, struct rbt_node_t *pare
 	*link = node;
 }
 
-int rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node);
+void rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node);
 
-// int rbt_init()
+void rbt_delete(struct rbt_t *rbt, struct rbt_node_t *node);
+
+void rbt_update(struct rbt_node_t *node, rbt_update_func func);
+
+void rbt_insert_update(struct rbt_node_t *node, rbt_update_func func);
 
 // int rbt_insert(struct rbt_t *rbt, struct rbt_node_t *node);
 
