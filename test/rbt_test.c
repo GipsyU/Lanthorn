@@ -97,11 +97,35 @@ int rbt_test(void)
 
 	debug("%p\n", v);
 
+	struct rbt_node_t *tmp;
+
+	err = rbt_next(&v1.rbt_node, &tmp);
+
+	debug("%s\n", strerror(err));
+
+	err = rbt_next(&v2.rbt_node, &tmp);
+
+	debug("%s\n", strerror(err));
+
+	err = rbt_next(&v3.rbt_node, &tmp);
+
+	debug("%s\n", strerror(err));
+
+	rbt_delete(&rbt, &v3.rbt_node);
+
+	err = rbt_next(&v1.rbt_node, &tmp);
+
+	debug("%s\n", strerror(err));
+
+	err = rbt_next(&v2.rbt_node, &tmp);
+
+	debug("%s\n", strerror(err));
+
 	rbt_delete(&rbt, &v1.rbt_node);
 
 	rbt_delete(&rbt, &v2.rbt_node);
 	
-	rbt_delete(&rbt, &v3.rbt_node);
+	
 	
 	v = rbt_search(&rbt, 0*PAGE_SIZE);
 	

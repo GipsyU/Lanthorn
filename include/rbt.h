@@ -36,9 +36,12 @@ void rbt_update(struct rbt_node_t *node, rbt_update_func func);
 
 void rbt_insert_update(struct rbt_node_t *node, rbt_update_func func);
 
-// int rbt_insert(struct rbt_t *rbt, struct rbt_node_t *node);
+struct rbt_node_t *rbt_delete_update_begin(struct rbt_node_t *node);
 
-// int rbt_find()
+void rbt_delete_update_end(struct rbt_node_t *node, rbt_update_func func);
 
+int rbt_next(const struct rbt_node_t *node, struct rbt_node_t **res);
+
+int rbt_prev(const struct rbt_node_t *node, struct rbt_node_t **res);
 
 #endif

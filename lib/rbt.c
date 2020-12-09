@@ -1,6 +1,8 @@
 /**
  * REFER FROM LINUX
  */
+#include <error.h>
+#include <log.h>
 #include <rbt.h>
 
 static void rotate_left(struct rbt_t *rbt, struct rbt_node_t *node)
@@ -74,6 +76,8 @@ static void rotate_right(struct rbt_t *rbt, struct rbt_node_t *node)
 void rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
 {
     struct rbt_node_t *f, *g;
+
+    node->color = RED;
 
     while ((f = node->f) && f->color == RED)
     {
@@ -165,6 +169,7 @@ static void rbt_delete_color(struct rbt_t *rbt, struct rbt_node_t *node, struct 
         if (parent->l == node)
         {
             other = parent->r;
+
             if (other->color == RED)
             {
                 other->color = BLACK;
@@ -183,7 +188,7 @@ static void rbt_delete_color(struct rbt_t *rbt, struct rbt_node_t *node, struct 
                 if (!other->r || other->r->color == BLACK)
                 {
                     other->l->color = BLACK;
-                    other->color = BLACK;
+                    other->color = RED;
                     rotate_right(rbt, other);
                     other = parent->r;
                 }
@@ -229,8 +234,59 @@ static void rbt_delete_color(struct rbt_t *rbt, struct rbt_node_t *node, struct 
             }
         }
     }
-    if (node)
-        node->color = BLACK;
+
+    if (node) node->color = BLACK;
+}
+
+int rbt_next(const struct rbt_node_t *node, struct rbt_node_t **res)
+{
+    struct rbt_node_t *parent;
+
+    if (node->r)
+    {
+        node = node->r;
+
+        while (node->l) node = node->l;
+
+        *res = node;
+
+        return E_OK;
+    }
+
+    while ((parent = node->f) && node == parent->r) node = parent;
+
+    *res = parent;
+
+    if (*res)
+        return E_OK;
+
+    else
+        return E_NOTFOUND;
+}
+int rbt_prev(const struct rbt_node_t *node, struct rbt_node_t **res)
+{
+    struct rbt_node_t *parent;
+
+    if (node->l)
+    {
+        node = node->l;
+        
+        while (node->r) node = node->r;
+        
+        *res = node;
+
+        return E_OK;
+    }
+
+    while ((parent = node->f) && node == parent->l) node = parent;
+
+    *res = parent;
+
+    if (*res)
+        return E_OK;
+
+    else
+        return E_NOTFOUND;
 }
 
 void rbt_delete(struct rbt_t *rbt, struct rbt_node_t *node)
@@ -379,4 +435,41 @@ void rbt_insert_update(struct rbt_node_t *node, rbt_update_func func)
     }
 
     rbt_update(node, func);
+}
+
+struct rbt_node_t *rbt_delete_update_begin(struct rbt_node_t *node)
+{
+    struct rbt_node_t *deepest;
+
+    if (node->r == NULL && node->l == NULL)
+
+        deepest = node->f;
+
+    else if (node->r == NULL)
+
+        deepest = node->l;
+
+    else if (node->l == NULL)
+
+        deepest = node->r;
+
+    else
+    {
+        rbt_next(node, &deepest);
+
+        if (deepest->r)
+
+            deepest = deepest->r;
+
+        else if (deepest->f != node)
+
+            deepest = deepest->f;
+    }
+
+    return deepest;
+}
+
+void rbt_delete_update_end(struct rbt_node_t *node, rbt_update_func func)
+{
+    if (node) rbt_update(node, func);
 }
