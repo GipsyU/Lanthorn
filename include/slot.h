@@ -1,9 +1,6 @@
-#ifndef __SOLT_H_
-
-#define __SLOT_H_
-
+#ifndef _SOLT_H_
+#define _SOLT_H_
 #include <arch/basic.h>
-
 #include <list.h>
 
 struct slot_alct_t

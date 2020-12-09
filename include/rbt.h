@@ -1,5 +1,4 @@
 #ifndef _RBT_H_
-
 #define _RBT_H_
 
 #include <arch/basic.h>

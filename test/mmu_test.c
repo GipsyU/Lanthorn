@@ -31,7 +31,7 @@ int mmu_test(void)
 
     addr_t addr;
 
-    kalloc(&addr, PAGE_SIZE);
+    kmalloc(&addr, PAGE_SIZE);
 
     debug("%p\n", addr);
 

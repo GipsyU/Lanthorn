@@ -1,5 +1,4 @@
 #include <slot.h>
-
 #include <error.h>
 
 int slot_init(struct slot_alct_t *alct, size_t slot_size)

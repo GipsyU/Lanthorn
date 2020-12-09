@@ -4,8 +4,6 @@
 #include <util.h>
 #include <memory.h>
 
-#include "buddy.h"
-
 #define BUDDY_NO_BUD 0
 #define BUDDY_LEFT 1
 #define BUDDY_RIGHT 2

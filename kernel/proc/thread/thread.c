@@ -1,6 +1,5 @@
 #include <thread.h>
 #include <list.h>
-#include <slot.h>
 #include <error.h>
 #include <util.h>
 #include <arch/cpu.h>
@@ -40,7 +39,7 @@ int thread_new(struct thread_t **thread, addr_t run)
 
     addr_t stack;
 
-    err = kalloc(&stack, PAGE_SIZE);
+    err = kmalloc(&stack, PAGE_SIZE);
 
     if (err != E_OK)
     {
@@ -71,7 +70,7 @@ int thread_user_new(struct thread_t **thread, addr_t run)
 
     addr_t stack;
 
-    err = kalloc(&stack, PAGE_SIZE);
+    err = kmalloc(&stack, PAGE_SIZE);
 
     if (err != E_OK)
     {

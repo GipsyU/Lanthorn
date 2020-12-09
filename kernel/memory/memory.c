@@ -6,17 +6,30 @@
 #include <util.h>
 #include <string.h>
 
-#include "buddy.h"
 
 static struct buddy_allocator_t pmm_alct;
 
-static struct buddy_allocator_t kvmm_alct;
-
 static u8 pmm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
-static u8 kvmm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
+static struct vpage_alct_t kvm_alct;
 
-extern int kvm_init(addr_t addr, size_t size);
+static u8 kvm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
+
+extern int vm_init(struct vpage_alct_t *alct);
+
+extern int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size);
+
+extern int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size);
+
+extern int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp);
+
+extern int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page);
+
+extern int buddy_alloc(struct buddy_allocator_t *alct, size_t page_num, struct page_t **page);
+
+extern int buddy_free(struct buddy_allocator_t *alct, struct page_t *page);
+
+extern int buddy_init(struct buddy_allocator_t *alct, addr_t addr, size_t size);
 
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
 {
@@ -53,10 +66,6 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
     
-    buddy_init(&kvmm_alct, (addr_t)kvmm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
-
-    memcpy(kvmm_alct.name, "kvm alct", 8);
-
     start = ROUND_UP(free_kvm_start, PAGE_SIZE);
 
     end = ROUND_DOWN(free_pmm_start + free_kvm_size, PAGE_SIZE);
@@ -65,7 +74,11 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     page.num = (end - start) / PAGE_SIZE;
 
-    err = buddy_insert(&kvmm_alct, &page);
+    vm_init(&kvm_alct);
+
+    slot_insert(&kvm_alct.slot_alct, kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+
+    err = vm_insert(&kvm_alct, start, end - start);
 
     if (err != E_OK)
     {
@@ -78,7 +91,6 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
         info("init kvm success.\n");
     }
 
-    err = kvm_init(start, end - start);
 
     // err = buddy_alloc(&pmm_alct, 1, &Page[0]);
     // info("%d %p %d %s\n", 0, Page[0].addr, Page[0].num, strerror(err));
@@ -129,20 +141,24 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
 // }
 
-static int kalloc_buddy(addr_t *addr, size_t size)
+static int kmalloc_page(addr_t *addr, size_t size)
 {
     int err = E_OK;
 
-    struct page_t *pp, *vp, *pte;
+    struct page_t *pp, *pte;
 
-    err = buddy_alloc(&pmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pp);
+    struct vpage_t *vp;
+
+    size = ROUND_UP(size, PAGE_SIZE);
+
+    err = buddy_alloc(&pmm_alct, size / PAGE_SIZE, &pp);
 
     if (err != E_OK)
     {
         goto error0;
     }
 
-    err = buddy_alloc(&kvmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &vp);
+    err = vm_alloc(&kvm_alct, &vp, size);
 
     if (err != E_OK)
     {
@@ -183,7 +199,7 @@ error3:
     buddy_free(&pmm_alct, pte);
 
 error2:
-    buddy_free(&kvmm_alct, vp);
+    vm_free(&kvm_alct, vp);
 
 error1:
     buddy_free(&pmm_alct, pp);
@@ -192,23 +208,23 @@ error0:
     return err;
 }
 
-int page_alloc(addr_t *addr)
-{
-    int err = E_OK;
+// int page_alloc(addr_t *addr)
+// {
+//     int err = E_OK;
 
-    struct page_t *pp;
+//     struct page_t *pp;
 
-    err = buddy_alloc(&pmm_alct, 1, &pp);
+//     err = buddy_alloc(&pmm_alct, 1, &pp);
 
-    if (err == E_OK)
-    {
-        *addr = pp->addr;
-    }
+//     if (err == E_OK)
+//     {
+//         *addr = pp->addr;
+//     }
 
-    return err;
-}
+//     return err;
+// }
 
-int kalloc(addr_t *addr, size_t size)
+int kmalloc(addr_t *addr, size_t size)
 {
     int err = E_OK;
 
@@ -217,14 +233,16 @@ int kalloc(addr_t *addr, size_t size)
         return E_INVAL;
     }
     
-    err = kalloc_buddy(addr, ROUND_UP(size, PAGE_SIZE));
+    err = kmalloc_page(addr, ROUND_UP(size, PAGE_SIZE));
 
     return err;
 }
 
-int kfree(addr_t addr)
+int kmfree(addr_t addr)
 {
     int err = E_OK;
+
+    
 
     return err;
 }

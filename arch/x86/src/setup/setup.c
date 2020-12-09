@@ -4,7 +4,6 @@
 #include <io.h>
 #include <cpu.h>
 #include "mboot.h"
-#include <slot.h>
 #include <arch/cpu.h>
 
 extern void __attribute__((noreturn)) main(struct boot_arg_t);

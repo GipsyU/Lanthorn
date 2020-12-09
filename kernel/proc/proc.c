@@ -11,7 +11,7 @@ static int proc_alloc(struct proc_t **proc)
 {
     int err = E_OK;
 
-    err = kalloc((addr_t *)*proc, sizeof (struct proc_t));
+    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
 
     /**
      * FIXME:ALLOC PID
@@ -55,14 +55,14 @@ int proc_user_init(struct proc_t **proc)
 {
     int err = E_OK;
 
-    err = kalloc((addr_t *)*proc, sizeof (struct proc_t));
+    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
 
     if (err != E_OK)
     {
         return err;
     }
 
-    err = page_alloc(&(*proc)->pde);
+    // err = page_alloc(&(*proc)->pde);
 
     if (err != E_OK)
     {
@@ -82,14 +82,14 @@ int proc_user_init(struct proc_t **proc)
 
     addr_t pte, init;
 
-    err = page_alloc(&pte);
+    // err = page_alloc(&pte);
 
     if (err != E_OK)
     {
         return err;
     }
 
-    err = kalloc(&init, PAGE_SIZE);
+    err = kmalloc(&init, PAGE_SIZE);
 
     if (err != E_OK)
     {
@@ -148,7 +148,7 @@ int proc_new(struct proc_t **proc)
 {
     int err = E_OK;
 
-    err = kalloc((addr_t *)*proc, sizeof (struct proc_t));
+    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
 
     if (err != E_OK)
     {
