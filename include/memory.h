@@ -8,7 +8,8 @@
 struct vpage_t
 {
     addr_t addr;
-    size_t num;
+    size_t size;
+    size_t mx_size;
     struct rbt_node_t rbt_node;
 };
 

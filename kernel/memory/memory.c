@@ -16,6 +16,8 @@ static u8 pmm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static u8 kvmm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
+extern int kvm_init(addr_t addr, size_t size);
+
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
 {
     int err = E_OK;
@@ -75,6 +77,8 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     {
         info("init kvm success.\n");
     }
+
+    err = kvm_init(start, end - start);
 
     // err = buddy_alloc(&pmm_alct, 1, &Page[0]);
     // info("%d %p %d %s\n", 0, Page[0].addr, Page[0].num, strerror(err));
