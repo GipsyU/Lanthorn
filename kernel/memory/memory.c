@@ -1,19 +1,20 @@
 #include <arch/mmu.h>
-#include <memory.h>
 #include <boot_arg.h>
 #include <error.h>
 #include <log.h>
-#include <util.h>
+#include <memory.h>
 #include <string.h>
+#include <util.h>
 
+static struct page_alct_t pm_alct;
 
-static struct buddy_allocator_t pmm_alct;
-
-static u8 pmm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
+static u8 pm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static struct vpage_alct_t kvm_alct;
 
 static u8 kvm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
+
+static struct slab_alct_t slab_alct;
 
 extern int vm_init(struct vpage_alct_t *alct);
 
@@ -23,13 +24,21 @@ extern int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
 
 extern int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp);
 
-extern int buddy_insert(struct buddy_allocator_t *alct, struct page_t *page);
+extern int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res);
 
-extern int buddy_alloc(struct buddy_allocator_t *alct, size_t page_num, struct page_t **page);
+extern int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size);
 
-extern int buddy_free(struct buddy_allocator_t *alct, struct page_t *page);
+extern int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page);
 
-extern int buddy_init(struct buddy_allocator_t *alct, addr_t addr, size_t size);
+extern int pm_free(struct page_alct_t *alct, struct page_t *page);
+
+extern int pm_init(struct page_alct_t *alct, addr_t addr, size_t size);
+
+extern int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size);
+
+extern int slab_free(struct slab_alct_t *alct, addr_t addr);
+
+extern int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*free)(addr_t));
 
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
 {
@@ -37,203 +46,99 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     info("free pmm start addr: %p, end addr: %p.\n", free_pmm_start, free_pmm_start + free_pmm_size);
 
-    buddy_init(&pmm_alct, (addr_t)pmm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
+    err = pm_init(&pm_alct, (addr_t)pm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
-    memcpy(pmm_alct.name, "pmm alct", 8);
+    if (err != E_OK) return err;
 
     addr_t start = ROUND_UP(free_pmm_start, PAGE_SIZE);
 
-    addr_t end = ROUND_DOWN(free_pmm_start + free_pmm_size, PAGE_SIZE);
+    size_t size = ROUND_DOWN(free_pmm_start + free_pmm_size, PAGE_SIZE) - start;
 
-    struct page_t page;
+    err = pm_insert(&pm_alct, start, size);
 
-    page.addr = start;
-
-    page.num = (end - start) / PAGE_SIZE;
-
-    err = buddy_insert(&pmm_alct, &page);
-
-    if (err != E_OK)
-    {
-        error("init pmm failed, err = %s.\n", strerror(err));
-
-        return err;
-    }
-    else
-    {
-        info("init pmm success.\n")
-    }
+    if (err != E_OK) return err;
+    
+    info("init pmm success.\n")
 
     info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
-    
+
     start = ROUND_UP(free_kvm_start, PAGE_SIZE);
 
-    end = ROUND_DOWN(free_pmm_start + free_kvm_size, PAGE_SIZE);
+    size = ROUND_DOWN(free_pmm_start + free_kvm_size, PAGE_SIZE) - start;
 
-    page.addr = start;
+    err = vm_init(&kvm_alct);
 
-    page.num = (end - start) / PAGE_SIZE;
-
-    vm_init(&kvm_alct);
+    if (err != E_OK) return err;
 
     slot_insert(&kvm_alct.slot_alct, kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
-    err = vm_insert(&kvm_alct, start, end - start);
+    err = vm_insert(&kvm_alct, start, size);
 
-    if (err != E_OK)
-    {
-        error("init kvm failed, err = %s.\n", strerror(err));
+    if (err != E_OK) return err;
+    
+    info("init kvm success.\n");
 
-        return err;
-    }
-    else
-    {
-        info("init kvm success.\n");
-    }
+    err = slab_init(&slab_alct, kmalloc, kmfree);
 
+    if (err != E_OK) return err;
 
-    // err = buddy_alloc(&pmm_alct, 1, &Page[0]);
-    // info("%d %p %d %s\n", 0, Page[0].addr, Page[0].num, strerror(err));
-
-    // err = buddy_alloc(&kvmm_alct, 11, &Page[1]);
-    // info("%d %p %d %s\n", 1, Page[1].addr, Page[1].num, strerror(err));
-
-    // err = buddy_alloc(&pmm_alct, 1, &Page[2]);
-    // info("%d %p %d %s\n", 2, Page[2].addr, Page[2].num, strerror(err));
-
-    // err = mmu_kern_map(Page[0].addr, Page[1].addr, Page[2].addr);
-
-    // debug("%s\n",strerror(err));
-
-    // debug("OK\n");
-
-    // int *x = Page[1].addr;
-
-    // debug("OK %p\n",x);
-
-    // *x = 1;
-
-    // debug("OK %p %d\n", x, *x);
-
-    // for (int i = 1; i <= 100; ++i)
-    // {
-    //     struct page_t *p;
-    //     err = buddy_alloc(&pmm_alct, 11, &p);
-    //     info("%d %p %d %s\n", i, p->addr, p->num, strerror(err));
-    // }
-
-    // for (int i = 1; i <= 100; ++i)
-    // {
-    //     err = buddy_free(&kvmm_alct, &Page[i]);
-    //     info("%s\n", strerror(err))
-    // }
+    info("init slab success.\n");
 
     return err;
 }
-
-// int get_page()
-// {
-
-// }
-
-// int put_page()
-// {
-
-// }
 
 static int kmalloc_page(addr_t *addr, size_t size)
 {
     int err = E_OK;
 
-    struct page_t *pp, *pte;
+    struct page_t *pp;
 
     struct vpage_t *vp;
 
     size = ROUND_UP(size, PAGE_SIZE);
 
-    err = buddy_alloc(&pmm_alct, size / PAGE_SIZE, &pp);
+    err = pm_alloc(&pm_alct, size / PAGE_SIZE, &pp);
 
-    if (err != E_OK)
-    {
-        goto error0;
-    }
+    if (err != E_OK) goto error0;
 
     err = vm_alloc(&kvm_alct, &vp, size);
 
-    if (err != E_OK)
-    {
-        goto error1;
-    }
+    if (err != E_OK) goto error1;
 
-    err = mmu_kern_map(pp->addr, vp->addr, NULL);
+    err = mmu_kern_map(pp->addr, vp->addr);
 
-    if (err != E_OK)
-    {
-        if (err == E_AGAIN)
-        {
-            err = buddy_alloc(&pmm_alct, ROUND_UP(size, PAGE_SIZE) / PAGE_SIZE, &pte);
-
-            if (err != E_OK)
-            {
-                goto error2;
-            }
-
-            err = mmu_kern_map(pp->addr, vp->addr, pte->addr);
-
-            if (err != E_OK)
-            {
-                goto error3;
-            }
-        }
-        else
-        {
-            goto error2;
-        }
-    }
+    if (err != E_OK) goto error2;
 
     *addr = vp->addr;
 
-    return err;
+    vp->map_page = pp;
 
-error3:
-    buddy_free(&pmm_alct, pte);
+    return err;
 
 error2:
     vm_free(&kvm_alct, vp);
 
 error1:
-    buddy_free(&pmm_alct, pp);
+    pm_free(&pm_alct, pp);
 
 error0:
     return err;
 }
 
-// int page_alloc(addr_t *addr)
-// {
-//     int err = E_OK;
-
-//     struct page_t *pp;
-
-//     err = buddy_alloc(&pmm_alct, 1, &pp);
-
-//     if (err == E_OK)
-//     {
-//         *addr = pp->addr;
-//     }
-
-//     return err;
-// }
-
 int kmalloc(addr_t *addr, size_t size)
 {
     int err = E_OK;
 
-    if (addr == NULL || size == 0)
+    if (size == 0) return E_INVAL;
+
+    if (size <= CONFIG_SZ_SLAB_ALLOC_MAX)
     {
-        return E_INVAL;
+        err = slab_alloc(&slab_alct, addr, size);
     }
-    
-    err = kmalloc_page(addr, ROUND_UP(size, PAGE_SIZE));
+    else
+    {
+        err = kmalloc_page(addr, ROUND_UP(size, PAGE_SIZE));
+    }
 
     return err;
 }
@@ -242,7 +147,50 @@ int kmfree(addr_t addr)
 {
     int err = E_OK;
 
-    
+    if (ROUND_DOWN(addr, PAGE_SIZE) == addr)
+    {
+        struct vpage_t *vp;
+
+        err = vm_search_addr(&kvm_alct, addr, &vp);
+
+        if (err != E_OK) return err;
+
+        err = pm_free(&pm_alct, vp->map_page);
+
+        if (err != E_OK) return err;
+
+        err = vm_free(&kvm_alct, vp);
+    }
+    else
+    {
+        err = slab_free(&slab_alct, addr);
+    }
+
+    return err;
+}
+
+int page_alloc(struct page_t **page)
+{
+    return pm_alloc(&pm_alct, 1, page);
+}
+
+int page_free(struct page_t *page)
+{
+    return pm_free(&pm_alct, page);
+}
+
+int page_get(struct page_t *page)
+{
+    atomic_add(&page->cnt, 1);
+
+    return E_OK;
+}
+
+int page_put(struct page_t *page)
+{
+    int err = E_OK;
+
+    if (atomic_sub_and_test(&page->cnt, 1)) err = page_free(page);
 
     return err;
 }

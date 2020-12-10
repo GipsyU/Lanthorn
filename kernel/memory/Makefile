@@ -1,1 +1,1 @@
-obj-y := memory.o buddy.o vm.o
+obj-y := memory.o pm.o vm.o slab.o

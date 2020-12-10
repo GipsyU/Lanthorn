@@ -24,3 +24,7 @@ config NR_KVMM_BUDDY_SLOT_PG
 config SZ_PROC_NAME
 	int 
 	default 10
+
+config SZ_SLAB_ALLOC_MAX
+	int
+	default 256

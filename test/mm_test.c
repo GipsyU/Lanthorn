@@ -2,7 +2,7 @@
 #include <log.h>
 #include <error.h>
 
-int mm_test(void)
+static void test1(void)
 {
     int err = E_OK;
 
@@ -15,7 +15,25 @@ int mm_test(void)
         err = kmalloc(&addr, PAGE_SIZE);
 
         debug("%s %p\n", strerror(err), addr);
+
+        int *x = addr;
+
+        *x = 1;
+        
+        err = kmfree(addr);
+
+        debug("%s\n", strerror(err));
+
+        *x = 1;
     }
 
+}
+
+int mm_test(void)
+{
+    int err = E_OK;
+
+    test1();
+    
     return err;
 }

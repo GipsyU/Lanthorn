@@ -10,7 +10,7 @@
 
 #include <arch/basic.h>
 
-int mmu_kern_map(addr_t pp, addr_t vp, addr_t pte);
+int mmu_kern_map(addr_t pp, addr_t vp);
 
 int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte);
 

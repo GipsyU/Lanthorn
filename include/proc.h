@@ -2,23 +2,17 @@
 #define _PROC_H_
 #include <arch/basic.h>
 #include <rbt.h>
+#include <memory.h>
 struct proc_t
 {
     uint pid;
-
     char name[CONFIG_SZ_PROC_NAME];
-
     uint flag;
-
     uint state;
-
     addr_t pde;
-
+    struct vpage_alct_t alct;
     struct rbt_node_t pid_rbn;
-
     struct rbt_t pg_rbt;
-
-    
 };
 
 static struct proc_t p0;

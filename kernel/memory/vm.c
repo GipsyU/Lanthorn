@@ -152,33 +152,36 @@ static int vm_insert_alloced(struct vpage_alct_t *alct, struct vpage_t *vp)
     return err;
 }
 
-// static int rbt_search_addr(struct rbt_t *rbt, addr_t addr, struct vpage_t **res)
-// {
-//     int err = E_OK;
+int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
+{
+    int err = E_OK;
 
-//     struct rbt_node_t *n = rbt->root;
+    struct rbt_node_t *n = alct->alloced_rbt.root;
 
-//     struct vpage_t *vpage;
+    struct vpage_t *vpage;
 
-//     while (n)
-//     {
-//         vpage = container_of(n, struct vpage_t, rbt_node);
+    while (n)
+    {
+        vpage = container_of(n, struct vpage_t, rbt_node);
 
-//         if (addr < vpage->addr)
-//         {
-//             n = n->l;
-//         }
-//         else if (addr > vpage->addr)
-//         {
-//             n = n->r;
-//         }
-//         else
-//         {
-//             return E_OK;
-//         }
-//     }
-//     return E_NOTFOUND;
-// }
+        if (addr < vpage->addr)
+        {
+            n = n->l;
+        }
+        else if (addr > vpage->addr)
+        {
+            n = n->r;
+        }
+        else
+        {
+            *res = vpage;
+            
+            return E_OK;
+        }
+    }
+    
+    return E_NOTFOUND;
+}
 
 static int rbt_search_size(struct rbt_t *rbt, size_t size, struct vpage_t **res)
 {

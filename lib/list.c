@@ -13,11 +13,6 @@ void list_init(struct list_node_t *head)
     head->p = head;    
 }
 
-addr_t list_data(struct list_node_t *node)
-{
-    return ((addr_t)node) + sizeof(struct list_node_t);
-}
-
 int list_isempty(struct list_node_t *head)
 {
     /**

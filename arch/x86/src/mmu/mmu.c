@@ -113,21 +113,15 @@ int mmu_init(addr_t *pde)
     return err;
 }
 
-int mmu_kern_map(addr_t pp, addr_t vp, addr_t pte)
+int mmu_kern_map(addr_t pp, addr_t vp)
 {
     int err = E_OK;
 
-    debug("mmu map %p to %p.\n", pp, vp);
+    info("mmu kern map %p to %p.\n", pp, vp);
 
-    if (pp % PAGE_SIZE != 0 || vp % PAGE_SIZE != 0)
-    {
-        return E_INVAL;
-    }
+    if (pp % PAGE_SIZE != 0 || vp % PAGE_SIZE != 0) return E_INVAL;
 
-    // if (vp < KERN_BASE)
-    // {
-    //     return E_INVAL;
-    // }
+    if (vp < KERN_BASE) return E_INVAL;
 
     if (vp >= KERN_BASE && vp < KERN_BASE + CONFIG_NR_BOOT_PTE * NR_PXE * PAGE_SIZE)
     {
@@ -135,40 +129,79 @@ int mmu_kern_map(addr_t pp, addr_t vp, addr_t pte)
 
         PTE[PDE_IDX(vp - KERN_BASE)][PTE_IDX(vp)] = pp | PXE_P | PXE_W;
 
+        /**
+         * FIXME: FLUSH
+         */
+
         mmu_pde_switch((addr_t)PDE - KERN_BASE);
 
         return E_OK;
     }
 
-    addr_t _pte;
+    addr_t pte;
 
     if ((PDE[PDE_IDX(vp)] & PXE_P) == 0)
     {
-        if (pte == NULL)
-        {
-            return E_AGAIN;
-        }
+        struct page_t *ptep;
 
-        PDE[PDE_IDX(vp)] = pte | PXE_P | PXE_W;
+        err = page_alloc(&ptep);
 
-        _pte = pte;
+        if (err != E_OK) return err;
+
+        page_get(ptep);
+
+        PDE[PDE_IDX(vp)] = ptep->addr | PXE_P | PXE_W;
+
+        pte = ptep->addr;
     }
     else
     {
-        /*
-         * FIXME
-         */
-        _pte = PDE[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
+        pte = PDE[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
     }
 
-    mmu_kern_map(_pte, (addr_t)TMP, 0);
+    mmu_kern_map(pte, (addr_t)TMP);
 
     TMP[PTE_IDX(vp)] = pp | PXE_P | PXE_W;
 
+    /**
+     * FIXME: FLAUSH
+     */
     mmu_pde_switch((addr_t)PDE - KERN_BASE);
 
     return err;
 }
+
+// int mmu_kern_unmap(addr_t vp)
+// {
+//     int err = E_OK;
+
+//     debug("mmu kern unmap %p.\n", vp);
+
+//     if (vp < KERN_BASE) return E_INVAL;
+
+//     if (vp >= KERN_BASE && vp < KERN_BASE + CONFIG_NR_BOOT_PTE * NR_PXE * PAGE_SIZE)
+//     {
+//         assert(vp == (addr_t)TMP, "mmu bug.\n");
+
+//         PTE[PDE_IDX(vp - KERN_BASE)][PTE_IDX(vp)] = pp | PXE_P | PXE_W;
+
+//         mmu_pde_switch((addr_t)PDE - KERN_BASE);
+
+//         return E_OK;
+//     }
+
+//     assert(PDE[PDE_IDX(vp)] & PXE_P) != 0, "mmu bug!\n");
+        
+//     addr_t pte = PDE[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
+
+//     mmu_kern_map(_pte, (addr_t)TMP, 0);
+
+//     TMP[PTE_IDX(vp)] = pp | PXE_P | PXE_W;
+
+//     mmu_pde_switch((addr_t)PDE - KERN_BASE);
+
+//     return err;
+// }
 
 int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte)
 {
@@ -184,7 +217,7 @@ int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte)
         return E_INVAL;
     }
 
-    mmu_kern_map(pde, (addr_t)TMP, NULL);
+    mmu_kern_map(pde, (addr_t)TMP);
 
     addr_t _pte;
 
@@ -207,7 +240,7 @@ int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte)
         _pte = TMP[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
     }
 
-    mmu_kern_map(_pte, (addr_t)TMP, NULL);
+    mmu_kern_map(_pte, (addr_t)TMP);
 
     TMP[PTE_IDX(vp)] = pp | PXE_P | PXE_W;
 
@@ -218,7 +251,7 @@ int mmu_pde_init(addr_t pde)
 {
     int err = E_OK;
 
-    err = mmu_kern_map(pde, (addr_t)TMP, NULL);
+    err = mmu_kern_map(pde, (addr_t)TMP);
 
     if (err != E_OK)
     {
@@ -244,7 +277,7 @@ int mmu_v2p(addr_t pde, addr_t v, addr_t *p)
 {
     int err = E_OK;
 
-    err = mmu_kern_map(pde, (addr_t)TMP, NULL);
+    err = mmu_kern_map(pde, (addr_t)TMP);
 
     if (err != E_OK)
     {
@@ -258,7 +291,7 @@ int mmu_v2p(addr_t pde, addr_t v, addr_t *p)
 
     addr_t pte = TMP[PDE_IDX(v)] & (~PXE_ATTR_MASK);
 
-    err = mmu_kern_map(pte, (addr_t)TMP, pde);
+    err = mmu_kern_map(pte, (addr_t)TMP);
 
     if (err != E_OK)
     {
