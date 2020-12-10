@@ -140,6 +140,8 @@ int kmalloc(addr_t *addr, size_t size)
         err = kmalloc_page(addr, ROUND_UP(size, PAGE_SIZE));
     }
 
+    info("kmalloc success: addr = %p, size = %p.\n", *addr, size);
+
     return err;
 }
 

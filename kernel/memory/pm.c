@@ -61,10 +61,6 @@ static int divide_page(struct page_t *f, struct page_t *l, struct page_t *r)
 {
     int err = E_OK;
 
-    /**
-     * AL?REAL
-     */
-
     if (f->buddy.state != BUD_ALLOCED || f->buddy.order == 0) return E_INVAL;
 
     l->addr = f->addr;

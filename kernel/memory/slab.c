@@ -20,7 +20,7 @@ int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size)
 
         if (err != E_OK) return err;
 
-        alct->free = _addr + sizeof(uint);
+        alct->freep = _addr + sizeof(uint);
 
         uint *cnt = _addr;
 
@@ -48,7 +48,7 @@ int slab_free(struct slab_alct_t *alct, addr_t addr)
 
     if (*cnt == 0)
     {
-        if (ROUND_DOWN(alct->freep, PAGE_SIZE) == cnt) alct->free = NULL;
+        if (ROUND_DOWN(alct->freep, PAGE_SIZE) == cnt) alct->freep = NULL;
         
         err = (alct->free)((addr_t)cnt);
     }
