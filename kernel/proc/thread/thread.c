@@ -9,8 +9,6 @@
 
 static struct list_node_t runnable;
 
-static u8 fm[12 * PAGE_SIZE];
-
 static void pre(void)
 {
     info("thread begin\n");
@@ -24,7 +22,7 @@ static void suf(void)
         ;
 }
 
-int thread_new(struct thread_t **thread, addr_t run)
+int thread_kern_new(struct thread_t **thread, addr_t exe)
 {
     int err = E_OK;
 
@@ -38,12 +36,12 @@ int thread_new(struct thread_t **thread, addr_t run)
 
     if (err != E_OK)
     {
-        kmfree((addr_t)*thread);
+        kmfree(*thread);
 
         return err;
     }
 
-    task_init(&(*thread)->task, stack, PAGE_SIZE, (addr_t)pre, run, (addr_t)suf);
+    task_init(&(*thread)->task, stack, PAGE_SIZE, pre, exe, suf);
 
     (*thread)->state = RUNNABEL;
 

@@ -81,15 +81,15 @@ int thread_test(void)
 
     struct thread_t *t1, *t2, *t3, *t4, *t5;
 
-    thread_new(&t1, P1);
+    thread_kern_new(&t1, P1);
 
-    thread_new(&t2, P2);
+    thread_kern_new(&t2, P2);
 
-    // thread_new(&t3, P3);
+    // thread_kern_new(&t3, P3);
     
-    // thread_new(&t4, P4);
+    // thread_kern_new(&t4, P4);
     
-    // thread_new(&t5, P5);
+    // thread_kern_new(&t5, P5);
 
     thread_schd();
 

@@ -35,6 +35,8 @@ int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size)
 
     alct->freep += size;
 
+    info("alloc mm from slab, addr = %p, size = %p.\n", *addr, size);
+
     return err;
 }
 
@@ -52,6 +54,8 @@ int slab_free(struct slab_alct_t *alct, addr_t addr)
         
         err = (alct->free)((addr_t)cnt);
     }
+
+    info("free mm to slab, addr = %p.\n", addr);
 
     return err;
 }

@@ -193,7 +193,8 @@ KBUILD_CFLAGS := -static -nostdinc\
 				 -fno-builtin \
 				 -Werror-implicit-function-declaration
 
-KBUILD_CFLAGS += $(call cc-disable-warning, main) $(call cc-disable-warning,discarded-qualifiers)
+KBUILD_CFLAGS += $(call cc-disable-warning, main) $(call cc-disable-warning,discarded-qualifiers) \
+				$(call cc-disable-warning, int-conversion)
 
 # require functions to have arguments in prototypes, not empty 'int foo()'
 KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
