@@ -91,10 +91,10 @@ __build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
 # Linus' kernel sanity checking tool
 ifneq ($(KBUILD_CHECKSRC),0)
   ifeq ($(KBUILD_CHECKSRC),2)
-    quiet_cmd_force_checksrc = CHECK   $<
+    quiet_cmd_force_checksrc = CHECK	$<
           cmd_force_checksrc = $(CHECK) $(CHECKFLAGS) $(c_flags) $< ;
   else
-      quiet_cmd_checksrc     = CHECK   $<
+      quiet_cmd_checksrc     = CHECK	$<
             cmd_checksrc     = $(CHECK) $(CHECKFLAGS) $(c_flags) $< ;
   endif
 endif

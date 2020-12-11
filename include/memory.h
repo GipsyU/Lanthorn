@@ -12,6 +12,7 @@ struct page_t
     addr_t addr;
     size_t size;
     struct atomic_t cnt;
+    struct rbt_node_t rbt_node;
     struct buddy_t
     {
         size_t order;

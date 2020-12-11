@@ -1,7 +1,7 @@
 #include <arch/basic.h>
 #include <arch/mmu.h>
-#include <log.h>
 #include <error.h>
+#include <log.h>
 #include <memory.h>
 #include <proc.h>
 #include <string.h>
@@ -19,11 +19,9 @@
 
 #define DEV_BASE 0xFE000000
 
-__attribute__((__aligned__(PAGE_SIZE))) pde_t volatile PDE[NR_PXE] =
-    {
-        [0] = (0) | PXE_P | PXE_W | PDE_PS,
+__attribute__((__aligned__(PAGE_SIZE))) pde_t volatile PDE[NR_PXE] = {[0] = (0) | PXE_P | PXE_W | PDE_PS,
 
-        [KERN_BASE >> 22] = (0) | PXE_P | PXE_W | PDE_PS};
+                                                                      [KERN_BASE >> 22] = (0) | PXE_P | PXE_W | PDE_PS};
 
 __attribute__((__aligned__(PAGE_SIZE))) pte_t volatile PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
@@ -35,9 +33,7 @@ __attribute__((__aligned__(PAGE_SIZE))) pxe_t volatile TMP[NR_PXE]; // virtual m
 
 int mmu_pde_switch(addr_t pde)
 {
-    asm volatile("mov %0, %%cr3"
-                 :
-                 : "r"(pde));
+    asm volatile("mov %0, %%cr3" : : "r"(pde));
 
     return E_OK;
 }
@@ -191,7 +187,7 @@ int mmu_kern_map(addr_t pp, addr_t vp)
 //     }
 
 //     assert(PDE[PDE_IDX(vp)] & PXE_P) != 0, "mmu bug!\n");
-        
+
 //     addr_t pte = PDE[PDE_IDX(vp)] & (~PXE_ATTR_MASK);
 
 //     mmu_kern_map(_pte, (addr_t)TMP, 0);

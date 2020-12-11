@@ -174,7 +174,6 @@ PYTHON		= python
 CHECK		= sparse
 
 CHECKFLAGS := -Wbitwise -Wno-return-void $(CF)
-NOSTDINC_FLAGS  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 
@@ -214,7 +213,7 @@ export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK PERL PYTHON
 export HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
 
-export KBUILD_CPPFLAGS NOSTDINC_FLAGS LANTHORNINCLUDE OBJCOPYFLAGS LDFLAGS
+export KBUILD_CPPFLAGS LANTHORNINCLUDE OBJCOPYFLAGS LDFLAGS
 export KBUILD_CFLAGS CFLAGS_KERNEL
 export KBUILD_AFLAGS AFLAGS_KERNEL
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
@@ -373,12 +372,6 @@ ifdef CONFIG_DEBUG_INFO
 	KBUILD_AFLAGS	+= -Wa,-gdwarf-2
 endif
 
-# arch Makefile may override CC so keep this after arch Makefile is included
-NOSTDINC_FLAGS += -nostdinc
-CHECKFLAGS     += $(NOSTDINC_FLAGS)
-
-
-
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
 
@@ -397,11 +390,15 @@ vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ \
-      --start-group $(vmlanthorn-all) --end-group
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) usr/usr.elf --end-group
 
-vmlanthorn: $(vmlanthorn-all) FORCE
+vmlanthorn: $(vmlanthorn-all) usr FORCE
 	+$(call if_changed,vmlanthorn)
+
+PHONY += usr
+ 
+usr:
+	$(Q)$(MAKE) $(build)=usr all
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in

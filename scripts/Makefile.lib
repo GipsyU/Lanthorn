@@ -91,13 +91,13 @@ __a_flags	=                          $(call flags,_a_flags)
 __cpp_flags     =                          $(call flags,_cpp_flags)
 endif
 
-c_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(LANTHORNINCLUDE)     \
+c_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
 		 $(__c_flags) $(modkern_cflags)
 
-a_flags        = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(LANTHORNINCLUDE)     \
+a_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
 		 $(__a_flags) $(modkern_aflags)
 
-cpp_flags      = -Wp,-MD,$(depfile) $(NOSTDINC_FLAGS) $(LANTHORNINCLUDE)     \
+cpp_flags      = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
 		 $(__cpp_flags)
 
 ld_flags       = $(LDFLAGS) $(ldflags-y)
