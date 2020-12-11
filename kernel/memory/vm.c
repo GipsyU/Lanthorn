@@ -84,7 +84,7 @@ static int vm_delete_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 
     rbt_delete_update_end(deepset, update);
 
-    err = slot_free(&alct->slot_alct, vp);
+    err = slot_free(&alct->slot_alct, (addr_t)vp);
 
     return err;
 }

@@ -21,15 +21,15 @@ int task_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t pre, addr_
 
     task->sp = saddr + ssize;
 
-    addr_t *_sp = (task->sp -= sizeof(suf));
+    addr_t *_sp = (void *)(task->sp -= sizeof(suf));
 
     *_sp = suf;
 
-    _sp = (task->sp -= sizeof(run));
+    _sp = (void *)(task->sp -= sizeof(run));
 
     *_sp = run;
 
-    struct context_t *context = (task->sp -= sizeof(struct context_t));
+    struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
 
     context->eip = pre;
 
@@ -51,11 +51,11 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
     task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss);
 
-    addr_t *_sp = (task->sp -= sizeof(addr_t));
+    addr_t *_sp = (void *)(task->sp -= sizeof(addr_t));
 
-    *_sp = intr_ret;
+    *_sp = (addr_t)intr_ret;
 
-    struct context_t *context = (task->sp -= sizeof(struct context_t));
+    struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
 
     context->eip = pre;
 

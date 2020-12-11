@@ -237,7 +237,7 @@ int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page)
 
     for (int i = CONFIG_NR_BUDDY_ORDER - 1; i >= 0; --i)
     {
-        if (size / PAGE_SIZE <= (1 << i)) order = i;
+        if (size / PAGE_SIZE <= ((uint)1 << i)) order = i;
         
         else break;
     }

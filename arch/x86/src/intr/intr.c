@@ -84,7 +84,7 @@ static void set_gate(struct gate_t *gate, int istrap, u32 sel, u32 off, u32 dpl)
     gate->off_31_16 = off >> 16;
 }
 
-static int inline lidt(addr_t addr, size_t size)
+static int lidt(addr_t addr, size_t size)
 {
     volatile u16 pd[3];
 
@@ -156,7 +156,7 @@ int intr_init(void)
 
     set_gate(&idt[128], 1, SEL_KCODE, intrx[128], 0);
 
-    lidt(idt, sizeof(idt));
+    lidt((addr_t)idt, sizeof(idt));
 
     for (int i = 0; i < NR_INTR; ++i)
     {
@@ -179,7 +179,7 @@ void intr_end(void)
 
 addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 {
-    struct intr_regs_t *regs = (ksp - sizeof(struct intr_regs_t));
+    struct intr_regs_t *regs = (void *)(ksp - sizeof(struct intr_regs_t));
     
     regs->cs = SEL_UCODE;
     

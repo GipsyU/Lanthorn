@@ -65,7 +65,7 @@ int gdt_init(struct seg_t *gdt, struct tss_t *tss)
 {
     int err = E_OK;
 
-    memset(&gdt[0], 0, sizeof(struct seg_t));
+    memset((addr_t)gdt, 0, sizeof(struct seg_t));
 
     set_seg(&gdt[SEL_KCODE >> 3], STA_X | STA_R, 0, 0xffffffff, DPL_KERN);
 
@@ -75,7 +75,7 @@ int gdt_init(struct seg_t *gdt, struct tss_t *tss)
 
     set_seg(&gdt[SEL_UDATA >> 3], STA_W, 0, 0xffffffff, DPL_USER);
 
-    set_tss(&gdt[SEL_TSS >> 3], 0x9, tss, sizeof(struct tss_t) - 1, DPL_KERN);
+    set_tss(&gdt[SEL_TSS >> 3], 0x9, (u32)tss, sizeof(struct tss_t) - 1, DPL_KERN);
 
     lgdt(gdt, CONFIG_NR_SEG * sizeof(struct seg_t));
 

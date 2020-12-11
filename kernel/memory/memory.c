@@ -70,7 +70,7 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     if (err != E_OK) return err;
 
-    slot_insert(&kvm_alct.slot_alct, kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+    slot_insert(&kvm_alct.slot_alct, (addr_t)kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
     err = vm_insert(&kvm_alct, start, size);
 

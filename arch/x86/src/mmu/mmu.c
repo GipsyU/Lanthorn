@@ -42,7 +42,7 @@ static int enable_4k_page(void)
 {
     for (int i = 0; i < CONFIG_NR_BOOT_PTE; ++i)
     {
-        for (int j = 0; j < NR_PXE; ++j)
+        for (uint j = 0; j < NR_PXE; ++j)
         {
             PTE[i][j] = (PAGE_SIZE * NR_PXE * i + PAGE_SIZE * j) | PXE_P | PXE_W;
         }
@@ -104,7 +104,7 @@ int mmu_init(addr_t *pde)
         return err;
     }
 
-    *pde = PDE;
+    *pde = (addr_t)PDE;
 
     return err;
 }
@@ -254,7 +254,7 @@ int mmu_pde_init(addr_t pde)
         return err;
     }
 
-    memset(TMP, 0, PAGE_SIZE);
+    memset((addr_t)TMP, 0, PAGE_SIZE);
 
     for (int i = 0; i < CONFIG_NR_BOOT_PTE; ++i)
     {

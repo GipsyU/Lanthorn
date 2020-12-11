@@ -184,7 +184,7 @@ LANTHORNINCLUDE := -I$(srctree)/arch/$(SRCARCH)/include \
 KBUILD_CPPFLAGS := 
 
 KBUILD_CFLAGS := -static -nostdinc\
-				 -Wall -Wundef \
+				 -W -Wundef \
 				 -fno-stack-protector \
 				 -Wstrict-prototypes \
 				 -fno-strict-aliasing -fno-common \
@@ -193,7 +193,7 @@ KBUILD_CFLAGS := -static -nostdinc\
 				 -fno-builtin \
 				 -Werror-implicit-function-declaration
 
-KBUILD_CFLAGS += $(call cc-disable-warning, main)
+KBUILD_CFLAGS += $(call cc-disable-warning, main) $(call cc-disable-warning,discarded-qualifiers)
 
 # require functions to have arguments in prototypes, not empty 'int foo()'
 KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)

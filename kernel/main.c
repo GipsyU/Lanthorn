@@ -42,4 +42,6 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     info("Lanthorn kernel init finished.\n");
 
     sysctrl_shutdown();
+
+    while(1);
 }

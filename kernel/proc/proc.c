@@ -28,7 +28,7 @@ static int p0_init(addr_t pde)
 
     p0.pid = 0;
 
-    memcpy(p0.name, "kern", 4);
+    memcpy((addr_t)p0.name, (addr_t)"kern", 4);
 
     return err;
 }
@@ -105,14 +105,14 @@ int proc_user_init(struct proc_t **proc)
         return err;
     }
 
-    err = mmu_user_map((*proc)->pde, initp, 0, pte);
+    err = mmu_user_map((*proc)->pde, initp, 0, 0);
 
     if (err != E_OK)
     {
         return err;
     }
 
-    memcpy(init, init_start, PAGE_SIZE);
+    memcpy(init, (addr_t)init_start, PAGE_SIZE);
 
     return err;
 }

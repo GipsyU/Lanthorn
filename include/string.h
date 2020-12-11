@@ -2,9 +2,9 @@
 #define _STRING_H_
 #include <arch/basic.h>
 
-void *memset(const void *s, char c, size_t size);
+void memset(const addr_t s, char c, size_t size);
 
-void *memcpy(void *dst, const void *src, size_t size);
+void memcpy(addr_t dst, const addr_t src, size_t size);
 
 int memcmp(const u8 *s1, const u8 *s2, size_t len);
 

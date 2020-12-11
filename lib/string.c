@@ -1,34 +1,30 @@
 #include <string.h>
 
-void *memset(const void *s, char c, size_t size)
+void memset(const addr_t s, char c, size_t size)
 {
-    char *sc = s;
+    char *sc = (void *)s;
     
     while (size--)
     {
         *sc++ = c;
     }
-    
-    return s;
 }
 
-void *memcpy(void *dst, const void *src, size_t size)
+void memcpy(addr_t dst, const addr_t src, size_t size)
 {
-    char *dstc = dst;
+    char *dstc = (void *)dst;
     
-    const char *srcc = src;
+    const char *srcc = (void *)src;
     
     while (size--)
     {
         *dstc++ = *srcc++;
     }
-
-    return dst;
 }
 
 int memcmp(const u8 *s1, const u8 *s2, size_t len)
 {
-    for (int i = 0; i < len; ++i)
+    for (uint i = 0; i < len; ++i)
     {
         if (s1[i] > s2[i])
         {

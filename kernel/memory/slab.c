@@ -5,7 +5,7 @@
 
 static inline uint *get_cnt(addr_t addr)
 {
-    return (int *)ROUND_DOWN(addr, PAGE_SIZE);
+    return (uint *)ROUND_DOWN(addr, PAGE_SIZE);
 }
 
 int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size)
@@ -22,7 +22,7 @@ int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size)
 
         alct->freep = _addr + sizeof(uint);
 
-        uint *cnt = _addr;
+        uint *cnt = (void *)_addr;
 
         *cnt = 0;
     }
@@ -48,7 +48,7 @@ int slab_free(struct slab_alct_t *alct, addr_t addr)
 
     if (*cnt == 0)
     {
-        if (ROUND_DOWN(alct->freep, PAGE_SIZE) == cnt) alct->freep = NULL;
+        if (ROUND_DOWN(alct->freep, PAGE_SIZE) == (addr_t)cnt) alct->freep = NULL;
         
         err = (alct->free)((addr_t)cnt);
     }

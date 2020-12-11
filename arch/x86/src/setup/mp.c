@@ -68,7 +68,7 @@ static u8 sum(u8 *addr, size_t len)
 {
     u8 sum = 0;
 
-    for (int i = 0; i < len; i++)
+    for (uint i = 0; i < len; i++)
     {
         sum += addr[i];
     }
@@ -191,7 +191,7 @@ int mp_init(int *num_cpu)
 
         if (type == MPPROC)
         {
-            struct mpproc *mppproc = addr;
+            struct mpproc *mppproc = (void *)addr;
 
             struct cpu_t *cpu;
 
