@@ -1,8 +1,8 @@
 #ifndef _ARCH_INTR_H_
-
 #define _ARCH_INTR_H_
+#include <arch/basic.h>
 
-int intr_register(int intrno, int (*hdl)(void));
+int intr_register(int intrno, int (*hdl)(uint));
 
 int intr_unregister(int intrno);
 

@@ -89,17 +89,11 @@ int mmu_init(addr_t *pde)
 
     err = disable_low_map();
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    if (err != E_OK) return err;
 
     err = map_dev();
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    if (err != E_OK) return err;
 
     *pde = (addr_t)PDE;
 

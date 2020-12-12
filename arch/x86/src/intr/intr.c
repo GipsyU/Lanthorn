@@ -59,7 +59,7 @@ struct intr_regs_t
 
 struct gate_t idt[NR_INTR];
 
-static int (*intr_table[NR_INTR])(void);
+static int (*intr_table[NR_INTR])(uint);
 
 static int islog[NR_INTR];
 
@@ -108,11 +108,11 @@ void intr_hdl(struct intr_regs_t *regs)
         info("intrno: %d\n", regs->intrno);
     }
 
-    int (*handler)(void) = intr_table[regs->intrno];
+    int (*handler)(uint) = intr_table[regs->intrno];
 
     if (handler != NULL)
     {
-        handler();
+        handler(regs->err);
     }
 
     if (regs->intrno == 14 || regs->intrno == 13)
@@ -127,7 +127,7 @@ void intr_hdl(struct intr_regs_t *regs)
     return;
 }
 
-int intr_register(int intrno, int (*hdl)(void))
+int intr_register(int intrno, int (*hdl)(uint errno))
 {
     int err = E_OK;
 

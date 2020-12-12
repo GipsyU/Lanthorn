@@ -112,7 +112,7 @@ int thread_free(struct thread_t *thread)
 //     return err;
 // }
 
-static int thread_intr(void)
+static int thread_intr(uint errno)
 {
     uint cpuid = cpu_id();
 
