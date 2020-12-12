@@ -20,10 +20,4 @@ typedef long unsigned int pxe_t;
 
 #define KERN_BASE   0xC0000000
 
-#define NR_INTR 256
-
-#define INTR_TIMER 32
-
-#define INTR_KBD 33
-
 #endif

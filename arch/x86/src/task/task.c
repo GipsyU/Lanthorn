@@ -1,7 +1,5 @@
 #include <arch/task.h>
-
 #include <error.h>
-
 struct context_t
 {
     u32 edi;

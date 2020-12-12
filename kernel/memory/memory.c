@@ -1,3 +1,4 @@
+#include <arch/intr.h>
 #include <arch/mmu.h>
 #include <boot_arg.h>
 #include <error.h>
@@ -40,6 +41,23 @@ extern int slab_free(struct slab_alct_t *alct, addr_t addr);
 
 extern int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*free)(addr_t));
 
+static int page_fault_hdl(uint errno)
+{
+    addr_t errv = mmu_err_addr();
+    
+    if ((errno & PF_P) == 0)
+    {
+        info("page fault: present, addr = %p.\n", errv);
+    
+        if (errv >= KERN_BASE)
+        {
+            mmu_sync_kern_space(mmu_get_pde(), errv);
+        }
+    }
+
+    return E_OK;
+}
+
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
 {
     int err = E_OK;
@@ -57,10 +75,10 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     err = pm_insert(&pm_alct, start, size);
 
     if (err != E_OK) return err;
-    
+
     info("init pmm success.\n")
 
-    info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
+        info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
 
     start = ROUND_UP(free_kvm_start, PAGE_SIZE);
 
@@ -75,7 +93,7 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     err = vm_insert(&kvm_alct, start, size);
 
     if (err != E_OK) return err;
-    
+
     info("init kvm success.\n");
 
     err = slab_init(&slab_alct, kmalloc, kmfree);
@@ -83,6 +101,8 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     if (err != E_OK) return err;
 
     info("init slab success.\n");
+
+    err = intr_register(INTR_PGFAULT, page_fault_hdl);
 
     return err;
 }
@@ -105,9 +125,12 @@ static int kmalloc_page(addr_t *addr, size_t size)
 
     if (err != E_OK) goto error1;
 
-    err = mmu_kern_map(pp->addr, vp->addr);
-
-    if (err != E_OK) goto error2;
+    for (size_t s = 0; s < size; s += PAGE_SIZE)
+    {
+        err = mmu_kern_map(pp->addr + s, vp->addr + s);
+        
+        if (err != E_OK) goto error2;
+    }
 
     *addr = vp->addr;
 

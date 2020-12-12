@@ -2,6 +2,11 @@
 #define _ARCH_INTR_H_
 #include <arch/basic.h>
 
+#define NR_INTR 256
+#define INTR_PGFAULT 14
+#define INTR_TIMER 32
+#define INTR_KBD 33
+
 int intr_register(int intrno, int (*hdl)(uint));
 
 int intr_unregister(int intrno);

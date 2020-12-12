@@ -19,9 +19,10 @@
 
 #define DEV_BASE 0xFE000000
 
-__attribute__((__aligned__(PAGE_SIZE))) addr_t volatile PDE[NR_PXE] = {[0] = (0) | PXE_P | PXE_W | PDE_PS,
+__attribute__((__aligned__(PAGE_SIZE)))
+addr_t volatile PDE[NR_PXE] = {[0] = (0) | PXE_P | PXE_W | PDE_PS,
 
-                                                                      [KERN_BASE >> 22] = (0) | PXE_P | PXE_W | PDE_PS};
+                               [KERN_BASE >> 22] = (0) | PXE_P | PXE_W | PDE_PS};
 
 __attribute__((__aligned__(PAGE_SIZE))) pte_t volatile PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
@@ -31,11 +32,23 @@ __attribute__((__aligned__(PAGE_SIZE))) pxe_t volatile TMP[NR_PXE]; // virtual m
  * FIXME
  */
 
-int mmu_pde_switch(addr_t pde)
+void mmu_pde_switch(addr_t pde)
 {
     asm volatile("mov %0, %%cr3" : : "r"(pde));
+}
 
-    return E_OK;
+void mmu_reflush(addr_t addr)
+{
+    asm volatile("invlpg (%0)" ::"a"(addr));
+}
+
+addr_t mmu_get_pde(void)
+{
+    addr_t pde;
+
+    asm volatile("mov %%cr3, %0" : "=r"(pde));
+
+    return pde;
 }
 
 static int enable_4k_page(void)
@@ -104,7 +117,7 @@ int mmu_kern_map(addr_t pp, addr_t vp)
 {
     int err = E_OK;
 
-    info("mmu kern map %p to %p.\n", pp, vp);
+    // info("mmu kern map %p to %p.\n", pp, vp);
 
     if (pp % PAGE_SIZE != 0 || vp % PAGE_SIZE != 0) return E_INVAL;
 
@@ -116,11 +129,7 @@ int mmu_kern_map(addr_t pp, addr_t vp)
 
         PTE[PDE_IDX(vp - KERN_BASE)][PTE_IDX(vp)] = pp | PXE_P | PXE_W;
 
-        /**
-         * FIXME: FLUSH
-         */
-
-        mmu_pde_switch((addr_t)PDE - KERN_BASE);
+        mmu_reflush(vp);
 
         return E_OK;
     }
@@ -150,10 +159,7 @@ int mmu_kern_map(addr_t pp, addr_t vp)
 
     TMP[PTE_IDX(vp)] = pp | PXE_P | PXE_W;
 
-    /**
-     * FIXME: FLAUSH
-     */
-    mmu_pde_switch((addr_t)PDE - KERN_BASE);
+    mmu_reflush(vp);
 
     return err;
 }
@@ -278,4 +284,13 @@ int mmu_v2p(addr_t pde, addr_t v, addr_t *p)
     *p = TMP[PTE_IDX(v)] & (~PXE_ATTR_MASK);
 
     return err;
+}
+
+addr_t mmu_err_addr(void)
+{
+    addr_t addr;
+
+    asm volatile("movl %%cr2, %0" : "=a"(addr));
+
+    return addr;
 }

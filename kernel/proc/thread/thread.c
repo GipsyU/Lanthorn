@@ -58,7 +58,7 @@ int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
         return err;
     }
 
-    err = mmu_sync_kern_space(proc->pagetb.pde->addr, *thread);
+    err = mmu_sync_kern_space(proc->pagetb.pde->addr, stack);
 
     if (err != E_OK) return err;
 
@@ -146,7 +146,6 @@ int thread_schd(void)
             cpu_set_task(cpuid, &thread->task);
 
             proc_switch(thread->proc);
-            debug("OK\n");
 
             task_switch(cpu_schd(cpuid), &thread->task);
         }
