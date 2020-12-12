@@ -58,14 +58,18 @@ struct slab_alct_t
 
     int (*free)(addr_t);
 };
+struct pagetb_t
+{
+    struct page_t *pde;
+    struct spinlock_t lock;
+    struct rbt_t rbt;
+};
 
 int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size);
 
 int kmalloc(addr_t *addr, size_t size);
 
 int kmfree(addr_t addr);
-
-// int kvmalloc()
 
 int page_alloc(struct page_t **page);
 
@@ -75,4 +79,5 @@ int page_get(struct page_t *page);
 
 int page_put(struct page_t *page);
 
+int pagetb_init(struct pagetb_t *tb);
 #endif

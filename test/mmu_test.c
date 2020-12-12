@@ -2,7 +2,7 @@
 #include <arch/mmu.h>
 #include <memory.h>
 #include <error.h>
-extern pde_t volatile PDE[];
+extern addr_t volatile PDE[];
 int mmu_test(void)
 {
     addr_t pde,low, pte;

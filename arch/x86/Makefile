@@ -6,7 +6,7 @@ LDFLAGS := -m elf_i386
 
 objs-y += arch/x86/src
 
-all: boot vmlanthorn
+all: boot vmlanthorn FORCE
 	$(Q)$(LD) $(LDFLAGS) -T arch/x86/boot/boot.ld arch/x86/boot/built-in.o vmlanthorn -o lanthorn
 
 boot:

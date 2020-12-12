@@ -1,1 +1,1 @@
-obj-y := proc.o thread/ init.o
+obj-y := proc.o thread/

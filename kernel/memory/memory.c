@@ -173,7 +173,11 @@ int kmfree(addr_t addr)
 
 int page_alloc(struct page_t **page)
 {
-    return pm_alloc(&pm_alct, 1, page);
+    int err = pm_alloc(&pm_alct, 1, page);
+
+    if (err != E_OK) return err;
+
+    return page_get(*page);
 }
 
 int page_free(struct page_t *page)
@@ -195,4 +199,13 @@ int page_put(struct page_t *page)
     if (atomic_sub_and_test(&page->cnt, 1)) err = page_free(page);
 
     return err;
+}
+
+int pagetb_init(struct pagetb_t *tb)
+{
+    spin_init(&tb->lock);
+
+    tb->rbt.root = NULL;
+
+    return E_OK;
 }

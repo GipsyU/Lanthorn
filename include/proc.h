@@ -5,24 +5,14 @@
 #include <memory.h>
 struct proc_t
 {
-    uint pid;
-    char name[CONFIG_SZ_PROC_NAME];
-    uint flag;
-    uint state;
-    addr_t pde;
-    struct vpage_alct_t alct;
-    struct rbt_node_t pid_rbn;
-    struct rbt_t pg_rbt;
+    struct pagetb_t pagetb;
+    struct list_node_t thread_ls;
 };
-
-static struct proc_t p0;
 
 int proc_init(addr_t pde);
 
-int proc_fork(void);
+int proc_new(struct proc_t **proc);
 
 int proc_switch(struct proc_t *proc);
-
-int proc_user_init(struct proc_t **proc);
 
 #endif

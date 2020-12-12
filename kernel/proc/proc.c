@@ -4,158 +4,140 @@
 #include <arch/mmu.h>
 #include <string.h>
 #include <log.h>
-extern void init_start(void);
-extern void init_end(void);
-extern char PDE[];
-static int proc_alloc(struct proc_t **proc)
-{
-    int err = E_OK;
+#include <thread.h>
 
-    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
-
-    /**
-     * FIXME:ALLOC PID
-     */
-
-    return err;
-}
+static struct proc_t proc_0;
 
 static int p0_init(addr_t pde)
 {
     int err = E_OK;
 
-    p0.pde = pde;
+    // pagetb_init(&proc_0.pagetb, pde);
 
-    p0.pid = 0;
 
-    memcpy((addr_t)p0.name, (addr_t)"kern", 4);
-
-    return err;
-}
-
-static int p1_init(void)
-{
-    int err = E_OK;
-
-    struct proc_t *proc;
-
-    err = proc_alloc(&proc);
-
-    if (err != E_OK)
-    {
-        return err;
-    }
-
-    
+    // list_init(&proc_0.thraed_ls);
 
     return err;
 }
 
-int proc_user_init(struct proc_t **proc)
-{
-    int err = E_OK;
+// int proc_user_init(struct proc_t **proc)
+// {
+//     int err = E_OK;
 
-    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
+//     err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         return err;
+//     }
 
-    // err = page_alloc(&(*proc)->pde);
+//     // err = page_alloc(&(*proc)->pde);
 
-    if (err != E_OK)
-    {
-        // kfree
-        // kfree
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         // kfree
+//         // kfree
+//         return err;
+//     }
     
 
-    err = mmu_pde_init((*proc)->pde);
+//     err = mmu_pde_init((*proc)->pde);
 
-    if (err != E_OK)
-    {
-        // kfree(proc);
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         // kfree(proc);
+//         return err;
+//     }
 
-    addr_t pte, init;
+//     addr_t pte, init;
 
-    // err = page_alloc(&pte);
+//     // err = page_alloc(&pte);
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         return err;
+//     }
 
-    err = kmalloc(&init, PAGE_SIZE);
+//     err = kmalloc(&init, PAGE_SIZE);
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         return err;
+//     }
     
-    addr_t initp;
+//     addr_t initp;
 
-    err = mmu_v2p((addr_t)PDE - KERN_BASE, init, &initp);
+//     err = mmu_v2p((addr_t)PDE - KERN_BASE, init, &initp);
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         return err;
+//     }
 
-    err = mmu_user_map((*proc)->pde, initp, 0, 0);
+//     err = mmu_user_map((*proc)->pde, initp, 0, 0);
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+//     if (err != E_OK)
+//     {
+//         return err;
+//     }
 
-    memcpy(init, (addr_t)init_start, PAGE_SIZE);
+//     // memcpy(init, (addr_t)init_start, PAGE_SIZE);
 
-    return err;
-}
+//     return err;
+// }
 
 int proc_init(addr_t pde)
 {
-    int err = E_OK;
+    int err = p0_init(pde);
 
-    err = p0_init(pde);
+    if (err != E_OK) return err;
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    err = thread_init();
 
+    if (err != E_OK) return err;
+    
     return err;
 }
 
 int proc_switch(struct proc_t *proc)
 {
-
-    mmu_pde_switch(proc->pde);
+    mmu_pde_switch(proc->pagetb.pde->addr);
 
     return E_OK;
 }
 
-// int proc_fork()
-// {
-
-// }
-
 int proc_new(struct proc_t **proc)
 {
-    int err = E_OK;
+    int err = kmalloc((addr_t *)proc, sizeof (struct proc_t));
 
-    err = kmalloc((addr_t *)*proc, sizeof (struct proc_t));
+    if (err != E_OK) return err;
 
-    if (err != E_OK)
+    err = pagetb_init(&(*proc)->pagetb);
+    
+    if (err != E_OK) return err;
+
+    err = page_alloc(&(*proc)->pagetb.pde);
+
+    if (err != E_OK) return err;
+
+    for (addr_t addr = KERN_BASE; addr != 0; addr += PAGE_SIZE * PAGE_SIZE / sizeof(addr_t))
     {
-        return err;
+        err = mmu_sync_kern_space((*proc)->pagetb.pde->addr, addr);
+
+        if (err != E_OK) return err;
     }
 
-
+    list_init(&(*proc)->thread_ls);
 
     return err;
 }
+
+// int proc_free(struct proc_t *proc)
+// {
+//     int err ;
+
+//     err = kmfree(proc);
+
+
+// }
+

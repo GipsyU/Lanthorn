@@ -177,7 +177,7 @@ CHECKFLAGS := -Wbitwise -Wno-return-void $(CF)
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 
-LANTHORNINCLUDE := -I$(srctree)/arch/$(SRCARCH)/include \
+LANTHORNINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
 				   -include include/generated/autoconf.h \
 				   -Iinclude
 
@@ -353,8 +353,6 @@ $(KCONFIG_CONFIG) include/config/auto.conf.cmd: ;
 # we execute the config step to be sure to catch updated Kconfig files
 include/config/%.conf: $(KCONFIG_CONFIG) include/config/auto.conf.cmd
 	$(Q)$(MAKE) -f $(srctree)/Makefile silentoldconfig
-
-
 else
 # Dummy target needed, because used as prerequisite
 include/config/auto.conf: ;
@@ -391,15 +389,13 @@ vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) usr/usr.elf --end-group
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) --end-group
 
-vmlanthorn: $(vmlanthorn-all) usr FORCE
-	+$(call if_changed,vmlanthorn)
+vmlanthorn:  $(vmlanthorn-all)
+	+$(call cmd,vmlanthorn)
 
-PHONY += usr
- 
-usr:
-	$(Q)$(MAKE) $(build)=usr all
+_usr:
+	$(Q)$(MAKE) $(build)=usr usr/usr.elf
 
 # The actual objects are generated when descending,
 # make sure no implicit rule kicks in
@@ -414,8 +410,6 @@ $(sort $(vmlanthorn-all)): $(vmlanthorn-dirs) ;
 PHONY += $(vmlanthorn-dirs)
 $(vmlanthorn-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
-
-
 
 # Things we need to do before we recursively start building the application
 # are listed in "prepare".

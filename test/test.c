@@ -15,9 +15,7 @@ extern int mm_test(void);
 int test(void)
 {
 
-    extern char _binary_usr_test_elf_start[];
 
-    debug("%p\n", _binary_usr_test_elf_start);
 
     info("begin test.\n");
 
@@ -27,7 +25,7 @@ int test(void)
 
     // mmu_test();
 
-    // proc_test();
+    proc_test();
 
 
 

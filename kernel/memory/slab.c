@@ -2,6 +2,7 @@
 #include <memory.h>
 #include <spinlock.h>
 #include <util.h>
+#include <log.h>
 
 static inline uint *get_cnt(addr_t addr)
 {

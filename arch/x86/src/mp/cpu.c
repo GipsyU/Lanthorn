@@ -13,16 +13,8 @@ static uint ncpu = 0;
 int cpu_new(struct cpu_t **cpu)
 {
     int err = E_OK;
-    
-    if (cpu == NULL)
-    {
-        return E_INVAL;
-    }
 
-    if (ncpu >= CONFIG_NR_CPU_MAX)
-    {
-        return E_NOSLOT;
-    }
+    if (ncpu >= CONFIG_NR_CPU_MAX) return E_NOSLOT;
 
     cpus[ncpu].cpuid = ncpu;
 
@@ -36,16 +28,8 @@ int cpu_new(struct cpu_t **cpu)
 int cpu_get(struct cpu_t **cpu, uint id)
 {
     int err = E_OK;
-
-    if (cpu == NULL)
-    {
-        return E_INVAL;
-    }
     
-    if (id >= ncpu)
-    {
-        return E_NOTFOUND;
-    }
+    if (id >= ncpu) return E_NOTFOUND;
 
     *cpu = &cpus[id];
 

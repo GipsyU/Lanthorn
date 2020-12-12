@@ -22,9 +22,10 @@ struct thread_t
     struct task_t task;
     struct proc_t *proc;
     struct list_node_t schd_ln;
+    struct list_node_t proc_ln;
 };
 
-int thread_kern_new(struct thread_t **thread, addr_t run);
+int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe);
 
 int thread_schd(void);
 

@@ -13,13 +13,13 @@
 #define PDE_MASK ((((u32)-1) >> 22) << 22)
 #define PTE_MASK ((((u32)-1) >> 22) << 12)
 #define PXE_ATTR_MASK (((u32)-1) >> 20)
-#define NR_PXE PAGE_SIZE / sizeof(pde_t)
+#define NR_PXE PAGE_SIZE / sizeof(addr_t)
 #define PDE_IDX(addr) (((addr)&PDE_MASK) >> 22)
 #define PTE_IDX(addr) (((addr)&PTE_MASK) >> 12)
 
 #define DEV_BASE 0xFE000000
 
-__attribute__((__aligned__(PAGE_SIZE))) pde_t volatile PDE[NR_PXE] = {[0] = (0) | PXE_P | PXE_W | PDE_PS,
+__attribute__((__aligned__(PAGE_SIZE))) addr_t volatile PDE[NR_PXE] = {[0] = (0) | PXE_P | PXE_W | PDE_PS,
 
                                                                       [KERN_BASE >> 22] = (0) | PXE_P | PXE_W | PDE_PS};
 
@@ -85,10 +85,7 @@ int mmu_init(addr_t *pde)
 
     err = enable_4k_page();
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    if (err != E_OK) return err;
 
     err = disable_low_map();
 
@@ -243,28 +240,13 @@ int mmu_user_map(addr_t pde, addr_t pp, addr_t vp, addr_t pte)
     return err;
 }
 
-int mmu_pde_init(addr_t pde)
+int mmu_sync_kern_space(addr_t pde, addr_t addr)
 {
-    int err = E_OK;
+    int err = mmu_kern_map(pde, (addr_t)TMP);
 
-    err = mmu_kern_map(pde, (addr_t)TMP);
+    if (err != E_OK) return err;
 
-    if (err != E_OK)
-    {
-        return err;
-    }
-
-    memset((addr_t)TMP, 0, PAGE_SIZE);
-
-    for (int i = 0; i < CONFIG_NR_BOOT_PTE; ++i)
-    {
-        TMP[PDE_IDX(KERN_BASE + PAGE_SIZE * NR_PXE * i)] = PDE[PDE_IDX(KERN_BASE + PAGE_SIZE * NR_PXE * i)];
-    }
-
-    for (addr_t addr = DEV_BASE; addr != 0; addr += NR_PXE * PAGE_SIZE)
-    {
-        TMP[PDE_IDX(addr)] = PDE[PDE_IDX(addr)];
-    }
+    TMP[PDE_IDX(addr)] = PDE[PDE_IDX(addr)];
 
     return err;
 }
