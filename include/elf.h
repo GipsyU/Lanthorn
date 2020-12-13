@@ -35,4 +35,6 @@ struct elfprog_t
 
 int elf_read(struct elf_t *elf, addr_t *entry);
 
+int elf_load(struct elf_t *elf, addr_t addr);
+
 #endif

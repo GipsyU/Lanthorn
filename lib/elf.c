@@ -1,6 +1,7 @@
 #include <elf.h>
 #include <error.h>
 #include <log.h>
+#include <string.h>
 #define ELF_MAGIC 0x464C457F
 
 int elf_read(struct elf_t *elf, addr_t *entry)
@@ -9,9 +10,19 @@ int elf_read(struct elf_t *elf, addr_t *entry)
 
     struct elfprog_t *prog = (void *)((addr_t)elf + elf->phoff);
 
-    for (uint i =0; i < elf->phnum; ++i, ++prog)
+    return E_OK;
+}
+
+int elf_load(struct elf_t *elf, addr_t addr)
+{
+    assert(elf->magic == ELF_MAGIC);
+
+    struct elfprog_t *prog = (void *)((addr_t)elf + elf->phoff);
+
+    for (uint i = 0; i < elf->phnum; ++i, ++prog)
     {
-        debug("%d %d %d\n", prog->filesz, prog->off, prog->memsz);
+        memcpy(addr + prog->paddr, (addr_t)elf + prog->off, prog->filesz);
+        memset(addr + prog->paddr, 0, prog->memsz - prog->filesz);
     }
 
     return E_OK;

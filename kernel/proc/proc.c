@@ -59,8 +59,6 @@ static int p1_init(void)
 
     err = mmu_v2p(proc_1->pagetb.pde->addr, 0, &t);
 
-    showerr;
-
     if (err != E_OK) return err;
 
     addr_t tmp;
@@ -79,9 +77,11 @@ static int p1_init(void)
     
     extern char _binary_usr_init_elf_end[];
 
-    elf_read((void *)_binary_usr_init_elf_start,NULL);
+    err = elf_read((void *)_binary_usr_init_elf_start, NULL);
 
-    memcpy(tmp, _binary_usr_init_elf_start+84, 2);
+    if (err != E_OK) return err;
+
+    elf_load((void *)_binary_usr_init_elf_start, tmp);
 
     return err;
 }
