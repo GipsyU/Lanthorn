@@ -84,7 +84,7 @@ static int vm_delete_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 
     rbt_delete_update_end(deepset, update);
 
-    err = slot_free(&alct->slot_alct, (addr_t)vp);
+    err = alct->mm_ops.free(vp);
 
     return err;
 }
@@ -247,7 +247,7 @@ int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
 
     struct vpage_t *vp;
 
-    err = slot_new(&alct->slot_alct, (addr_t *)&vp);
+    err = alct->mm_ops.alloc((addr_t *)&vp, sizeof(struct vpage_t));
 
     if (err != E_OK) return err;
 
@@ -279,7 +279,7 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
         return err;
     }
 
-    err = slot_new(&alct->slot_alct, (addr_t *)vp);
+    err = alct->mm_ops.alloc((addr_t *)vp, sizeof(struct vpage_t));
 
     if (err != E_OK)
     {
@@ -319,15 +319,20 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
     return err;
 }
 
-int vm_init(struct vpage_alct_t *alct)
+/**
+ * FIXME: func p
+ */
+int vm_init(struct vpage_alct_t *alct, int (*alloc)(addr_t *addr, size_t size), int (*free)(addr_t addr))
 {
-    slot_init(&alct->slot_alct, sizeof(struct vpage_t));
-
     spin_init(&alct->lock);
 
     alct->free_rbt.root = NULL;
 
     alct->alloced_rbt.root = NULL;
+
+    alct->mm_ops.alloc = alloc;
+
+    alct->mm_ops.free = free;
 
     return E_OK;
 }

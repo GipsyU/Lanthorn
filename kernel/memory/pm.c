@@ -10,7 +10,7 @@ static int new_page(struct page_alct_t *alct, struct page_t **page)
 {
     int err = E_OK;
 
-    err = slot_new(&(alct->slot_alct), (addr_t *)page);
+    err = slot_alloc(&(alct->slot_alct), (addr_t *)page);
 
     atomic_set(&(*page)->cnt, 0);
 
@@ -34,15 +34,15 @@ static int free_page(struct page_alct_t *alct, struct page_t *page)
 
 static int merge_page(struct page_alct_t *alct, struct page_t **f, struct page_t *p1, struct page_t *p2)
 {
-    assert (p1->buddy.state == BUD_ALLOCED && p2->buddy.state == BUD_ALLOCED, "bud bug.\n");
+    assert (p1->buddy.state == BUD_ALLOCED && p2->buddy.state == BUD_ALLOCED);
     
-    assert(p1->buddy.b == p2 && p2->buddy.b == p1, "bud bug.\n");
+    assert(p1->buddy.b == p2 && p2->buddy.b == p1);
 
-    assert(p1->buddy.f == p2->buddy.f, "bud bug\n");
+    assert(p1->buddy.f == p2->buddy.f);
 
     *f = p1->buddy.f;
 
-    assert((*f)->buddy.state == BUD_VIRT, "bud bug.\n");
+    assert((*f)->buddy.state == BUD_VIRT);
 
     /**
      * FIXME: should free
@@ -98,7 +98,7 @@ static int buddy_get(struct page_alct_t *alct, uint order, struct page_t **page)
 {
     int err = E_OK;
 
-    assert(order < CONFIG_NR_BUDDY_ORDER, "bud bug.\n");
+    assert(order < CONFIG_NR_BUDDY_ORDER);
 
     if (list_isempty(&alct->head[order])) return E_NOMEM;
 
@@ -126,7 +126,7 @@ static int buddy_put(struct page_alct_t *alct, struct page_t *page)
 {
     if (page->buddy.order >= CONFIG_NR_BUDDY_ORDER) return E_INVAL;
 
-    assert(page->buddy.state == BUD_ALLOCED, "bud bug\n.");
+    assert(page->buddy.state == BUD_ALLOCED);
 
     info("put memory into buddy sys, addr:%p, order:%d.\n", page->addr, page->buddy.order);
 
@@ -189,7 +189,7 @@ int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size)
 {
     int err = E_OK;
 
-    assert(size % PAGE_SIZE == 0 && size > 0 && addr %PAGE_SIZE == 0, "bud bug.\n");
+    assert(size % PAGE_SIZE == 0 && size > 0 && addr %PAGE_SIZE == 0);
 
     for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
     {
@@ -268,9 +268,9 @@ int pm_init(struct page_alct_t *alct, addr_t addr, size_t size)
 
     size_t slot_size = addr + size - slot_addr;
 
-    err = slot_init(&(alct->slot_alct), sizeof(struct page_t));
+    slot_init(&(alct->slot_alct), sizeof(struct page_t));
 
-    err = slot_insert(&(alct->slot_alct), slot_addr, slot_size);
+    slot_insert(&(alct->slot_alct), slot_addr, slot_size);
 
     for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
     {

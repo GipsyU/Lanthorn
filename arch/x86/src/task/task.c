@@ -37,7 +37,6 @@ int task_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t pre, addr_
 }
 
 extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp);
-extern void intr_ret(void);
 
 int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size_t uss, addr_t pre, addr_t run)
 {
@@ -49,10 +48,6 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
     task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss);
 
-    addr_t *_sp = (void *)(task->sp -= sizeof(addr_t));
-
-    *_sp = (addr_t)intr_ret;
-
     struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
 
     context->eip = pre;
@@ -61,8 +56,6 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
     return E_OK;
 }
-
-
 
 void task_switch(struct task_t *o, struct task_t *n)
 {

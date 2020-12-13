@@ -16,7 +16,6 @@ enum T_STATE
 
 struct thread_t
 {
-    uint id;
     uint cpuid;
     enum T_STATE state;
     struct task_t task;
@@ -25,7 +24,11 @@ struct thread_t
     struct list_node_t proc_ln;
 };
 
+struct thread_t *thread_now(void);
+
 int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe);
+
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz);
 
 int thread_schd(void);
 

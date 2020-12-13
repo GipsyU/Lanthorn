@@ -6,6 +6,7 @@
 #include <memory.h>
 #include <string.h>
 #include <util.h>
+#include <slot.h>
 
 static struct page_alct_t pm_alct;
 
@@ -15,17 +16,9 @@ static struct vpage_alct_t kvm_alct;
 
 static u8 kvm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
+static struct slot_alct_t kvm_slot_alct;
+
 static struct slab_alct_t slab_alct;
-
-extern int vm_init(struct vpage_alct_t *alct);
-
-extern int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size);
-
-extern int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size);
-
-extern int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp);
-
-extern int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res);
 
 extern int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size);
 
@@ -35,11 +28,26 @@ extern int pm_free(struct page_alct_t *alct, struct page_t *page);
 
 extern int pm_init(struct page_alct_t *alct, addr_t addr, size_t size);
 
-extern int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size);
+static int kvm_slot_alloc(addr_t *addr, size_t size)
+{
+    assert(size = sizeof(struct vpage_t));
 
-extern int slab_free(struct slab_alct_t *alct, addr_t addr);
+    int err = slot_alloc(&kvm_slot_alct, addr);
 
-extern int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*free)(addr_t));
+    if (err != E_OK)
+    {
+        /**
+         * FIXME:NEW MM;
+         */
+    }
+
+    return err;
+}
+
+static int kvm_slot_free(addr_t addr)
+{
+    return slot_free(&kvm_slot_alct, addr);
+}
 
 static int page_fault_hdl(uint errno)
 {
@@ -48,7 +56,9 @@ static int page_fault_hdl(uint errno)
     if ((errno & PF_P) == 0)
     {
         info("page fault: present, addr = %p.\n", errv);
-    
+
+        while(1);
+
         if (errv >= KERN_BASE)
         {
             mmu_sync_kern_space(mmu_get_pde(), errv);
@@ -78,17 +88,17 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     info("init pmm success.\n")
 
-        info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
+    info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
 
     start = ROUND_UP(free_kvm_start, PAGE_SIZE);
 
     size = ROUND_DOWN(free_pmm_start + free_kvm_size, PAGE_SIZE) - start;
 
-    err = vm_init(&kvm_alct);
+    slot_init(&kvm_slot_alct, sizeof(struct vpage_t));
 
-    if (err != E_OK) return err;
+    slot_insert(&kvm_slot_alct, (addr_t)kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
-    slot_insert(&kvm_alct.slot_alct, (addr_t)kvm_slot, CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE);
+    vm_init(&kvm_alct, kvm_slot_alloc, kvm_slot_free);
 
     err = vm_insert(&kvm_alct, start, size);
 

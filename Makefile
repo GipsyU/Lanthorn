@@ -389,9 +389,9 @@ vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) --end-group
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) usr/usr.elf --end-group
 
-vmlanthorn:  $(vmlanthorn-all)
+vmlanthorn:  $(vmlanthorn-all) _usr FORCE
 	+$(call cmd,vmlanthorn)
 
 _usr:

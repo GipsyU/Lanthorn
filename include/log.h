@@ -28,11 +28,14 @@ void print(const char *fmt, ...);
         while (1)                                                                                                      \
             ;                                                                                                          \
     }
-/*
- * FIXME: enable assert(0);
- */
-#define assert(exp, info)                                                                                              \
+#define assert(exp)                                                                                                    \
     {                                                                                                                  \
-        if ((exp) == 0) panic(info);                                                                                   \
+        if ((exp) == 0) panic("panic.\n");                                                                             \
     }
+
+#define showerr                                                                                                        \
+    {                                                                                                                  \
+        debug("%s\n", strerror(err));                                                                                  \
+    }
+
 #endif

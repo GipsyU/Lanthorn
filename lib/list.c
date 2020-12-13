@@ -20,7 +20,7 @@ int list_isempty(struct list_node_t *head)
      */
     if (head->n == head)
     {
-        assert(head->p == head, "list bug\n");
+        assert(head->p == head);
 
         return 1;
     }

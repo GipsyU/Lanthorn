@@ -37,6 +37,13 @@ static int queue_init(struct schd_q_t *q)
     return E_OK;
 }
 
+struct thread_t *thread_now(void)
+{
+    struct task_t *task = cpu_get_task(cpu_id());
+
+    return container_of(task, struct thread_t, task);
+}
+
 int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
 {
     int err = kmalloc((addr_t *)thread, sizeof(struct thread_t));
@@ -75,6 +82,58 @@ int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
     return err;
 }
 
+/**
+ * FIXME:CLEAN UP
+ */
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz)
+{
+    int err = kmalloc((addr_t *)thread, sizeof(struct thread_t));
+
+    if (err != E_OK) return err;
+
+    err = mmu_sync_kern_space(proc->pagetb.pde->addr, *thread);
+
+    if (err != E_OK) return err;
+    
+    addr_t kstack = NULL;
+
+    err = kmalloc(&kstack, PAGE_SIZE);
+
+    if (err != E_OK) return err;
+
+    err = mmu_sync_kern_space(proc->pagetb.pde->addr, kstack);
+
+    if (err != E_OK) return err;
+    
+    addr_t ustk_a = NULL;
+
+    err = um_stack_alloc(&proc->um, &ustk_a, PAGE_SIZE);
+
+    if (err != E_OK) return err;
+
+    struct page_t *page;
+    
+    err = page_alloc(&page);
+
+    if (err != E_OK) return err;
+
+    err = mmu_user_map(proc->pagetb.pde->addr, page->addr, ustk_a, 1);
+
+    if (err != E_OK) return err;
+
+    task_user_init(&(*thread)->task, kstack, PAGE_SIZE, ustk_a, PAGE_SIZE, pre, exe);
+
+    (*thread)->state = RUNNABEL;
+
+    (*thread)->proc = proc;
+
+    list_push_back(&proc->thread_ls, &(*thread)->proc_ln);
+
+    list_push_back(&runnable.queue, &(*thread)->schd_ln);
+
+    return err;
+}
+
 int thread_free(struct thread_t *thread)
 {
     int err = E_OK;
@@ -83,34 +142,6 @@ int thread_free(struct thread_t *thread)
 
     return err;
 }
-
-// int thread_user_new(struct thread_t **thread, addr_t run)
-// {
-//     int err = E_OK;
-
-//     err = kmalloc((addr_t *)thread, sizeof(struct thread_t));
-
-//     if (err != E_OK) return err;
-
-//     addr_t stack;
-
-//     err = kmalloc(&stack, PAGE_SIZE);
-
-//     if (err != E_OK)
-//     {
-//         kmfree((addr_t)*thread);
-
-//         return err;
-//     }
-
-//     task_user_init(&(*thread)->task, stack, PAGE_SIZE, 0, PAGE_SIZE, (addr_t)pre, run);
-
-//     (*thread)->state = RUNNABEL;
-
-//     list_push_back(&runnable, &(*thread)->schd_ln);
-
-//     return err;
-// }
 
 static int thread_intr(uint errno)
 {

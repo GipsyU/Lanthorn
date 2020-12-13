@@ -1,7 +1,7 @@
 #include <slot.h>
 #include <error.h>
 
-int slot_init(struct slot_alct_t *alct, size_t slot_size)
+void slot_init(struct slot_alct_t *alct, size_t slot_size)
 {   
     if (slot_size < sizeof(struct list_node_t))
     {
@@ -11,11 +11,9 @@ int slot_init(struct slot_alct_t *alct, size_t slot_size)
     alct->slot_size = slot_size;
 
     list_init(&(alct->free_slot_head));
-
-    return E_OK;
 }
 
-int slot_new(struct slot_alct_t *alct, addr_t *addr)
+int slot_alloc(struct slot_alct_t *alct, addr_t *addr)
 {
     if (list_isempty(&(alct->free_slot_head)))
     {
@@ -34,12 +32,10 @@ int slot_free(struct slot_alct_t *alct, addr_t addr)
     return E_OK;
 }
 
-int slot_insert(struct slot_alct_t *alct, addr_t addr, size_t size)
+void slot_insert(struct slot_alct_t *alct, addr_t addr, size_t size)
 {
     for (addr_t _addr= addr; _addr + alct->slot_size <= addr + size; _addr += alct->slot_size)
     {
         slot_free(alct, _addr);
     }
-
-    return E_OK;
 }

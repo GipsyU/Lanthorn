@@ -62,21 +62,21 @@ int proc_test(void)
 {
     int err = E_OK;
 
-    struct proc_t *p1, *p2;
+    // struct proc_t *p1, *p2;
 
-    err = proc_new(&p1);
+    // err = proc_new(&p1);
 
-    err = proc_new(&p2);
+    // err = proc_new(&p2);
     
-    struct thread_t *t11, *t12, *t21, *t22;
+    // struct thread_t *t11, *t12, *t21, *t22;
 
-    err = thread_kern_new(&t11, p1, T11);
+    // err = thread_kern_new(&t11, p1, T11);
     
-    err = thread_kern_new(&t12, p1, T12);
+    // err = thread_kern_new(&t12, p1, T12);
     
-    err = thread_kern_new(&t21, p2, T21);
+    // err = thread_kern_new(&t21, p2, T21);
     
-    err = thread_kern_new(&t22, p2, T22);
+    // err = thread_kern_new(&t22, p2, T22);
 
     thread_schd();
 }

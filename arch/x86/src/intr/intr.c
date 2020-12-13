@@ -169,6 +169,7 @@ void intr_end(void)
 
     asm volatile("sti");
 }
+extern void intr_ret(void);
 
 addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 {
@@ -189,7 +190,11 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
     
     regs->ebp = ubp;
 
-    return (addr_t)regs;
+    addr_t *iret = ((void *)regs) - sizeof(addr_t); 
+
+    *iret = intr_ret;
+
+    return (addr_t)iret;
 }
 
 int intr_enable(void)
