@@ -6,6 +6,7 @@
 #define INTR_PGFAULT 14
 #define INTR_TIMER 32
 #define INTR_KBD 33
+#define INTR_SYSCALL 128
 
 int intr_register(int intrno, int (*hdl)(uint));
 

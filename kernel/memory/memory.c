@@ -52,7 +52,7 @@ static int kvm_slot_free(addr_t addr)
 static int page_fault_hdl(uint errno)
 {
     addr_t errv = mmu_err_addr();
-    
+
     if ((errno & PF_P) == 0)
     {
         info("page fault: present, addr = %p.\n", errv);

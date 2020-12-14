@@ -112,7 +112,7 @@ void intr_hdl(struct intr_regs_t *regs)
 
     if (handler != NULL)
     {
-        handler(regs->err);
+        regs->eax = handler(regs->esp);
     }
 
     lapic_eoi();
@@ -147,7 +147,7 @@ int intr_init(void)
         set_gate(&idt[i], 0, SEL_KCODE, intrx[i], 0);
     }
 
-    set_gate(&idt[128], 1, SEL_KCODE, intrx[128], 0);
+    set_gate(&idt[INTR_SYSCALL], 1, SEL_KCODE, intrx[INTR_SYSCALL], DPL_USER);
 
     lidt((addr_t)idt, sizeof(idt));
 
