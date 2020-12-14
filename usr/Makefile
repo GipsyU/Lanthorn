@@ -1,18 +1,37 @@
-quiet_cmd_elfcc = CC      $@
-      cmd_elfcc = $(CC) -m32 -c $< -o $(patsubst %.elf, %.o, $@); \
-	  			ld -m elf_i386 -N -e start -Ttext 0 $(patsubst %.elf, %.o, $@) -o $@
+quiet_cmd_cc_elf_o = CC      $@
+      cmd_cc_elf_o = $(CC) -m32 -c $< -o $@
 
-elf-y := init.elf
+usr-y := init.elf main.elf
 
-USR_ELFS = $(addprefix $(obj)/,$(elf-y))
+usr-y := $(addprefix $(obj)/, $(usr-y))
 
-LDFLAGS_usr.elf := -m elf_i386 -r -b binary
+usr_dir := $(filter %/, $(usr-y))
 
-$(obj)/usr.elf : $(USR_ELFS)
+usr_dir_o := $(patsubst %/, %/built-in.o, $(usr_dir))
+
+usr_dir_elfs := $(patsubst %/, %.elf, $(usr_dir))
+
+usr_sg_elfs := $(filter-out %/, $(usr-y))
+
+LDFLAGS_usr.elf += -r -b binary
+
+quiet_cmd_usr = LD      $@
+      cmd_usr = $(LD) $(LDFLAGS) -r -b binary $^ -o $@
+
+$(obj)/usr.elf : $(usr_sg_elfs) $(usr_dir_elfs)
+	$(call if_changed,usr)
+
+ldflags-y += -T $(src)/usr.ld
+
+$(usr_dir_elfs) : %.elf : %/built-in.o
 	$(call if_changed,ld)
 
-$(obj)/%.elf : $(src)/%.c
-	$(call if_changed,elfcc)
+PHONY += $(usr_dir)
 
-$(obj)/%.elf : $(src)/%.S
-	$(call if_changed,elfcc)
+$(usr_dir_o): $(usr_dir)
+
+$(usr_dir):
+	$(Q)$(MAKE) $(build)=$@
+
+$(usr_sg_elfs) : %.elf : %.o
+	$(call if_changed,ld)
