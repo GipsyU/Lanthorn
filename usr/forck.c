@@ -1,1 +1,0 @@
-extern int syscall(int sysno, ...);

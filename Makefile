@@ -337,12 +337,14 @@ vmlanthorn-libs	:= $(patsubst %,%/lib.a, $(libs-y))
 vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 
 quiet_cmd_vmlanthorn = LD      $@
-      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) usr/usr.elf --end-group
+      cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $^ --end-group
 
-vmlanthorn:  $(vmlanthorn-all) usr
+vmlanthorn:  $(vmlanthorn-all) usr/usr.elf
 	+$(call cmd,vmlanthorn)
 
 PHONY += usr
+
+usr/usr.elf:usr
 
 usr:
 	$(Q)$(MAKE) $(build)=usr usr/usr.elf

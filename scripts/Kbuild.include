@@ -206,14 +206,9 @@ objectify = $(foreach o,$(1),$(if $(filter /%,$(o)),$(o),$(obj)/$(o)))
 #                   including used config symbols
 # if_changed_rule - as if_changed but execute rule instead
 
-ifneq ($(KBUILD_NOCMDDEP),1)
-# Check if both arguments are the same including their order. Result is empty
-# string if equal. User may override this check using make KBUILD_NOCMDDEP=1
+# Check if both arguments are the same including their order. Result is empty string if equal.
 arg-check = $(filter-out $(subst $(space),$(space_escape),$(strip $(cmd_$@))), \
                          $(subst $(space),$(space_escape),$(strip $(cmd_$1))))
-else
-arg-check = $(if $(strip $(cmd_$@)),,1)
-endif
 
 # Replace >$< with >$$< to preserve $ when reloading the .cmd file
 # (needed for make)

@@ -112,6 +112,8 @@ void intr_hdl(struct intr_regs_t *regs)
 
     if (handler != NULL)
     {
+        debug("OK\n");
+
         regs->eax = handler(regs->esp);
     }
 
