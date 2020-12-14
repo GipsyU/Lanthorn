@@ -1,8 +1,8 @@
 # Backward compatibility
-asflags-y  += $(EXTRA_AFLAGS)
-ccflags-y  += $(EXTRA_CFLAGS)
-cppflags-y += $(EXTRA_CPPFLAGS)
-ldflags-y  += $(EXTRA_LDFLAGS)
+asflags-y  +=
+ccflags-y  +=
+cppflags-y += 
+ldflags-y  +=
 
 #
 # flags that take effect in sub directories
@@ -91,14 +91,11 @@ __a_flags	=                          $(call flags,_a_flags)
 __cpp_flags     =                          $(call flags,_cpp_flags)
 endif
 
-c_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
-		 $(__c_flags) $(modkern_cflags)
+c_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE) $(__c_flags) 
 
-a_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
-		 $(__a_flags) $(modkern_aflags)
+a_flags        = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE) $(__a_flags)
 
-cpp_flags      = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE)     \
-		 $(__cpp_flags)
+cpp_flags      = -Wp,-MD,$(depfile) $(LANTHORNINCLUDE) $(__cpp_flags)
 
 ld_flags       = $(LDFLAGS) $(ldflags-y)
 

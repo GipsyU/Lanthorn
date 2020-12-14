@@ -15,10 +15,6 @@ lib-y :=
 always :=
 targets :=
 subdir-y :=
-EXTRA_AFLAGS   :=
-EXTRA_CFLAGS   :=
-EXTRA_CPPFLAGS :=
-EXTRA_LDFLAGS  :=
 asflags-y  :=
 ccflags-y  :=
 cppflags-y :=
@@ -88,23 +84,11 @@ __build: $(if $(KBUILD_BUILTIN),$(builtin-target) $(lib-target) $(extra-y)) \
         $(subdir-ym) $(always)
 	@:
 
-# Linus' kernel sanity checking tool
-ifneq ($(KBUILD_CHECKSRC),0)
-  ifeq ($(KBUILD_CHECKSRC),2)
-    quiet_cmd_force_checksrc = CHECK	$<
-          cmd_force_checksrc = $(CHECK) $(CHECKFLAGS) $(c_flags) $< ;
-  else
-      quiet_cmd_checksrc     = CHECK	$<
-            cmd_checksrc     = $(CHECK) $(CHECKFLAGS) $(c_flags) $< ;
-  endif
-endif
-
 # Compile C sources (.c)
 # ---------------------------------------------------------------------------
 
 # Default is built-in, unless we know otherwise
 
-modkern_cflags = $(KBUILD_CFLAGS_KERNEL) $(CFLAGS_KERNEL)
 quiet_modtag := $(empty)   $(empty)
 
 # Default for not multi-part modules
@@ -116,69 +100,30 @@ $(multi-objs-y:.o=.s)   : modname = $(modname-multi)
 $(multi-objs-y:.o=.lst) : modname = $(modname-multi)
 
 quiet_cmd_cc_s_c = CC $(quiet_modtag)  $@
-cmd_cc_s_c       = $(CC) $(c_flags) $(DISABLE_LTO) -fverbose-asm -S -o $@ $<
+	  cmd_cc_s_c = $(CC) $(c_flags) $(DISABLE_LTO) -fverbose-asm -S -o $@ $<
 
 $(obj)/%.s: $(src)/%.c FORCE
 	$(call if_changed_dep,cc_s_c)
 
 quiet_cmd_cpp_i_c = CPP $(quiet_modtag) $@
-cmd_cpp_i_c       = $(CPP) $(c_flags) -o $@ $<
+	  cmd_cpp_i_c = $(CPP) $(c_flags) -o $@ $<
 
 $(obj)/%.i: $(src)/%.c FORCE
 	$(call if_changed_dep,cpp_i_c)
 
-# C (.c) files
-# The C file is compiled and updated dependency information is generated.
-# (See cmd_cc_o_c + relevant part of rule_cc_o_c)
-
 quiet_cmd_cc_o_c = CC $(quiet_modtag)  $@
-
-cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
-
-ifdef CONFIG_STACK_VALIDATION
-ifneq ($(SKIP_STACK_VALIDATION),1)
-
-__objtool_obj := $(objtree)/tools/objtool/objtool
-
-objtool_args = check
-ifndef CONFIG_FRAME_POINTER
-objtool_args += --no-fp
-endif
-
-# 'OBJECT_FILES_NON_STANDARD := y': skip objtool checking for a directory
-# 'OBJECT_FILES_NON_STANDARD_foo.o := 'y': skip objtool checking for a file
-# 'OBJECT_FILES_NON_STANDARD_foo.o := 'n': override directory skip for a file
-cmd_objtool = $(if $(patsubst y%,, \
-	$(OBJECT_FILES_NON_STANDARD_$(basetarget).o)$(OBJECT_FILES_NON_STANDARD)n), \
-	$(__objtool_obj) $(objtool_args) "$(@)";)
-objtool_obj = $(if $(patsubst y%,, \
-	$(OBJECT_FILES_NON_STANDARD_$(basetarget).o)$(OBJECT_FILES_NON_STANDARD)n), \
-	$(__objtool_obj))
-
-endif # SKIP_STACK_VALIDATION
-endif # CONFIG_STACK_VALIDATION
+	  cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
 
 define rule_cc_o_c
-	$(call echo-cmd,checksrc) $(cmd_checksrc)			  \
-	$(call cmd_and_fixdep,cc_o_c)					  \
-	$(cmd_objtool)
+	$(call cmd_and_fixdep,cc_o_c)
 endef
 
 define rule_as_o_S
-	$(call cmd_and_fixdep,as_o_S)					  \
-	$(cmd_objtool)
+	$(call cmd_and_fixdep,as_o_S)
 endef
 
-# List module undefined symbols (or empty line if not enabled)
-ifdef CONFIG_TRIM_UNUSED_KSYMS
-cmd_undef_syms = $(NM) $@ | sed -n 's/^ \+U //p' | xargs echo
-else
-cmd_undef_syms = echo
-endif
-
 # Built-in and composite module parts
-$(obj)/%.o: $(src)/%.c $(objtool_obj) FORCE
-	$(call cmd,force_checksrc)
+$(obj)/%.o: $(src)/%.c FORCE
 	$(call if_changed_rule,cc_o_c)
 
 quiet_cmd_cc_lst_c = MKLST   $@
@@ -191,9 +136,6 @@ $(obj)/%.lst: $(src)/%.c FORCE
 
 # Compile assembler sources (.S)
 # ---------------------------------------------------------------------------
-
-modkern_aflags := $(KBUILD_AFLAGS_KERNEL) $(AFLAGS_KERNEL)
-
 quiet_cmd_cpp_s_S = CPP $(quiet_modtag) $@
 cmd_cpp_s_S       = $(CPP) $(a_flags) -o $@ $<
 
@@ -203,7 +145,7 @@ $(obj)/%.s: $(src)/%.S FORCE
 quiet_cmd_as_o_S = AS $(quiet_modtag)  $@
 cmd_as_o_S       = $(CC) $(a_flags) -c -o $@ $<
 
-$(obj)/%.o: $(src)/%.S $(objtool_obj) FORCE
+$(obj)/%.o: $(src)/%.S FORCE
 	$(call if_changed_rule,as_o_S)
 
 targets += $(real-objs-y) $(lib-y)

@@ -1,7 +1,3 @@
-VERSION = 0
-PATCHLEVEL = 0
-SUBLEVEL = 0
-
 MAKEFLAGS += -rR --include-dir=$(CURDIR)
 
 # Avoid funny character set dependencies
@@ -24,6 +20,7 @@ unexport GREP_OPTIONS
 ifeq ("$(origin V)", "command line")
   KBUILD_VERBOSE = $(V)
 endif
+
 ifndef KBUILD_VERBOSE
   KBUILD_VERBOSE = 0
 endif
@@ -93,23 +90,6 @@ ifeq ($(skip-makefile),)
 # so that IDEs/editors are able to understand relative filenames.
 MAKEFLAGS += --no-print-directory
 
-# Call a source code checker (by default, "sparse") as part of the
-# C compilation.
-#
-# Use 'make C=1' to enable checking of only re-compiled files.
-# Use 'make C=2' to enable checking of *all* source files, regardless
-# of whether they are re-compiled or not.
-#
-# See the file "Documentation/sparse.txt" for more details, including
-# where to get the "sparse" utility.
-
-ifeq ("$(origin C)", "command line")
-  KBUILD_CHECKSRC = $(C)
-endif
-ifndef KBUILD_CHECKSRC
-  KBUILD_CHECKSRC = 0
-endif
-
 PHONY += all
 _all: all
 
@@ -118,9 +98,7 @@ objtree := $(CURDIR)
 src		:= $(srctree)
 obj		:= $(objtree)
 
-VPATH	:= $(srctree)
-
-export srctree objtree VPATH
+export srctree objtree
 
 # ARCH		?= $(SUBARCH)
 ARCH		?= x86
@@ -140,19 +118,13 @@ HOSTCXX      = g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89
 HOSTCXXFLAGS = -O2
 
-ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
-HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
-		-Wno-missing-field-initializers -fno-delete-null-pointer-checks
-endif
-
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
 
 KBUILD_BUILTIN := 1
 
 export KBUILD_BUILTIN
-export KBUILD_CHECKSRC KBUILD_SRC
-
+export KBUILD_SRC
 
 # We need some generic definitions (do not try to remake the file).
 scripts/Kbuild.include: ;
@@ -174,8 +146,6 @@ PYTHON		= python
 CHECK		= sparse
 
 CHECKFLAGS := -Wbitwise -Wno-return-void $(CF)
-CFLAGS_KERNEL	=
-AFLAGS_KERNEL	=
 
 LANTHORNINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
 				   -include include/generated/autoconf.h \
@@ -202,31 +172,20 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
 # enforce correct pointer usage
 KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
 				 
-KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS := -D__ASSEMBLY__
 
-KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))
-
-export VERSION PATCHLEVEL SUBLEVEL KERNELVERSION
 export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
 export CPP AR NM STRIP OBJCOPY OBJDUMP
 export MAKE AWK PERL PYTHON
 export HOSTCXX HOSTCXXFLAGS CHECK CHECKFLAGS
-
 export KBUILD_CPPFLAGS LANTHORNINCLUDE OBJCOPYFLAGS LDFLAGS
-export KBUILD_CFLAGS CFLAGS_KERNEL
-export KBUILD_AFLAGS AFLAGS_KERNEL
-export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS
+export KBUILD_CFLAGS KBUILD_AFLAGS KBUILD_ARFLAGS
 
 # Files to ignore in find ... statements
 
 export RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o    \
 			  -name CVS -o -name .pc -o -name .hg -o -name .git \) \
 			  -prune -o
-export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
-			 --exclude CVS --exclude .pc --exclude .hg --exclude .git
 
 # ===========================================================================
 # Rules shared between *config targets and build targets
@@ -247,7 +206,7 @@ outputmakefile:
 ifneq ($(KBUILD_SRC),)
 	$(Q)ln -fsn $(srctree) source
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
+	    $(srctree) $(objtree)
 endif
 
 # To make sure we do not include .config for any of the *config targets
@@ -258,12 +217,10 @@ endif
 # Detect when mixed targets is specified, and make a second invocation
 # of make so .config is not included in this case either (for *config).
 
-version_h := include/generated/version.h
-
 no-dot-config-targets := clean mrproper distclean \
-			 cscope help% %docs check% coccicheck \
-			 $(version_h) headers_% archheaders archscripts \
-			 kernelversion %src-pkg
+			 help% %docs check% coccicheck \
+			 headers_% archheaders archscripts \
+			 %src-pkg
 
 config-targets := 0
 mixed-targets  := 0
@@ -280,11 +237,6 @@ ifneq ($(filter config %config,$(MAKECMDGOALS)),)
         ifneq ($(words $(MAKECMDGOALS)),1)
                 mixed-targets := 1
         endif
-endif
-
-# install need also be processed one by one
-ifneq ($(filter install,$(MAKECMDGOALS)),)
-    mixed-targets := 1
 endif
 
 ifeq ($(mixed-targets),1)
@@ -363,16 +315,12 @@ endif # $(dot-config)
 all: vmlanthorn
 # This allow a user to issue only 'make' to build the application
 # Defaults to lanthorn, but the arch makefile usually adds further targets
-
 include $(srctree)/arch/$(ARCH)/Makefile
 
 ifdef CONFIG_DEBUG_INFO
 	KBUILD_CFLAGS	+= -ggdb
 	KBUILD_AFLAGS	+= -Wa,-gdwarf-2
 endif
-
-# use the deterministic mode of AR if available
-KBUILD_ARFLAGS := $(call ar-option,D)
 
 include scripts/Makefile.extrawarn
 
@@ -391,30 +339,19 @@ vmlanthorn-all	:= $(vmlanthorn-objs) $(vmlanthorn-libs)
 quiet_cmd_vmlanthorn = LD      $@
       cmd_vmlanthorn = $(LD) $(LDFLAGS) -r -o $@ --start-group $(vmlanthorn-all) usr/usr.elf --end-group
 
-vmlanthorn:  $(vmlanthorn-all) _usr FORCE
+vmlanthorn:  $(vmlanthorn-all) usr
 	+$(call cmd,vmlanthorn)
 
-_usr:
+PHONY += usr
+
+usr:
 	$(Q)$(MAKE) $(build)=usr usr/usr.elf
 
-# The actual objects are generated when descending,
-# make sure no implicit rule kicks in
 $(sort $(vmlanthorn-all)): $(vmlanthorn-dirs) ;
-
-# Handle descending into subdirectories listed in $(lanthorn-dirs)
-# Preset locale variables to speed up the build process. Limit locale
-# tweaks to this spot to avoid wrong language settings when running
-# make menuconfig etc.
-# Error messages still appears in the original language
 
 PHONY += $(vmlanthorn-dirs)
 $(vmlanthorn-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@
-
-# Things we need to do before we recursively start building the application
-# are listed in "prepare".
-# A multi level approach is used. prepareN is processed before prepareN-1.
-# version.h and scripts_basic is processed / created.
 
 # Listed in dependency order
 PHONY += prepare prepare0 prepare1 prepare2 prepare3
@@ -435,9 +372,7 @@ endif
 # prepare2 creates a makefile if using a separate output directory
 prepare2: prepare3 outputmakefile
 
-prepare1: prepare2 $(version_h) include/config/auto.conf
-
-archprepare:
+prepare1: prepare2 include/config/auto.conf
 
 prepare0: prepare1 scripts_basic
 	$(Q)$(MAKE) $(build)=.
@@ -445,29 +380,7 @@ prepare0: prepare1 scripts_basic
 # All the preparing..
 prepare: prepare0
 
-# Generate some files
 # ---------------------------------------------------------------------------
-
-# KERNELRELEASE can change from a few different places, meaning version.h
-# needs to be updated, so this check is forced on all builds
-
-define filechk_version.h
-	(echo \#define LANTHORN_VERSION_CODE $(shell                         \
-	expr $(VERSION) \* 65536 + 0$(PATCHLEVEL) \* 256 + 0$(SUBLEVEL)); \
-	echo '#define LANTHORN_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))';)
-endef
-
-$(version_h): $(srctree)/Makefile FORCE
-	$(call filechk,version.h)
-
-
-PHONY += headerdep
-headerdep:
-	$(Q)find $(srctree)/include/ -name '*.h' | xargs --max-args 1 \
-	$(srctree)/scripts/headerdep.pl -I$(srctree)/include
-
-
-###
 # Cleaning is done on three levels.
 # make clean     Delete most generated files
 # make mrproper  Delete the current configuration, and all generated files
@@ -479,8 +392,7 @@ CLEAN_FILES +=	vmlanthorn lanthorn
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated .tmp_objdiff
-MRPROPER_FILES += .config .config.old .version .old_version \
-		  cscope* GPATH GSYMS
+MRPROPER_FILES += .config .config.old
 
 # clean - Delete most
 #
@@ -533,7 +445,6 @@ distclean: mrproper
 # $(Q)$(MAKE) $(clean)=dir
 clean := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.clean obj
 
-
 PHONY += help
 help:
 	@echo  'Cleaning targets:'
@@ -551,11 +462,6 @@ help:
 	@echo  '  dir/file.[ois]  - Build specified target only'
 	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
 	@echo  '                    (requires a recent binutils and recent build (System.map))'
-	@echo  '  kernelversion	  - Output the version stored in Makefile (use with make -s)'
-	 echo  ''
-	@echo  'Static analysers'
-	@echo  '  includecheck    - Check for duplicate included header files'
-	@echo  '  headerdep       - Detect inclusion cycles in headers'
 	@echo  ''
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
 	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
@@ -568,17 +474,6 @@ help:
 	@echo  '		Multiple levels can be combined with W=12 or W=123'
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
-
-
-# Scripts to check various things for consistency
-# ---------------------------------------------------------------------------
-
-PHONY += includecheck
-
-includecheck:
-	find $(srctree)/* $(RCS_FIND_IGNORE) \
-		-name '*.[hcS]' -type f -print | sort \
-		| xargs $(PERL) -w $(srctree)/scripts/checkincludes.pl
 
 endif #ifeq ($(config-targets),1)
 endif #ifeq ($(mixed-targets),1)
