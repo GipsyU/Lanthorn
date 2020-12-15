@@ -1,6 +1,8 @@
-#include <syscall.h>
+#include <type.h>
+#include <mm.h>
 int main(void)
 {
-    SYSCALL();
-    while(1);
+    addr_t addr;
+    int err = malloc(&addr, 0x1000);
+    return 0;
 }

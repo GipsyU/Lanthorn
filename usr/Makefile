@@ -19,7 +19,9 @@ usr_sg_elfs := $(filter-out %/, $(usr-y))
 
 LDFLAGS_usr.elf += -r -b binary
 
-KBUILD_CFLAGS += -I$(src)/include
+KBUILD_CFLAGS += -I$(src)/include -D__USER__
+
+KBUILD_AFLAGS += -D__USER__
 
 quiet_cmd_usr = LD      $@
       cmd_usr = $(LD) $(LDFLAGS) -r -b binary $(usr_sg_elfs) $(usr_dir_elfs) -o $@

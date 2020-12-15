@@ -5,4 +5,4 @@ qemu-system-i386    -kernel $1 \
                     -nographic \
                     -serial mon:stdio \
                     -no-reboot \
-                    $@
+                    $2 $3

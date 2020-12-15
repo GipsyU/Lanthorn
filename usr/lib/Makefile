@@ -1,1 +1,1 @@
-lib-y := syscall.o
+lib-y := syscall.o usr.o mm.o

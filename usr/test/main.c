@@ -1,5 +1,5 @@
 #include <syscall.h>
 int main(void)
 {
-    SYSCALL();
+    return 0;
 }

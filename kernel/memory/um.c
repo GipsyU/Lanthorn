@@ -3,6 +3,7 @@
 #include <proc.h>
 #include <log.h>
 #include <util.h>
+#include <syscall.h>
 
 int um_stack_alloc(struct um_t *um, addr_t *addr, size_t size)
 {
@@ -110,6 +111,14 @@ static int umfree_slab(addr_t addr)
     return umfree(&proc->um, addr);
 }
 
+
+static int umalloc_hdl(addr_t *addr, size_t *size)
+{
+    struct proc_t *proc = proc_now();
+
+    return umalloc(&proc->um, addr, size);
+}
+
 int um_init(struct um_t *um)
 {
     int err = vm_init(&um->vp_alct, kmalloc, kmfree);
@@ -119,6 +128,8 @@ int um_init(struct um_t *um)
     um->layout = init_uvmlo;
 
     slab_init(&um->slab_alct, umalloc_slab, umfree_slab);
+
+    err = syscall_register(SYS_malloc, umalloc_hdl, 2);
 
     return err;
 }

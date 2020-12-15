@@ -1,8 +1,8 @@
-#include <arch/intr.h>
-#include <error.h>
 #include <arch/basic.h>
-#include <log.h>
+#include <arch/intr.h>
 #include <cpu.h>
+#include <error.h>
+#include <log.h>
 
 #define STS_T32A 0x9 // Available 32-bit TSS
 #define STS_IG32 0xE // 32-bit Interrupt Gate
@@ -94,9 +94,7 @@ static int lidt(addr_t addr, size_t size)
 
     pd[2] = addr >> 16;
 
-    asm volatile("lidt (%0)"
-                 :
-                 : "r"(pd));
+    asm volatile("lidt (%0)" : : "r"(pd));
 }
 
 extern void lapic_eoi(void);
@@ -112,9 +110,17 @@ void intr_hdl(struct intr_regs_t *regs)
 
     if (handler != NULL)
     {
-        debug("OK\n");
+        if (regs->intrno == INTR_SYSCALL)
 
-        regs->eax = handler(regs->esp);
+            regs->eax = handler(regs->esp + 4);
+
+        else if (regs->intrno == INTR_PGFAULT)
+
+            regs->eax = handler(regs->err);
+
+        else
+
+            regs->eax = handler(NULL);
     }
 
     lapic_eoi();
@@ -176,23 +182,23 @@ extern void intr_ret(void);
 addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 {
     struct intr_regs_t *regs = (void *)(ksp - sizeof(struct intr_regs_t));
-    
+
     regs->cs = SEL_UCODE;
-    
+
     regs->ds = regs->es = regs->fs = regs->gs = regs->ss = SEL_UDATA;
-    
+
     regs->eip = run;
-    
+
     /**
      * FIXME:enable intr
      */
     // regs->eflags
-    
+
     regs->esp = usp;
-    
+
     regs->ebp = ubp;
 
-    addr_t *iret = ((void *)regs) - sizeof(addr_t); 
+    addr_t *iret = ((void *)regs) - sizeof(addr_t);
 
     *iret = intr_ret;
 
@@ -201,11 +207,10 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 
 int intr_enable(void)
 {
-    asm volatile("sti": : :"memory");
+    asm volatile("sti" : : : "memory");
 }
 
 int intr_disable(void)
 {
-    asm volatile("cli": : :"memory");
-
+    asm volatile("cli" : : : "memory");
 }

@@ -9,11 +9,24 @@
 
 extern void test(void);
 
+extern int syscall_init(void);
+
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
     int err = E_OK;
 
     info("Hello Lanthorn.\n");
+
+    err = syscall_init();
+
+    if (err != E_OK)
+    {
+        error("init syscall failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init syscall success.\n");
+    }
 
     err = memory_init(boot_arg.free_pmm_start, boot_arg.free_pmm_size, boot_arg.free_kvm_start, boot_arg.free_kvm_size);
 
@@ -23,9 +36,9 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     }
     else
     {
-        info("kernal memory init success.\n");
+        info("init memory success.\n");
     }
-    
+
     err = proc_init(boot_arg.pde);
     
     if (err != E_OK)

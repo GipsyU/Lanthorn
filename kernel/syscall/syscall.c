@@ -1,9 +1,11 @@
-#include <syscall.h>
-#include <error.h>
 #include <arch/intr.h>
+#include <error.h>
 #include <log.h>
+#include <syscall.h>
 
-static int (*syscalls[NR_SYSCALL])(addr_t);
+static addr_t syscalls[NR_SYSCALL];
+
+static uint syscall_nparam[NR_SYSCALL];
 
 static int syscall_hdl(uint *args)
 {
@@ -13,17 +15,54 @@ static int syscall_hdl(uint *args)
 
     if (syscalls[args[0]] != NULL)
     {
-        intr_get_arg();
+        if (syscall_nparam[args[0]] == 0)
+        {
+            int (*handler)(void) = (void *)syscalls[args[0]];
 
-        return syscalls[args[0]](args);
+            return handler();
+        }
+        if (syscall_nparam[args[0]] == 1)
+        {
+            int (*handler)(uint) = (void *)syscalls[args[0]];
+
+            return handler(args[1]);
+        }
+        if (syscall_nparam[args[0]] == 2)
+        {
+            int (*handler)(uint, uint) = (void *)syscalls[args[0]];
+
+            return handler(args[1], args[2]);
+        }
+        if (syscall_nparam[args[0]] == 3)
+        {
+            int (*handler)(uint, uint, uint) = (void *)syscalls[args[0]];
+
+            return handler(args[1], args[2], args[3]);
+        }
+        if (syscall_nparam[args[0]] == 4)
+        {
+            int (*handler)(uint, uint, uint, uint) = (void *)syscalls[args[0]];
+
+            return handler(args[1], args[2], args[3], args[4]);
+        }
+        if (syscall_nparam[args[0]] == 5)
+        {
+            int (*handler)(uint, uint, uint, uint, uint) = (void *)syscalls[args[0]];
+
+            return handler(args[1], args[2], args[3], args[4], args[5]);
+        }
+
+        error("nparam overflow.\n");
     }
 }
 
-int syscall_register(uint id, int (*func)(uint))
+int syscall_register(uint id, addr_t func, uint nparam)
 {
     if (id >= NR_SYSCALL) return E_INVAL;
 
     syscalls[id] = func;
+
+    syscall_nparam[id] = nparam;
 
     return E_OK;
 }
@@ -34,12 +73,14 @@ int syscall_unregister(uint id)
 
     syscalls[id] = NULL;
 
+    syscall_nparam[id] = 0;
+
     return E_OK;
 }
 
 int syscall_init(void)
 {
-    intr_register(INTR_SYSCALL, syscall_hdl);
+    intr_register(INTR_SYSCALL, (void *)syscall_hdl);
 
     return E_OK;
 }

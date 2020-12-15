@@ -1,6 +1,4 @@
 .vscode/*
 scripts/*
 usr/.vscode*
-build/*
-compile.sh
-run.sh
+build*

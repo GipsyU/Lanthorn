@@ -539,13 +539,6 @@ endif
 
 endif	# skip-makefile
 
-PHONY += qdb gdb
-qdb:
-	./arch/$(ARCH)/platform/qemu/qemu-run.sh -s -S
-
-gdb:
-	gdb -tui -x tools/gdbinit
-
 PHONY += FORCE
 FORCE:
 

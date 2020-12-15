@@ -1,6 +1,8 @@
 #ifndef _USR_SYSCALL_H_
 #define _USR_SYSCALL_H_
 
-extern void SYSCALL(void);
+#include "../../include/syscall.h"
+
+extern int syscall(int id, ...);
 
 #endif
