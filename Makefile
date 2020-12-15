@@ -36,7 +36,7 @@ endif
 # If the user is running make -s (silent mode), suppress echoing of
 # commands
 
-export quiet Q
+export quiet Q KBUILD_VERBOSE
 
 # KBUILD_SRC is set on invocation of make in OBJ directory
 # KBUILD_SRC is not intended to be used by the regular user (for now)
@@ -93,12 +93,21 @@ MAKEFLAGS += --no-print-directory
 PHONY += all
 _all: all
 
-srctree	:= $(if $(KBUILD_SRC),$(KBUILD_SRC),$(CURDIR))
-objtree := $(CURDIR)
+ifeq ($(KBUILD_SRC),)
+srctree := .
+else
+ifeq ($(KBUILD_SRC)/,$(dir $(CURDIR)))
+srctree := ..
+else
+srctree := $(KBUILD_SRC)
+endif
+endif
+
+objtree	:= .
 src		:= $(srctree)
 obj		:= $(objtree)
-
-export srctree objtree
+VPATH		:= $(srctree)
+export srctree objtree VPATH
 
 # ARCH		?= $(SUBARCH)
 ARCH		?= x86
@@ -123,8 +132,7 @@ HOSTCXXFLAGS = -O2
 
 KBUILD_BUILTIN := 1
 
-export KBUILD_BUILTIN
-export KBUILD_SRC
+export KBUILD_BUILTIN KBUILD_SRC
 
 # We need some generic definitions (do not try to remake the file).
 scripts/Kbuild.include: ;
@@ -147,7 +155,8 @@ CHECK		= sparse
 
 CHECKFLAGS := -Wbitwise -Wno-return-void $(CF)
 
-LANTHORNINCLUDE := -I$(src)/arch/$(SRCARCH)/include \
+LANTHORNINCLUDE := $(if $(KBUILD_SRC), -I$(srctree)/include) \
+				   -I$(src)/arch/$(SRCARCH)/include \
 				   -include include/generated/autoconf.h \
 				   -Iinclude
 
@@ -186,6 +195,8 @@ export KBUILD_CFLAGS KBUILD_AFLAGS KBUILD_ARFLAGS
 export RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o    \
 			  -name CVS -o -name .pc -o -name .hg -o -name .git \) \
 			  -prune -o
+export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
+			 --exclude CVS --exclude .pc --exclude .hg --exclude .git
 
 # ===========================================================================
 # Rules shared between *config targets and build targets
@@ -264,7 +275,7 @@ ifeq ($(config-targets),1)
 # Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
 # KBUILD_DEFCONFIG may point out an alternative default configuration
 # used for 'make defconfig'
-include $(srctree)/arch/$(ARCH)/Makefile
+-include arch/$(ARCH)/Makefile
 export KBUILD_DEFCONFIG KBUILD_KCONFIG
 
 config: scripts_basic outputmakefile FORCE
@@ -284,9 +295,6 @@ else
 PHONY += scripts
 scripts: scripts_basic include/config/auto.conf include/config/tristate.conf
 	$(Q)$(MAKE) $(build)=$(@)
-
-objs-y := kernel lib test
-libs-y := 
 
 ifeq ($(dot-config),1)
 # Read in config
@@ -330,6 +338,9 @@ include scripts/Makefile.extrawarn
 # Also any assignments in arch/$(ARCH)/Makefile take precedence over
 # this default value
 export KBUILD_IMAGE ?= lanthorn
+
+objs-y += kernel lib test
+libs-y += 
 
 vmlanthorn-dirs	:= $(objs-y) $(libs-y)
 vmlanthorn-objs	:= $(patsubst %,%/built-in.o, $(objs-y))
@@ -528,10 +539,7 @@ endif
 
 endif	# skip-makefile
 
-PHONY += qemu qdb gdb
-qemu:
-	./arch/$(ARCH)/platform/qemu/qemu-run.sh
-
+PHONY += qdb gdb
 qdb:
 	./arch/$(ARCH)/platform/qemu/qemu-run.sh -s -S
 

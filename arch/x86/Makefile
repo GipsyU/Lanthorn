@@ -4,7 +4,7 @@ LDFLAGS := -m elf_i386
 
 objs-y += arch/x86/src
 
-ldflags-y += -T arch/x86/boot/boot.ld
+ldflags-y += -T $(srctree)/arch/x86/boot/boot.ld
 
 PHONY += boot
 

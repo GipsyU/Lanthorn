@@ -27,7 +27,7 @@ quiet_cmd_usr = LD      $@
 $(obj)/usr.elf : $(usr_lib) $(usr_sg_elfs) $(usr_dir_elfs)
 	$(call if_changed,usr)
 
-ldflags-y += -T $(src)/usr.ld
+ldflags-y += -T $(srctree)/$(src)/usr.ld
 
 $(usr_dir_elfs) : %.elf : %/built-in.o $(usr_lib)/lib.a
 	$(call if_changed,ld)
