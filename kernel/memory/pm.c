@@ -1,10 +1,12 @@
 #include <error.h>
 #include <list.h>
 #include <log.h>
-#include <util.h>
 #include <memory.h>
+#include <spinlock.h>
+#include <util.h>
 /*
  * FIXME: no free cache of list node.
+ * be careful: maybe cause deadlock.
  */
 static int new_page(struct page_alct_t *alct, struct page_t **page)
 {
@@ -12,30 +14,27 @@ static int new_page(struct page_alct_t *alct, struct page_t **page)
 
     err = slot_alloc(&(alct->slot_alct), (addr_t *)page);
 
-    atomic_set(&(*page)->cnt, 0);
-
     if (err != E_OK)
     {
-        /**
-         * FIXME
-         */
         error("buddy slot not enough\n");
 
         return err;
     }
 
+    atomic_set(&(*page)->cnt, 0);
+
     return err;
 }
 
-static int free_page(struct page_alct_t *alct, struct page_t *page)
+static void free_page(struct page_alct_t *alct, struct page_t *page)
 {
-    return slot_free(&(alct->slot_alct), (addr_t)page);
+    slot_free(&(alct->slot_alct), (addr_t)page);
 }
 
-static int merge_page(struct page_alct_t *alct, struct page_t **f, struct page_t *p1, struct page_t *p2)
+static void merge_page(struct page_alct_t *alct, struct page_t **f, struct page_t *p1, struct page_t *p2)
 {
-    assert (p1->buddy.state == BUD_ALLOCED && p2->buddy.state == BUD_ALLOCED);
-    
+    assert(p1->buddy.state == BUD_ALLOCED && p2->buddy.state == BUD_ALLOCED);
+
     assert(p1->buddy.b == p2 && p2->buddy.b == p1);
 
     assert(p1->buddy.f == p2->buddy.f);
@@ -44,24 +43,12 @@ static int merge_page(struct page_alct_t *alct, struct page_t **f, struct page_t
 
     assert((*f)->buddy.state == BUD_VIRT);
 
-    /**
-     * FIXME: should free
-     */
-
-    free_page(alct, p1);
-
-    free_page(alct, p2);
-
     (*f)->buddy.state = BUD_ALLOCED;
-
-    return E_OK;
 }
 
 static int divide_page(struct page_t *f, struct page_t *l, struct page_t *r)
 {
-    int err = E_OK;
-
-    if (f->buddy.state != BUD_ALLOCED || f->buddy.order == 0) return E_INVAL;
+    if (f->buddy.order == 0) return E_NOMEM;
 
     l->addr = f->addr;
 
@@ -90,14 +77,12 @@ static int divide_page(struct page_t *f, struct page_t *l, struct page_t *r)
     r->buddy.state = BUD_ALLOCED;
 
     f->buddy.state = BUD_VIRT;
-    
-    return err;
+
+    return E_OK;
 }
 
 static int buddy_get(struct page_alct_t *alct, uint order, struct page_t **page)
 {
-    int err = E_OK;
-
     assert(order < CONFIG_NR_BUDDY_ORDER);
 
     if (list_isempty(&alct->head[order])) return E_NOMEM;
@@ -108,12 +93,12 @@ static int buddy_get(struct page_alct_t *alct, uint order, struct page_t **page)
 
     (*page)->buddy.state = BUD_ALLOCED;
 
-    return err;
+    return E_OK;
 }
 
 static int buddy_get_ptc(struct page_t *page)
 {
-    if (page->buddy.state != BUD_FREE) return E_INVAL;
+    if (page->buddy.state != BUD_FREE) return E_FAILE;
 
     list_delete(&page->buddy.list_node);
 
@@ -124,7 +109,7 @@ static int buddy_get_ptc(struct page_t *page)
 
 static int buddy_put(struct page_alct_t *alct, struct page_t *page)
 {
-    if (page->buddy.order >= CONFIG_NR_BUDDY_ORDER) return E_INVAL;
+    assert(page->buddy.order < CONFIG_NR_BUDDY_ORDER);
 
     assert(page->buddy.state == BUD_ALLOCED);
 
@@ -135,6 +120,10 @@ static int buddy_put(struct page_alct_t *alct, struct page_t *page)
         if (buddy_get_ptc(page->buddy.b) != E_OK) break;
 
         merge_page(alct, &f, page, page->buddy.b);
+
+        free_page(alct, page->buddy.b);
+
+        free_page(alct, page);
     }
 
     page->buddy.state = BUD_FREE;
@@ -146,11 +135,9 @@ static int buddy_put(struct page_alct_t *alct, struct page_t *page)
 
 static int buddy_alloc(struct page_alct_t *alct, uint order, struct page_t **page)
 {
-    int err = E_OK;
-
     if (order >= CONFIG_NR_BUDDY_ORDER) return E_NOMEM;
 
-    err = buddy_get(alct, order, page);
+    int err = buddy_get(alct, order, page);
 
     if (err != E_OK)
     {
@@ -177,7 +164,7 @@ static int buddy_alloc(struct page_alct_t *alct, uint order, struct page_t **pag
             return err;
         }
 
-        err = buddy_put(alct, r);
+        buddy_put(alct, r);
 
         *page = l;
     }
@@ -187,9 +174,9 @@ static int buddy_alloc(struct page_alct_t *alct, uint order, struct page_t **pag
 
 int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size)
 {
-    int err = E_OK;
+    assert(size % PAGE_SIZE == 0 && size > 0 && addr % PAGE_SIZE == 0);
 
-    assert(size % PAGE_SIZE == 0 && size > 0 && addr %PAGE_SIZE == 0);
+    int err = E_OK;
 
     for (int i = 0; i < CONFIG_NR_BUDDY_ORDER; ++i)
     {
@@ -211,9 +198,7 @@ int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size)
 
             page->buddy.state = BUD_ALLOCED;
 
-            int err = buddy_put(alct, page);
-
-            if (err != E_OK) return err;
+            buddy_put(alct, page);
 
             addr += (1 << i) * PAGE_SIZE;
         }
@@ -225,24 +210,26 @@ int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size)
 int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page)
 {
 
-    int err = E_OK;
-
     if (size == 0) return E_INVAL;
 
     size = ROUND_UP(size, PAGE_SIZE);
-
-    if (size / PAGE_SIZE > (1 << (CONFIG_NR_BUDDY_ORDER - 1))) return E_NOMEM;
 
     int order;
 
     for (int i = CONFIG_NR_BUDDY_ORDER - 1; i >= 0; --i)
     {
-        if (size / PAGE_SIZE <= ((uint)1 << i)) order = i;
-        
-        else break;
+        if (size / PAGE_SIZE <= ((uint)1 << i))
+            order = i;
+
+        else
+            break;
     }
 
-    err = buddy_alloc(alct, order, page);
+    spin_lock(&alct->lock);
+
+    int err = buddy_alloc(alct, order, page);
+
+    spin_unlock(&alct->lock);
 
     return err;
 }
@@ -251,7 +238,11 @@ int pm_free(struct page_alct_t *alct, struct page_t *page)
 {
     int err = E_OK;
 
+    spin_lock(&alct->lock);
+
     err = buddy_put(alct, page);
+
+    spin_unlock(&alct->lock);
 
     return err;
 }
@@ -276,6 +267,8 @@ int pm_init(struct page_alct_t *alct, addr_t addr, size_t size)
     {
         list_init(&alct->head[i]);
     }
+
+    err = spin_init(&alct->lock);
 
     return err;
 }

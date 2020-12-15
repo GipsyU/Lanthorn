@@ -14,7 +14,7 @@ void slot_init(struct slot_alct_t *alct, size_t slot_size);
 
 int slot_alloc(struct slot_alct_t *alct, addr_t *addr);
 
-int slot_free(struct slot_alct_t *alct, addr_t addr);
+void slot_free(struct slot_alct_t *alct, addr_t addr);
 
 void slot_insert(struct slot_alct_t *alct, addr_t addr, size_t size);
 

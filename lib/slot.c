@@ -25,11 +25,9 @@ int slot_alloc(struct slot_alct_t *alct, addr_t *addr)
     return E_OK;
 }
 
-int slot_free(struct slot_alct_t *alct, addr_t addr)
+void slot_free(struct slot_alct_t *alct, addr_t addr)
 {   
     list_push_back(&(alct->free_slot_head), (struct list_node_t *)addr);
-
-    return E_OK;
 }
 
 void slot_insert(struct slot_alct_t *alct, addr_t addr, size_t size)
