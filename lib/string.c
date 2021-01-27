@@ -1,4 +1,5 @@
 #include <string.h>
+#include <util.h>
 
 void memset(const addr_t s, char c, size_t size)
 {
@@ -47,4 +48,32 @@ uint strlen(const char *s)
     while (*_s) _s++;
 
     return _s - s;
+}
+
+int strcmp(const char *s1, const char *s2)
+{
+    uint len1 = strlen(s1);
+
+    uint len2 = strlen(s2);
+
+    uint len = min(len1, len2);
+
+    for (uint i = 0; i < len; ++i)
+    {
+        if (s1[i] < s2[i]) return -1;
+
+        if (s1[i] > s2[i]) return 1;
+    }
+
+    if (len1 < len2)
+
+        return -1;
+
+    else if (len1 > len2)
+
+        return 1;
+
+    else
+
+        return 0;
 }
