@@ -8,4 +8,6 @@ void memcpy(addr_t dst, const addr_t src, size_t size);
 
 int memcmp(const u8 *s1, const u8 *s2, size_t len);
 
+uint strlen(const char *s);
+
 #endif

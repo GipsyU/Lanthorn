@@ -3,7 +3,7 @@
 void memset(const addr_t s, char c, size_t size)
 {
     char *sc = (void *)s;
-    
+
     while (size--)
     {
         *sc++ = c;
@@ -13,9 +13,9 @@ void memset(const addr_t s, char c, size_t size)
 void memcpy(addr_t dst, const addr_t src, size_t size)
 {
     char *dstc = (void *)dst;
-    
+
     const char *srcc = (void *)src;
-    
+
     while (size--)
     {
         *dstc++ = *srcc++;
@@ -38,4 +38,13 @@ int memcmp(const u8 *s1, const u8 *s2, size_t len)
     }
 
     return 0;
+}
+
+uint strlen(const char *s)
+{
+    char *_s = s;
+
+    while (*_s) _s++;
+
+    return _s - s;
 }
