@@ -95,7 +95,7 @@ static int vm_merge(struct vpage_alct_t *alct, struct vpage_t *vp)
 
     struct rbt_node_t *tmp = NULL;
 
-    while (rbt_next(now, &tmp) == E_OK)
+    while ((tmp = rbt_next(now)) != NULL)
     {
         struct vpage_t *nowvp = container_of(now, struct vpage_t, rbt_node);
 
@@ -110,7 +110,7 @@ static int vm_merge(struct vpage_alct_t *alct, struct vpage_t *vp)
         rbt_update(now, update);
     }
 
-    while (rbt_prev(now, &tmp) == E_OK)
+    while ((tmp = rbt_prev(now)) != NULL)
     {
         struct vpage_t *nowvp = container_of(now, struct vpage_t, rbt_node);
 
@@ -318,6 +318,29 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 
     return err;
 }
+
+// int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t **new_alct)
+// {
+//     int err = kmalloc(new_alct, sizeof(struct vpage_alct_t));
+
+//     if (err != E_OK) return err;
+
+//     spin_lock(&old_alct->lock);
+
+//     spin_init(&(*new_alct)->lock);
+
+//     (*new_alct)->mm_ops = old_alct->mm_ops;
+
+//     struct rbt_node_t *node = NULL;
+
+//     err = rbt_first(&old_alct->free_rbt, &node);
+
+    
+
+//     spin_unlock(&old_alct->lock);
+
+//     return err;
+// }
 
 /**
  * FIXME: func p

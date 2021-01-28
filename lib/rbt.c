@@ -1,7 +1,6 @@
 /**
  * REFER FROM LINUX
  */
-#include <error.h>
 #include <log.h>
 #include <rbt.h>
 
@@ -238,9 +237,9 @@ static void rbt_delete_color(struct rbt_t *rbt, struct rbt_node_t *node, struct 
     if (node) node->color = BLACK;
 }
 
-int rbt_next(const struct rbt_node_t *node, struct rbt_node_t **res)
+struct rbt_node_t *rbt_next(const struct rbt_node_t *node)
 {
-    struct rbt_node_t *parent;
+    struct rbt_node_t *parent, *res;
 
     if (node->r)
     {
@@ -248,45 +247,29 @@ int rbt_next(const struct rbt_node_t *node, struct rbt_node_t **res)
 
         while (node->l) node = node->l;
 
-        *res = node;
-
-        return E_OK;
+        return node;
     }
 
     while ((parent = node->f) && node == parent->r) node = parent;
 
-    *res = parent;
-
-    if (*res)
-        return E_OK;
-
-    else
-        return E_NOTFOUND;
+    return parent;
 }
-int rbt_prev(const struct rbt_node_t *node, struct rbt_node_t **res)
+struct rbt_node_t *rbt_prev(const struct rbt_node_t *node)
 {
     struct rbt_node_t *parent;
 
     if (node->l)
     {
         node = node->l;
-        
-        while (node->r) node = node->r;
-        
-        *res = node;
 
-        return E_OK;
+        while (node->r) node = node->r;
+
+        return node;
     }
 
     while ((parent = node->f) && node == parent->l) node = parent;
 
-    *res = parent;
-
-    if (*res)
-        return E_OK;
-
-    else
-        return E_NOTFOUND;
+    return parent;
 }
 
 void rbt_delete(struct rbt_t *rbt, struct rbt_node_t *node)
@@ -455,7 +438,7 @@ struct rbt_node_t *rbt_delete_update_begin(struct rbt_node_t *node)
 
     else
     {
-        rbt_next(node, &deepest);
+        deepest = rbt_next(node);
 
         if (deepest->r)
 
@@ -472,4 +455,17 @@ struct rbt_node_t *rbt_delete_update_begin(struct rbt_node_t *node)
 void rbt_delete_update_end(struct rbt_node_t *node, rbt_update_func func)
 {
     if (node) rbt_update(node, func);
+}
+
+struct rbt_node_t *rbt_first(struct rbt_t *rbt)
+{
+    struct rbt_node_t *tmp = NULL, *res;
+
+    res = rbt->root;
+
+    if (res == NULL) return res;
+
+    while ((tmp = rbt_prev(res)) != NULL) res = tmp;
+
+    return res;
 }

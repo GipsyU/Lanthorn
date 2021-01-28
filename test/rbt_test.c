@@ -79,6 +79,11 @@ int rbt_test(void)
 
     err = rbt_insert(&rbt, &v3);
 
+	rbt_rep(&rbt, p)
+	{
+		debug("%p\n", (container_of(p, struct vpage_t, rbt_node))->addr);
+	}
+
 	struct vpage_t *v;
 
 	v = rbt_search(&rbt, 0*PAGE_SIZE);
@@ -99,33 +104,21 @@ int rbt_test(void)
 
 	struct rbt_node_t *tmp;
 
-	err = rbt_next(&v1.rbt_node, &tmp);
+	tmp = rbt_next(&v1.rbt_node);
 
-	debug("%s\n", strerror(err));
+	tmp = rbt_next(&v2.rbt_node);
 
-	err = rbt_next(&v2.rbt_node, &tmp);
-
-	debug("%s\n", strerror(err));
-
-	err = rbt_next(&v3.rbt_node, &tmp);
-
-	debug("%s\n", strerror(err));
+	tmp = rbt_next(&v3.rbt_node);
 
 	rbt_delete(&rbt, &v3.rbt_node);
 
-	err = rbt_next(&v1.rbt_node, &tmp);
+	tmp = rbt_next(&v1.rbt_node);
 
-	debug("%s\n", strerror(err));
-
-	err = rbt_next(&v2.rbt_node, &tmp);
-
-	debug("%s\n", strerror(err));
+	tmp = rbt_next(&v2.rbt_node);
 
 	rbt_delete(&rbt, &v1.rbt_node);
 
 	rbt_delete(&rbt, &v2.rbt_node);
-	
-	
 	
 	v = rbt_search(&rbt, 0*PAGE_SIZE);
 	

@@ -1,4 +1,0 @@
-int dev_init()
-{
-    
-}
