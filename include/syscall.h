@@ -15,6 +15,12 @@
 #define SYS_mfree 9
 #define SYS_kill 10
 #define SYS_poweroff 11
+#define SYS_servercall 12
+#define SYS_msg_send 13
+#define SYS_msg_recieve 14
+#define SYS_msg_read 15
+#define SYS_msg_newbox 15
+#define SYS_msg_newmsg 16
 
 #ifndef __USER__
 

@@ -14,6 +14,7 @@ enum ERRORS {
     E_NOTFOUND,
     E_EXIST,
     E_FAILE,
+    E_NOMSG,
     E_MAX
 };
 const char *strerror(int err);

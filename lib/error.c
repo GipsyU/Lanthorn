@@ -13,6 +13,7 @@ const char *strerror(int err) {
         ERRCASE(E_AGAIN);
         ERRCASE(E_EXIST);
         ERRCASE(E_FAILE);
+        ERRCASE(E_NOMSG);
         default: return "E_UNKNOWN";
     }
     #undef ERRCASE
