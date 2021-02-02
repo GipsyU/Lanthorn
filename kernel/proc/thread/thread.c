@@ -1,19 +1,21 @@
 #include <arch/cpu.h>
 #include <arch/intr.h>
+#include <arch/mmu.h>
 #include <error.h>
 #include <list.h>
 #include <log.h>
 #include <memory.h>
-#include <thread.h>
-#include <util.h>
 #include <proc.h>
 #include <spinlock.h>
-#include <arch/mmu.h>
+#include <thread.h>
+#include <util.h>
+
+extern struct proc_t proc_0;
 static struct schd_q_t
 {
     struct spinlock_t lock;
     struct list_node_t queue;
-}runnable;
+} runnable;
 
 static void pre(void)
 {
@@ -50,10 +52,8 @@ int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
 
     if (err != E_OK) return err;
 
-    err = mmu_sync_kern_space(proc->pagetb.pde->addr, *thread);
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
 
-    if (err != E_OK) return err;
-    
     addr_t stack;
 
     err = kmalloc(&stack, PAGE_SIZE);
@@ -65,9 +65,7 @@ int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
         return err;
     }
 
-    err = mmu_sync_kern_space(proc->pagetb.pde->addr, stack);
-
-    if (err != E_OK) return err;
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, stack);
 
     task_init(&(*thread)->task, stack, PAGE_SIZE, pre, exe, suf);
 
@@ -91,33 +89,19 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, s
 
     if (err != E_OK) return err;
 
-    err = mmu_sync_kern_space(proc->pagetb.pde->addr, *thread);
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
 
-    if (err != E_OK) return err;
-    
     addr_t kstack = NULL;
 
     err = kmalloc(&kstack, PAGE_SIZE);
 
     if (err != E_OK) return err;
 
-    err = mmu_sync_kern_space(proc->pagetb.pde->addr, kstack);
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, kstack);
 
-    if (err != E_OK) return err;
-    
     addr_t ustk_a = NULL;
 
-    err = um_stack_alloc(&proc->um, &ustk_a, PAGE_SIZE);
-
-    if (err != E_OK) return err;
-
-    struct page_t *page;
-    
-    err = page_alloc(&page);
-
-    if (err != E_OK) return err;
-
-    err = mmu_user_map(proc->pagetb.pde->addr, page->addr, ustk_a, 1);
+    err = umalloc(&proc->um, &ustk_a, PAGE_SIZE);
 
     if (err != E_OK) return err;
 

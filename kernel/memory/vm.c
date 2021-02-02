@@ -154,7 +154,7 @@ static int vm_insert_alloced(struct vpage_alct_t *alct, struct vpage_t *vp)
 
 int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
 {
-    int err = E_OK;
+    spin_lock(&alct->lock);
 
     struct rbt_node_t *n = alct->alloced_rbt.root;
 
@@ -168,18 +168,22 @@ int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
         {
             n = n->l;
         }
-        else if (addr > vpage->addr)
+        else if (addr >= vpage->addr + vpage->size)
         {
             n = n->r;
         }
         else
         {
             *res = vpage;
-            
+
+            spin_unlock(&alct->lock);
+
             return E_OK;
         }
     }
-    
+
+    spin_unlock(&alct->lock);
+
     return E_NOTFOUND;
 }
 
@@ -238,18 +242,17 @@ static int rbt_search_size(struct rbt_t *rbt, size_t size, struct vpage_t **res)
 
 int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
 {
+    assert(addr % PAGE_SIZE == 0 && size % PAGE_SIZE == 0);
+
     int err = E_OK;
 
-    if (addr % PAGE_SIZE != 0 || size % PAGE_SIZE != 0 || size == 0)
-    {
-        return E_INVAL;
-    }
+    spin_lock(&alct->lock);
 
     struct vpage_t *vp;
 
     err = alct->mm_ops.alloc((addr_t *)&vp, sizeof(struct vpage_t));
 
-    if (err != E_OK) return err;
+    if (err != E_OK) goto error;
 
     /**
      * TODO: vpage_init
@@ -261,6 +264,9 @@ int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
 
     err = vm_insert_free(alct, vp);
 
+error:
+    spin_unlock(&alct->lock);
+
     return err;
 }
 
@@ -268,23 +274,19 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
 {
     int err = E_OK;
 
+    spin_lock(&alct->lock);
+
     size = ROUND_UP(size, PAGE_SIZE);
 
     struct vpage_t *res = NULL;
 
     err = rbt_search_size(&alct->free_rbt, size, &res);
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    if (err != E_OK) goto error;
 
     err = alct->mm_ops.alloc((addr_t *)vp, sizeof(struct vpage_t));
 
-    if (err != E_OK)
-    {
-        return err;
-    }
+    if (err != E_OK) goto error;
 
     (*vp)->addr = res->addr;
 
@@ -305,42 +307,110 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
 
     vm_insert_alloced(alct, *vp);
 
+error:
+    spin_unlock(&alct->lock);
+
     return err;
 }
 
 int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 {
+    spin_lock(&alct->lock);
+
     int err = E_OK;
 
     rbt_delete(&alct->alloced_rbt, &vp->rbt_node);
 
     err = vm_insert_free(alct, vp);
 
+    spin_unlock(&alct->lock);
+
     return err;
 }
 
-// int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t **new_alct)
-// {
-//     int err = kmalloc(new_alct, sizeof(struct vpage_alct_t));
+int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
+{
+    int err = E_OK;
+    spin_lock(&old_alct->lock);
 
-//     if (err != E_OK) return err;
+    vm_init(new_alct, old_alct->mm_ops.alloc, old_alct->mm_ops.free);
 
-//     spin_lock(&old_alct->lock);
+    rbt_rep(&old_alct->alloced_rbt, p)
+    {
+        struct vpage_t *vpo = container_of(p, struct vpage_t, rbt_node);
 
-//     spin_init(&(*new_alct)->lock);
+        struct vpage_t *vpn = NULL;
 
-//     (*new_alct)->mm_ops = old_alct->mm_ops;
+        err = new_alct->mm_ops.alloc((addr_t *)&vpn, sizeof(struct vpage_t));
 
-//     struct rbt_node_t *node = NULL;
+        if (err != E_OK) return err;
 
-//     err = rbt_first(&old_alct->free_rbt, &node);
+        vpn->addr = vpo->addr;
 
-    
+        vpn->size = vpo->size;
 
-//     spin_unlock(&old_alct->lock);
+        vpn->map_page = vpo->map_page;
 
-//     return err;
-// }
+        vm_insert_alloced(new_alct, vpn);
+    }
+
+    rbt_rep(&old_alct->free_rbt, p)
+    {
+        struct vpage_t *vpo = container_of(p, struct vpage_t, rbt_node);
+
+        struct vpage_t *vpn = NULL;
+
+        err = new_alct->mm_ops.alloc((addr_t *)&vpn, sizeof(struct vpage_t));
+
+        if (err != E_OK) return err;
+
+        vpn->addr = vpo->addr;
+
+        vpn->size = vpo->size;
+
+        vm_insert_free(new_alct, vpn);
+    }
+
+    spin_unlock(&old_alct->lock);
+
+    return err;
+}
+
+int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struct vpage_t **vpl, struct vpage_t **vpr)
+{
+    assert(bound > vpo->addr && bound < vpo->addr + vpo->size - 1 && bound % PAGE_SIZE == 0);
+
+    spin_lock(&alct->lock);
+
+    int err = E_OK;
+
+    rbt_delete(&alct->alloced_rbt, &vpo->rbt_node);
+
+    err = alct->mm_ops.alloc((addr_t *)vpr, sizeof(struct vpage_t));
+
+    if (err != E_OK) goto error;
+
+    (*vpr)->size = vpo->addr + vpo->size - bound;
+
+    (*vpr)->addr = bound;
+
+    vpo->size = bound - vpo->addr;
+
+    *vpl = vpo;
+
+    err = vm_insert_alloced(alct, *vpl);
+
+    assert(err == E_OK);
+
+    err = vm_insert_alloced(alct, *vpr);
+
+    assert(err == E_OK);
+
+error:
+    spin_unlock(&alct->lock);
+
+    return err;
+}
 
 /**
  * FIXME: func p
@@ -349,9 +419,9 @@ int vm_init(struct vpage_alct_t *alct, int (*alloc)(addr_t *addr, size_t size), 
 {
     spin_init(&alct->lock);
 
-    alct->free_rbt.root = NULL;
+    rbt_init(&alct->free_rbt);
 
-    alct->alloced_rbt.root = NULL;
+    rbt_init(&alct->alloced_rbt);
 
     alct->mm_ops.alloc = alloc;
 

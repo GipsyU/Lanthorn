@@ -4,9 +4,10 @@
 #include <error.h>
 #include <log.h>
 #include <memory.h>
+#include <proc.h>
+#include <slot.h>
 #include <string.h>
 #include <util.h>
-#include <slot.h>
 
 static struct page_alct_t pm_alct;
 
@@ -20,13 +21,7 @@ static struct slot_alct_t kvm_slot_alct;
 
 static struct slab_alct_t slab_alct;
 
-extern int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size);
-
-extern int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page);
-
-extern int pm_free(struct page_alct_t *alct, struct page_t *page);
-
-extern int pm_init(struct page_alct_t *alct, addr_t addr, size_t size);
+extern struct proc_t proc_0;
 
 static int kvm_slot_alloc(addr_t *addr, size_t size)
 {
@@ -46,7 +41,9 @@ static int kvm_slot_alloc(addr_t *addr, size_t size)
 
 static int kvm_slot_free(addr_t addr)
 {
-    return slot_free(&kvm_slot_alct, addr);
+    slot_free(&kvm_slot_alct, addr);
+
+    return 0;
 }
 
 static int page_fault_hdl(uint errno)
@@ -57,24 +54,25 @@ static int page_fault_hdl(uint errno)
     {
         info("page fault: present, addr = %p.\n", errv);
 
-        while(1);
-
         if (errv >= KERN_BASE)
         {
-            mmu_sync_kern_space(mmu_get_pde(), errv);
+            mmu_sync_kern_space(proc_0.ptb.pde, mmu_get_pde(), errv);
+        }
+        else
+        {
+            um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
         }
     }
 
     return E_OK;
 }
 
-int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size)
+int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size,
+                addr_t kern_pde)
 {
-    int err = E_OK;
-
     info("free pmm start addr: %p, end addr: %p.\n", free_pmm_start, free_pmm_start + free_pmm_size);
 
-    err = pm_init(&pm_alct, (addr_t)pm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
+    int err = pm_init(&pm_alct, (addr_t)pm_slot, CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE);
 
     if (err != E_OK) return err;
 
@@ -86,7 +84,11 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
 
     if (err != E_OK) return err;
 
-    info("init pmm success.\n")
+    info("init pmm success.\n");
+
+    ptb_init(&proc_0.ptb, kern_pde);
+
+    info("init p0 ptb success.\n");
 
     info("free kvm start addr: %p, end addr: %p.\n", free_kvm_start, free_kvm_start + free_kvm_size);
 
@@ -117,39 +119,33 @@ int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_sta
     return err;
 }
 
-static int kmalloc_page(addr_t *addr, size_t size)
+int kmalloc_page(struct vpage_t **vp, size_t size)
 {
-    int err = E_OK;
-
     struct page_t *pp;
-
-    struct vpage_t *vp;
 
     size = ROUND_UP(size, PAGE_SIZE);
 
-    err = pm_alloc(&pm_alct, size / PAGE_SIZE, &pp);
+    int err = pm_alloc(&pm_alct, size / PAGE_SIZE, &pp);
 
     if (err != E_OK) goto error0;
 
-    err = vm_alloc(&kvm_alct, &vp, size);
+    err = vm_alloc(&kvm_alct, vp, size);
 
     if (err != E_OK) goto error1;
 
     for (size_t s = 0; s < size; s += PAGE_SIZE)
     {
-        err = mmu_kern_map(pp->addr + s, vp->addr + s);
-        
+        err = ptb_map(&proc_0.ptb, (*vp)->addr + s, pp->addr + s, 0, 1);
+
         if (err != E_OK) goto error2;
     }
 
-    *addr = vp->addr;
-
-    vp->map_page = pp;
+    (*vp)->map_page = pp;
 
     return err;
 
 error2:
-    vm_free(&kvm_alct, vp);
+    vm_free(&kvm_alct, *vp);
 
 error1:
     pm_free(&pm_alct, pp);
@@ -170,7 +166,11 @@ int kmalloc(addr_t *addr, size_t size)
     }
     else
     {
-        err = kmalloc_page(addr, ROUND_UP(size, PAGE_SIZE));
+        struct vpage_t *vp;
+
+        err = kmalloc_page(&vp, ROUND_UP(size, PAGE_SIZE));
+
+        *addr = vp->addr;
     }
 
     info("kmalloc success: addr = %p, size = %p.\n", *addr, size);
@@ -204,13 +204,24 @@ int kmfree(addr_t addr)
     return err;
 }
 
+int page_get_ptr(addr_t pa, struct page_t **page)
+{
+    assert(pa % PAGE_SIZE == 0);
+
+    return pm_get_page(&pm_alct, pa, page);
+}
+
 int page_alloc(struct page_t **page)
 {
     int err = pm_alloc(&pm_alct, 1, page);
 
     if (err != E_OK) return err;
 
-    return page_get(*page);
+    assert(atomic_read(&(*page)->cnt) == 0);
+
+    atomic_add(&(*page)->cnt, 1);
+
+    return err;
 }
 
 int page_free(struct page_t *page)
@@ -232,13 +243,4 @@ int page_put(struct page_t *page)
     if (atomic_sub_and_test(&page->cnt, 1)) err = page_free(page);
 
     return err;
-}
-
-int pagetb_init(struct pagetb_t *tb)
-{
-    spin_init(&tb->lock);
-
-    tb->rbt.root = NULL;
-
-    return E_OK;
 }

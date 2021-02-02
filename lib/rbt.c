@@ -72,6 +72,11 @@ static void rotate_right(struct rbt_t *rbt, struct rbt_node_t *node)
     }
 }
 
+void rbt_init(struct rbt_t *rbt)
+{
+    rbt->root = NULL;
+}
+
 void rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node)
 {
     struct rbt_node_t *f, *g;

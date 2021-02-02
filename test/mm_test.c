@@ -19,14 +19,13 @@ static void test1(void)
         int *x = addr;
 
         *x = 1;
-        
+
         err = kmfree(addr);
 
         debug("%s\n", strerror(err));
 
         *x = 1;
     }
-
 }
 
 static void test2(void)

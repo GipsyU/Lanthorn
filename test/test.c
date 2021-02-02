@@ -17,16 +17,16 @@ int test(void)
 {
     info("begin test.\n");
 
-    rbt_test();
+    // rbt_test();
 
     // mm_test();
 
     // mmu_test();
 
 
-    // proc_test();
+    proc_test();
 
-    msg_test();
+    // msg_test();
 
     debug("test over.\n");
 

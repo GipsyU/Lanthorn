@@ -1,11 +1,12 @@
-#include <error.h>
 #include <arch/basic.h>
+#include <arch/sysctrl.h>
+#include <boot_arg.h>
+#include <error.h>
 #include <log.h>
 #include <memory.h>
-#include <boot_arg.h>
-#include <string.h>
+#include <msg.h>
 #include <proc.h>
-#include <arch/sysctrl.h>
+#include <string.h>
 
 extern void test(void);
 
@@ -28,7 +29,8 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("init syscall success.\n");
     }
 
-    err = memory_init(boot_arg.free_pmm_start, boot_arg.free_pmm_size, boot_arg.free_kvm_start, boot_arg.free_kvm_size);
+    err = memory_init(boot_arg.free_pmm_start, boot_arg.free_pmm_size, boot_arg.free_kvm_start, boot_arg.free_kvm_size,
+                      boot_arg.pde);
 
     if (err != E_OK)
     {
@@ -39,8 +41,8 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("init memory success.\n");
     }
 
-    err = proc_init(boot_arg.pde);
-    
+    err = proc_init();
+
     if (err != E_OK)
     {
         error("init proc failed, err = %s.\n", strerror(err));
@@ -50,11 +52,23 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("init proc success.\n");
     }
 
+    err = msg_init();
+
+    if (err != E_OK)
+    {
+        error("init msg failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init msg success.\n");
+    }
+
     test();
 
     info("Lanthorn kernel init finished.\n");
 
     sysctrl_shutdown();
 
-    while(1);
+    while (1)
+        ;
 }

@@ -5,14 +5,14 @@
 #include <memory.h>
 struct proc_t
 {
-    struct pagetb_t pagetb;
+    struct ptb_t ptb;
     struct list_node_t thread_ls;
     struct um_t um;
 };
 
 struct proc_t *proc_now(void);
 
-int proc_init(addr_t pde);
+int proc_init(void);
 
 int proc_new(struct proc_t **proc);
 

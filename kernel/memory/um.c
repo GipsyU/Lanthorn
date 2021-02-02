@@ -37,6 +37,8 @@ int um_heap_alloc(struct um_t *um, addr_t *addr, size_t size)
 
 static int umalloc_page(struct um_t *um, addr_t *addr, size_t size)
 {
+    assert(size % PAGE_SIZE == 0);
+
     struct vpage_t *vp;
 
     int err = vm_alloc(&um->vp_alct, &vp, size);
@@ -54,8 +56,6 @@ static int umalloc_page(struct um_t *um, addr_t *addr, size_t size)
             err = vm_insert(&um->vp_alct, nm, size);
 
             if (err != E_OK) return err;
-
-            struct vpage_t *vp;
 
             err = vm_alloc(&um->vp_alct, &vp, size);
 
@@ -130,6 +130,52 @@ int um_init(struct um_t *um)
     slab_init(&um->slab_alct, umalloc_slab, umfree_slab);
 
     err = syscall_register(SYS_malloc, umalloc_hdl, 2);
+
+    return err;
+}
+/**
+ * FIXME: CLEAN UP
+ */
+
+int um_dump(struct um_t *um_old, struct um_t *um_new)
+{
+    um_new->layout = um_old->layout;
+
+    int err = vm_dump(&um_old->vp_alct, &um_new->vp_alct);
+
+    if (err != E_OK) return err;
+
+    err = slab_dump(&um_old->slab_alct, &um_new->slab_alct);
+
+    return err;
+}
+
+int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
+{
+    info("um page fault, addr = %p.\n", errva);
+
+    if (errva < um->layout.heap_s || errva >= um->layout.heap_e)
+    {
+        error("um page fault error");
+
+        return E_FAULT;
+    }
+
+    struct vpage_t *vp = NULL;
+
+    int err = vm_search_addr(&um->vp_alct, errva, &vp);
+
+    if (err != E_OK) return err;
+
+    debug("%p %p\n", vp->addr, vp->size);
+
+    struct page_t *page = NULL;
+
+    err = page_alloc(&page);
+
+    if (err != E_OK) return err;
+
+    ptb_map(ptb, ROUND_DOWN(errva, PAGE_SIZE), page->addr, 1, 1);
 
     return err;
 }

@@ -73,3 +73,16 @@ int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*fr
 
     return E_OK;
 }
+
+int slab_dump(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new)
+{
+    int err = slab_init(slab_new, slab_old->alloc, slab_old->free);
+
+    spin_lock(&slab_old->lock);
+    
+    slab_new->freep = slab_old->freep;
+
+    spin_unlock(&slab_old->lock);
+
+    return err;
+}

@@ -30,6 +30,8 @@ static inline void rb_link_node(struct rbt_node_t *node, struct rbt_node_t *pare
     *link = node;
 }
 
+void rbt_init(struct rbt_t *rbt);
+
 void rbt_insert_color(struct rbt_t *rbt, struct rbt_node_t *node);
 
 void rbt_delete(struct rbt_t *rbt, struct rbt_node_t *node);

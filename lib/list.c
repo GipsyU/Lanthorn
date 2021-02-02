@@ -10,7 +10,7 @@ void list_init(struct list_node_t *head)
 {
     head->n = head;
 
-    head->p = head;    
+    head->p = head;
 }
 
 int list_isempty(struct list_node_t *head)
@@ -44,22 +44,22 @@ struct list_node_t *list_back(struct list_node_t *head)
 void list_push_front(struct list_node_t *head, struct list_node_t *node)
 {
     node->n = head->n;
- 
+
     node->p = head;
- 
+
     head->n->p = node;
- 
+
     head->n = node;
 }
 
 void list_push_back(struct list_node_t *head, struct list_node_t *node)
 {
     node->p = head->p;
- 
+
     node->n = head;
- 
+
     head->p->n = node;
- 
+
     head->p = node;
 }
 
@@ -91,4 +91,3 @@ struct list_node_t *list_pop_back(struct list_node_t *head)
 
     return back;
 }
-

@@ -1,1 +1,1 @@
-obj-y := memory.o pm.o vm.o slab.o um.o
+obj-y := memory.o pm.o vm.o slab.o um.o ptb.o

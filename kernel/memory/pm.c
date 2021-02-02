@@ -2,6 +2,7 @@
 #include <list.h>
 #include <log.h>
 #include <memory.h>
+#include <rbt.h>
 #include <spinlock.h>
 #include <util.h>
 /*
@@ -22,6 +23,8 @@ static int new_page(struct page_alct_t *alct, struct page_t **page)
     }
 
     atomic_set(&(*page)->cnt, 0);
+
+    spin_init(&(*page)->lock);
 
     return err;
 }
@@ -172,6 +175,81 @@ static int buddy_alloc(struct page_alct_t *alct, uint order, struct page_t **pag
     return err;
 }
 
+static int _rbt_insert(struct rbt_t *rbt, struct page_t *page)
+{
+    struct rbt_node_t **p = &rbt->root;
+
+    struct rbt_node_t *parent = NULL;
+
+    struct page_t *pg;
+
+    while (*p)
+    {
+        parent = *p;
+
+        pg = container_of(parent, struct page_t, rbt_node);
+
+        if (page->addr < pg->addr)
+        {
+            p = &(*p)->l;
+        }
+        else if (page->addr > pg->addr)
+        {
+            p = &(*p)->r;
+        }
+        else
+        {
+            return E_EXIST;
+        }
+    }
+
+    rb_link_node(&page->rbt_node, parent, p);
+
+    return E_OK;
+}
+
+static int rbt_insert(struct rbt_t *rbt, struct page_t *page)
+{
+    int err = _rbt_insert(rbt, page);
+
+    if (err != E_OK) return err;
+
+    rbt_insert_color(rbt, &page->rbt_node);
+
+    return err;
+}
+
+static int rbt_find(struct rbt_t *rbt, addr_t pa, struct page_t **res)
+{
+    assert(pa % PAGE_SIZE == 0);
+
+    struct rbt_node_t *n = rbt->root;
+
+    struct page_t *page;
+
+    while (n)
+    {
+        page = container_of(n, struct page_t, rbt_node);
+
+        if (pa < page->addr)
+        {
+            n = n->l;
+        }
+        else if (pa > page->addr)
+        {
+            n = n->r;
+        }
+        else
+        {
+            *res = page;
+
+            return E_OK;
+        }
+    }
+
+    return E_NOTFOUND;
+}
+
 int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size)
 {
     assert(size % PAGE_SIZE == 0 && size > 0 && addr % PAGE_SIZE == 0);
@@ -229,6 +307,17 @@ int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page)
 
     int err = buddy_alloc(alct, order, page);
 
+    if (err != E_OK)
+    {
+        spin_unlock(&alct->lock);
+
+        return err;
+    }
+
+    err = rbt_insert(&alct->alloced_rbt, *page);
+
+    assert(err == E_OK);
+
     spin_unlock(&alct->lock);
 
     return err;
@@ -241,6 +330,15 @@ int pm_free(struct page_alct_t *alct, struct page_t *page)
     spin_lock(&alct->lock);
 
     err = buddy_put(alct, page);
+
+    if (err != E_OK)
+    {
+        spin_unlock(&alct->lock);
+
+        return err;
+    }
+
+    rbt_delete(&alct->alloced_rbt, &page->rbt_node);
 
     spin_unlock(&alct->lock);
 
@@ -268,7 +366,22 @@ int pm_init(struct page_alct_t *alct, addr_t addr, size_t size)
         list_init(&alct->head[i]);
     }
 
-    err = spin_init(&alct->lock);
+    spin_init(&alct->lock);
+
+    rbt_init(&alct->alloced_rbt);
+
+    return err;
+}
+
+int pm_get_page(struct page_alct_t *alct, addr_t addr, struct page_t **page)
+{
+    assert(addr % PAGE_SIZE == 0);
+
+    spin_lock(&alct->lock);
+
+    int err = rbt_find(&alct->alloced_rbt, addr, page);
+
+    spin_unlock(&alct->lock);
 
     return err;
 }

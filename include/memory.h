@@ -13,7 +13,7 @@ struct page_t
     size_t size;
     struct atomic_t cnt;
     struct rbt_node_t rbt_node;
-    struct list_node_t vm_ln;
+    struct spinlock_t lock;
     struct buddy_t
     {
         size_t order;
@@ -38,7 +38,6 @@ struct vpage_t
     size_t size;
     size_t mx_size;
     struct page_t *map_page;
-    struct list_node_t page_ls;
     struct rbt_node_t rbt_node;
 };
 
@@ -65,9 +64,10 @@ struct slab_alct_t
 
     int (*free)(addr_t);
 };
-struct pagetb_t
+
+struct ptb_t
 {
-    struct page_t *pde;
+    addr_t pde;
     struct spinlock_t lock;
     struct rbt_t rbt;
 };
@@ -102,7 +102,19 @@ struct um_t
     struct slab_alct_t slab_alct;
 };
 
-int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size);
+int pm_insert(struct page_alct_t *alct, addr_t addr, size_t size);
+
+int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page);
+
+int pm_free(struct page_alct_t *alct, struct page_t *page);
+
+int pm_init(struct page_alct_t *alct, addr_t addr, size_t size);
+
+int pm_get_page(struct page_alct_t *alct, addr_t addr, struct page_t **page);
+
+int memory_init(addr_t free_pmm_start, size_t free_pmm_size, addr_t free_kvm_start, size_t free_kvm_size, addr_t pde);
+
+int kmalloc_page(struct vpage_t **vp, size_t size);
 
 int kmalloc(addr_t *addr, size_t size);
 
@@ -116,7 +128,7 @@ int page_get(struct page_t *page);
 
 int page_put(struct page_t *page);
 
-int pagetb_init(struct pagetb_t *tb);
+int page_get_ptr(addr_t pa, struct page_t **page);
 
 int vm_init(struct vpage_alct_t *alct, int (*alloc)(addr_t *addr, size_t size), int (*free)(addr_t addr));
 
@@ -128,6 +140,10 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp);
 
 int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res);
 
+int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct);
+
+int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struct vpage_t **vpl, struct vpage_t **vpr);
+
 int umalloc(struct um_t *um, addr_t *addr, size_t size);
 
 int um_stack_alloc(struct um_t *um, addr_t *addr, size_t size);
@@ -136,10 +152,20 @@ int um_heap_alloc(struct um_t *um, addr_t *addr, size_t size);
 
 int um_init(struct um_t *um);
 
+int um_dump(struct um_t *um_old, struct um_t *um_new);
+
+int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva);
+
 int slab_alloc(struct slab_alct_t *alct, addr_t *addr, size_t size);
 
 int slab_free(struct slab_alct_t *alct, addr_t addr);
 
 int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*free)(addr_t));
+
+int slab_dump(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new);
+
+int ptb_map(struct ptb_t *ptb, addr_t va, addr_t pa, uint usr, uint wtb);
+
+int ptb_init(struct ptb_t *tb, addr_t pde);
 
 #endif

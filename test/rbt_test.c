@@ -68,8 +68,8 @@ int rbt_test(void)
     v1.addr = 0 * PAGE_SIZE;
     v2.addr = 1 * PAGE_SIZE;
     v3.addr = 2 * PAGE_SIZE;
-
-    rbt.root = NULL;
+    
+	rbt_init(&rbt);
 
     int err;
 
