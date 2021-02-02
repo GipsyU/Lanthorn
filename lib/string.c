@@ -50,6 +50,14 @@ uint strlen(const char *s)
     return _s - s;
 }
 
+void strcpy(char *dst, const char *src, size_t size)
+{
+    while (size--)
+    {
+        *dst++ = *src++;
+    }
+}
+
 int strcmp(const char *s1, const char *s2)
 {
     uint len1 = strlen(s1);

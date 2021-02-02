@@ -10,6 +10,8 @@ int memcmp(const u8 *s1, const u8 *s2, size_t len);
 
 uint strlen(const char *s);
 
+void strcpy(char *dst, const char *src, size_t size);
+
 int strcmp(const char *s1, const char *s2);
 
 #endif
