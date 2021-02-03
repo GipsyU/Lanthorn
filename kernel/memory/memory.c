@@ -133,6 +133,8 @@ int kmalloc_page(struct vpage_t **vp, size_t size)
 
     if (err != E_OK) goto error1;
 
+    (*vp)->type = KM_NORMAL;
+
     for (size_t s = 0; s < size; s += PAGE_SIZE)
     {
         err = ptb_map(&proc_0.ptb, (*vp)->addr + s, pp->addr + s, 0, 1);

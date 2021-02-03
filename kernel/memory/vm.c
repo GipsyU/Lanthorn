@@ -376,11 +376,10 @@ int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
     return err;
 }
 
-int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struct vpage_t **vpl, struct vpage_t **vpr)
+static int _vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struct vpage_t **vpl,
+                     struct vpage_t **vpr)
 {
     assert(bound > vpo->addr && bound < vpo->addr + vpo->size - 1 && bound % PAGE_SIZE == 0);
-
-    spin_lock(&alct->lock);
 
     int err = E_OK;
 
@@ -405,6 +404,47 @@ int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struc
     err = vm_insert_alloced(alct, *vpr);
 
     assert(err == E_OK);
+
+error:
+
+    return err;
+}
+
+int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size_t size, struct vpage_t **res)
+{
+    spin_lock(&alct->lock);
+
+    int err = E_OK;
+
+    assert(addr % PAGE_SIZE == 0 && size % PAGE_SIZE == 0);
+
+    assert(addr >= vpage->addr && addr + size <= vpage->addr + vpage->size);
+
+    if (addr > vpage->addr)
+    {
+        struct vpage_t *vpl, *vpr;
+
+        err = _vm_slice(alct, vpage, addr, &vpl, &vpr);
+
+        if (err != E_OK) goto error;
+
+        vpage = vpr;
+    }
+
+    if (addr + size < vpage->addr + vpage->size)
+    {
+        struct vpage_t *vpl, *vpr;
+
+        err = _vm_slice(alct, vpage, addr + size, &vpl, &vpr);
+
+        if (err != E_OK) goto error;
+
+        vpage = vpl;
+    }
+
+    assert(vpage->addr == addr && vpage->size == size);
+
+    *res = vpage;
 
 error:
     spin_unlock(&alct->lock);

@@ -67,6 +67,8 @@ static int umalloc_page(struct um_t *um, addr_t *addr, size_t size)
             return err;
     }
 
+    vp->type = UM_NOPM;
+
     *addr = vp->addr;
 
     return err;
@@ -167,15 +169,26 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
 
     if (err != E_OK) return err;
 
-    debug("%p %p\n", vp->addr, vp->size);
+    if (vp->type == UM_NOPM)
+    {
+        struct page_t *page = NULL;
 
-    struct page_t *page = NULL;
+        err = page_alloc(&page);
 
-    err = page_alloc(&page);
+        if (err != E_OK) return err;
+        
+        ptb_map(ptb, ROUND_DOWN(errva, PAGE_SIZE), page->addr, 1, 1);
 
-    if (err != E_OK) return err;
-
-    ptb_map(ptb, ROUND_DOWN(errva, PAGE_SIZE), page->addr, 1, 1);
+        
+    }
+    else if (vp->type == UM_NORMAL)
+    {
+        warn("um page fault in um_normal type in vpage.\n");
+    }
+    else if (vp->type == UM_RCU)
+    {
+        
+    }
 
     return err;
 }

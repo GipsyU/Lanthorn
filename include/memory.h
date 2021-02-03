@@ -37,6 +37,7 @@ struct vpage_t
     addr_t addr;
     size_t size;
     size_t mx_size;
+    enum TYPE {KM_NORMAL, UM_NORMAL, UM_NOPM, UM_RCU} type;
     struct page_t *map_page;
     struct rbt_node_t rbt_node;
 };
@@ -142,7 +143,7 @@ int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
 
 int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct);
 
-int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t bound, struct vpage_t **vpl, struct vpage_t **vpr);
+int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size_t size, struct vpage_t **res);
 
 int umalloc(struct um_t *um, addr_t *addr, size_t size);
 
@@ -167,5 +168,7 @@ int slab_dump(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new);
 int ptb_map(struct ptb_t *ptb, addr_t va, addr_t pa, uint usr, uint wtb);
 
 int ptb_init(struct ptb_t *tb, addr_t pde);
+
+int ptb_dump(struct ptb_t *ptbo, struct ptb_t *ptbn);
 
 #endif
