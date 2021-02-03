@@ -6,6 +6,21 @@
 #include <spinlock.h>
 #include <util.h>
 
+static int vpage_new(struct vpage_alct_t *alct,  addr_t addr, size_t size, struct vpage_t **vpage)
+{
+    int err = alct->mm_ops.alloc((addr_t *)vpage, sizeof(struct vpage_t));
+
+    if (err != E_OK) return err;
+
+    spin_init(&(*vpage)->lock);
+
+    (*vpage)->addr = addr;
+
+    (*vpage)->size = size;
+
+    return err;
+}
+
 static void update(struct rbt_node_t *node)
 {
     struct vpage_t *vpage = container_of(node, struct vpage_t, rbt_node);
@@ -250,17 +265,9 @@ int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
 
     struct vpage_t *vp;
 
-    err = alct->mm_ops.alloc((addr_t *)&vp, sizeof(struct vpage_t));
+    err = vpage_new(alct, addr, size, &vp);
 
     if (err != E_OK) goto error;
-
-    /**
-     * TODO: vpage_init
-     */
-
-    vp->addr = addr;
-
-    vp->size = size;
 
     err = vm_insert_free(alct, vp);
 
@@ -284,13 +291,9 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
 
     if (err != E_OK) goto error;
 
-    err = alct->mm_ops.alloc((addr_t *)vp, sizeof(struct vpage_t));
+    err = vpage_new(alct, res->addr, size, vp);
 
     if (err != E_OK) goto error;
-
-    (*vp)->addr = res->addr;
-
-    (*vp)->size = size;
 
     if (res->size == size)
     {
@@ -341,6 +344,9 @@ int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
 
         struct vpage_t *vpn = NULL;
 
+        /**
+         * FIXME:vpage_new;
+         */
         err = new_alct->mm_ops.alloc((addr_t *)&vpn, sizeof(struct vpage_t));
 
         if (err != E_OK) return err;
@@ -385,13 +391,9 @@ static int _vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t boun
 
     rbt_delete(&alct->alloced_rbt, &vpo->rbt_node);
 
-    err = alct->mm_ops.alloc((addr_t *)vpr, sizeof(struct vpage_t));
+    err = vpage_new(alct, bound, vpo->addr + vpo->size - bound, vpr);
 
     if (err != E_OK) goto error;
-
-    (*vpr)->size = vpo->addr + vpo->size - bound;
-
-    (*vpr)->addr = bound;
 
     vpo->size = bound - vpo->addr;
 

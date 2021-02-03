@@ -37,6 +37,7 @@ struct vpage_t
     addr_t addr;
     size_t size;
     size_t mx_size;
+    struct spinlock_t lock;
     enum TYPE {KM_NORMAL, UM_NORMAL, UM_NOPM, UM_RCU} type;
     struct page_t *map_page;
     struct rbt_node_t rbt_node;
