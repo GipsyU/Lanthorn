@@ -7,6 +7,7 @@
 #define STS_T32A 0x9 // Available 32-bit TSS
 #define STS_IG32 0xE // 32-bit Interrupt Gate
 #define STS_TG32 0xF // 32-bit Trap Gate
+#define FL_IF 0x00000200
 
 struct gate_t
 {
@@ -189,10 +190,7 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 
     regs->eip = run;
 
-    /**
-     * FIXME:enable intr
-     */
-    // regs->eflags
+    regs->eflags = FL_IF;
 
     regs->esp = usp;
 
