@@ -7,15 +7,11 @@
 #include <memory.h>
 #include <proc.h>
 #include <spinlock.h>
+#include <string.h>
 #include <thread.h>
 #include <util.h>
 
 extern struct proc_t proc_0;
-static struct schd_q_t
-{
-    struct spinlock_t lock;
-    struct list_node_t queue;
-} runnable;
 
 static void pre(void)
 {
@@ -23,20 +19,69 @@ static void pre(void)
     intr_end();
 }
 
-static void suf(void)
+static void thread_enclosure(addr_t func, uint nargs, ...)
 {
-    info("thread end\n");
+    info("thread begin.\n");
+
+    intr_end();
+
+    int err = E_OK;
+
+    long *args = (void *)(((addr_t)&nargs) + sizeof(nargs));
+
+    if (nargs == 0)
+    {
+        int (*handler)(void) = (void *)func;
+
+        err = handler();
+    }
+
+    if (nargs == 1)
+    {
+        int (*handler)(long) = (void *)func;
+
+        err = handler(args[0]);
+    }
+
+    if (nargs == 2)
+    {
+        int (*handler)(long, long) = (void *)func;
+
+        err = handler(args[0], args[1]);
+    }
+
+    if (nargs == 3)
+    {
+        int (*handler)(long, long, long) = (void *)func;
+
+        err = handler(args[0], args[1], args[2]);
+    }
+
+    if (nargs == 4)
+    {
+        int (*handler)(long, long, long, long) = (void *)func;
+
+        err = handler(args[0], args[1], args[2], args[3]);
+    }
+
+    if (nargs == 5)
+    {
+        int (*handler)(long, long, long, long, long) = (void *)func;
+
+        err = handler(args[0], args[1], args[2], args[3], args[4]);
+    }
+
+    if (nargs > 5)
+    {
+        error("thread_enclosure error.\n");
+    }
+
+    info("thread end, killed.\n");
+
+    schd_kill(thread_now());
+
     while (1)
         ;
-}
-
-static int queue_init(struct schd_q_t *q)
-{
-    spin_init(&q->lock);
-
-    list_init(&q->queue);
-
-    return E_OK;
 }
 
 struct thread_t *thread_now(void)
@@ -46,36 +91,86 @@ struct thread_t *thread_now(void)
     return container_of(task, struct thread_t, task);
 }
 
-int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
+static int thread_new(struct thread_t **res)
 {
-    int err = kmalloc((addr_t *)thread, sizeof(struct thread_t));
+    struct thread_t *thread = NULL;
+
+    int err = kmalloc((addr_t *)&thread, sizeof(struct thread_t));
 
     if (err != E_OK) return err;
 
-    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
+    thread->state = UNSCHDED;
+
+    thread->proc = NULL;
+
+    thread->wake_sig = 0;
+
+    *res = thread;
+
+    return err;
+}
+
+int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
+{
+    int err = thread_new(thread);
+
+    if (err != E_OK) return err;
 
     addr_t stack;
 
-    err = kmalloc(&stack, PAGE_SIZE);
+    err = kmalloc(&stack, KERN_STACK_SIZE);
 
-    if (err != E_OK)
+    if (err != E_OK) return err;
+
+    (*thread)->ks_addr = stack;
+
+    (*thread)->ks_size = KERN_STACK_SIZE;
+
+    long *args = (void *)(((addr_t)&nargs) + sizeof(nargs));
+
+    if (nargs == 0)
     {
-        kmfree(*thread);
-
-        return err;
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs);
     }
 
-    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, stack);
+    if (nargs == 1)
+    {
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0]);
+    }
 
-    task_init(&(*thread)->task, stack, PAGE_SIZE, pre, exe, suf);
+    if (nargs == 2)
+    {
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1]);
+    }
 
-    (*thread)->state = RUNNABEL;
+    if (nargs == 3)
+    {
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
+                       args[2]);
+    }
 
-    (*thread)->proc = proc;
+    if (nargs == 4)
+    {
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
+                       args[2], args[3]);
+    }
 
-    list_push_back(&proc->thread_ls, &(*thread)->proc_ln);
+    if (nargs == 5)
+    {
+        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
+                       args[2], args[3], args[4]);
+    }
 
-    list_push_back(&runnable.queue, &(*thread)->schd_ln);
+    if (nargs > 5)
+    {
+        error("thread kern new error.\n");
+    }
+
+    (*thread)->proc = &proc_0;
+
+    list_push_back(&proc_0.thread_ls, &(*thread)->proc_ln);
+
+    schd_run(*thread);
 
     return err;
 }
@@ -85,17 +180,23 @@ int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe)
  */
 int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz)
 {
-    int err = kmalloc((addr_t *)thread, sizeof(struct thread_t));
+    int err = thread_new(thread);
 
     if (err != E_OK) return err;
+
+    debug("%p\n", *thread);
 
     mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
 
     addr_t kstack = NULL;
 
-    err = kmalloc(&kstack, PAGE_SIZE);
+    err = kmalloc(&kstack, KERN_STACK_SIZE);
 
     if (err != E_OK) return err;
+
+    (*thread)->ks_addr = kstack;
+
+    (*thread)->ks_size = KERN_STACK_SIZE;
 
     mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, kstack);
 
@@ -107,13 +208,11 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, s
 
     task_user_init(&(*thread)->task, kstack, PAGE_SIZE, ustk_a, PAGE_SIZE, pre, exe);
 
-    (*thread)->state = RUNNABEL;
-
     (*thread)->proc = proc;
 
     list_push_back(&proc->thread_ls, &(*thread)->proc_ln);
 
-    list_push_back(&runnable.queue, &(*thread)->schd_ln);
+    schd_run(*thread);
 
     return err;
 }
@@ -127,52 +226,61 @@ int thread_free(struct thread_t *thread)
     return err;
 }
 
-static int thread_intr(uint errno)
-{
-    uint cpuid = cpu_id();
-
-    struct task_t *task = cpu_get_task(cpuid);
-
-    struct thread_t *thread = container_of(task, struct thread_t, task);
-
-    thread->state = RUNNABEL;
-
-    list_push_back(&runnable.queue, &thread->schd_ln);
-
-    task_switch(task, cpu_schd(cpuid));
-
-    return E_OK;
-}
-
-int thread_schd(void)
-{
-    uint cpuid = cpu_id();
-
-    while (1)
-    {
-        if (list_isempty(&runnable.queue) == 0)
-        {
-            struct thread_t *thread = container_of(list_pop_front(&runnable.queue), struct thread_t, schd_ln);
-
-            thread->state = RUNNING;
-
-            thread->cpuid = cpu_id();
-
-            cpu_set_task(cpuid, &thread->task);
-
-            proc_switch(thread->proc);
-
-            task_switch(cpu_schd(cpuid), &thread->task);
-        }
-    }
-    return E_OK;
-}
-
 int thread_init(void)
 {
-    queue_init(&runnable);
-
-    intr_register(INTR_TIMER, thread_intr);
-
     return E_OK;
 }
+
+int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res)
+{
+    struct thread_t *threadn = NULL;
+
+    int err = kmalloc((addr_t *)&threadn, sizeof(struct thread_t));
+
+    if (err != E_OK) return err;
+
+    addr_t stack;
+
+    err = kmalloc(&stack, thread->ks_size);
+
+    if (err != E_OK) return err;
+
+    threadn->ks_addr = stack;
+
+    threadn->ks_size = thread->ks_size;
+
+    threadn->task.saddr = stack;
+
+    threadn->task.ssize = threadn->ks_size;
+
+    threadn->task.sp = thread->task.sp - thread->task.saddr + stack;
+
+    addr_t *src = thread->ks_addr;
+
+    addr_t *dst = threadn->ks_addr;
+
+    for (uint i = 0; i < PAGE_SIZE / 4; ++i)
+    {
+        if (src[i] >= thread->ks_addr && src[i] < thread->ks_addr + thread->ks_size)
+        {
+            dst[i] = src[i] - thread->ks_addr + threadn->ks_addr;
+        }
+        else
+        {
+            dst[i] = src[i];
+        }
+    }
+
+    threadn->proc = proc;
+
+    list_push_back(&proc->thread_ls, &threadn->proc_ln);
+
+    *res = threadn;
+
+    return err;
+}
+
+// int thread_kill(struct thread_t *thread)
+// {
+
+// }

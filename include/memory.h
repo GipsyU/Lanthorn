@@ -142,7 +142,7 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp);
 
 int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res);
 
-int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct);
+int vm_fork(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct, struct ptb_t *ptb);
 
 int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size_t size, struct vpage_t **res);
 
@@ -154,7 +154,7 @@ int um_heap_alloc(struct um_t *um, addr_t *addr, size_t size);
 
 int um_init(struct um_t *um);
 
-int um_dump(struct um_t *um_old, struct um_t *um_new);
+int um_fork(struct um_t *um_old, struct um_t *um_new, struct ptb_t* ptb);
 
 int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva);
 
@@ -164,12 +164,14 @@ int slab_free(struct slab_alct_t *alct, addr_t addr);
 
 int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*free)(addr_t));
 
-int slab_dump(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new);
+int slab_fork(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new);
 
 int ptb_map(struct ptb_t *ptb, addr_t va, addr_t pa, uint usr, uint wtb);
 
 int ptb_init(struct ptb_t *tb, addr_t pde);
 
-int ptb_dump(struct ptb_t *ptbo, struct ptb_t *ptbn);
+int ptb_fork(struct ptb_t *ptbo, struct ptb_t *ptbn);
+
+int ptb_unmap(struct ptb_t *ptb, addr_t va);
 
 #endif

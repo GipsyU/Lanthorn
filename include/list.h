@@ -41,4 +41,7 @@ struct list_node_t *list_pop_back(struct list_node_t *head);
 #define list_rep(head, p) \
     for (struct list_node_t * (p) = (head)->n; (p) != head; (p) = (p)->n)
 
+#define list_rep_s(head, p) \
+    for (struct list_node_t * (p) = (head)->n, *pp = (p)->n; (p) != head; (p) = pp, pp = pp->n)
+
 #endif

@@ -7,33 +7,61 @@
 #include <list.h>
 #include <proc.h>
 
+#define KERN_STACK_SIZE (8 * PAGE_SIZE)
+
 enum T_STATE
 {
+    UNSCHDED,
     RUNNABEL,
     RUNNING,
-    SLEEPING
+    SLEEPING,
+    KILLED
 };
 
 struct thread_t
 {
     uint cpuid;
     enum T_STATE state;
+    addr_t ks_addr;
+    size_t ks_size;
+    long wake_sig;
     struct task_t task;
     struct proc_t *proc;
     struct list_node_t schd_ln;
     struct list_node_t proc_ln;
 };
 
+struct schd_t
+{
+    struct spinlock_t lock;
+    struct list_node_t runnable;
+    struct list_node_t sleeping;
+};
+
+static struct schd_t scheduler;
+
 struct thread_t *thread_now(void);
 
-int thread_kern_new(struct thread_t **thread, struct proc_t *proc, addr_t exe);
+int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...);
 
 int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz);
 
-int thread_schd(void);
-
 int thread_init(void);
 
-int thread_dd(void);
+int thread_sleep(void);
+
+int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res);
+
+int schd_schdule(void);
+
+int schd_run(struct thread_t *thread);
+
+int schd_kill(struct thread_t *thread);
+
+int schd_sleep(struct thread_t *thread, long wake_sig);
+
+int schd_wake(long wake_sig);
+
+int schd_init(void);
 
 #endif

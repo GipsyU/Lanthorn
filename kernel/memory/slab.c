@@ -1,8 +1,8 @@
 #include <error.h>
+#include <log.h>
 #include <memory.h>
 #include <spinlock.h>
 #include <util.h>
-#include <log.h>
 
 static inline uint *get_cnt(addr_t addr)
 {
@@ -52,7 +52,7 @@ int slab_free(struct slab_alct_t *alct, addr_t addr)
     if (*cnt == 0)
     {
         if (ROUND_DOWN(alct->freep, PAGE_SIZE) == (addr_t)cnt) alct->freep = NULL;
-        
+
         err = (alct->free)((addr_t)cnt);
     }
 
@@ -74,12 +74,12 @@ int slab_init(struct slab_alct_t *alct, int (*alloc)(addr_t *, size_t), int (*fr
     return E_OK;
 }
 
-int slab_dump(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new)
+int slab_fork(struct slab_alct_t *slab_old, struct slab_alct_t *slab_new)
 {
     int err = slab_init(slab_new, slab_old->alloc, slab_old->free);
 
     spin_lock(&slab_old->lock);
-    
+
     slab_new->freep = slab_old->freep;
 
     spin_unlock(&slab_old->lock);

@@ -38,7 +38,7 @@ int ptb_map(struct ptb_t *ptb, addr_t va, addr_t pa, uint usr, uint wtb)
 
         mmu_pp_clean(ptep->addr);
 
-        mmu_pte_set(ptb->pde, va, ptep->addr, usr, wtb);
+        mmu_pte_set(ptb->pde, va, ptep->addr, usr, 1);
     }
 
     err = mmu_map(ptb->pde, va, pa, usr, wtb);
@@ -94,7 +94,7 @@ int ptb_init(struct ptb_t *tb, addr_t pde)
     return E_OK;
 }
 
-int ptb_dump(struct ptb_t *ptbo, struct ptb_t *ptbn)
+int ptb_fork(struct ptb_t *ptbo, struct ptb_t *ptbn)
 {
     struct page_t *pden;
 
@@ -103,4 +103,11 @@ int ptb_dump(struct ptb_t *ptbo, struct ptb_t *ptbn)
     if (err != E_OK) return err;
 
     ptb_init(ptbn, pden->addr);
+
+    for (addr_t addr = KERN_BASE; addr != 0; addr += PAGE_SIZE * PAGE_SIZE / sizeof(addr_t))
+    {
+        mmu_sync_kern_space(proc_0.ptb.pde, ptbn->pde, addr);
+    }
+
+    return E_OK;
 }

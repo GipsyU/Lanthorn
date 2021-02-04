@@ -1,9 +1,10 @@
+#include <arch/phyops.h>
 #include <error.h>
+#include <log.h>
 #include <memory.h>
 #include <proc.h>
-#include <log.h>
-#include <util.h>
 #include <syscall.h>
+#include <util.h>
 
 int um_stack_alloc(struct um_t *um, addr_t *addr, size_t size)
 {
@@ -113,7 +114,6 @@ static int umfree_slab(addr_t addr)
     return umfree(&proc->um, addr);
 }
 
-
 static int umalloc_hdl(addr_t *addr, size_t *size)
 {
     struct proc_t *proc = proc_now();
@@ -139,15 +139,15 @@ int um_init(struct um_t *um)
  * FIXME: CLEAN UP
  */
 
-int um_dump(struct um_t *um_old, struct um_t *um_new)
+int um_fork(struct um_t *um_old, struct um_t *um_new, struct ptb_t *ptb)
 {
     um_new->layout = um_old->layout;
 
-    int err = vm_dump(&um_old->vp_alct, &um_new->vp_alct);
+    int err = vm_fork(&um_old->vp_alct, &um_new->vp_alct, ptb);
 
     if (err != E_OK) return err;
 
-    err = slab_dump(&um_old->slab_alct, &um_new->slab_alct);
+    err = slab_fork(&um_old->slab_alct, &um_new->slab_alct);
 
     return err;
 }
@@ -160,6 +160,9 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
     {
         error("um page fault error");
 
+        while (1)
+            ;
+
         return E_FAULT;
     }
 
@@ -171,23 +174,67 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
 
     if (vp->type == UM_NOPM)
     {
+        struct vpage_t *tmp = NULL;
+
+        err = vm_slice(&um->vp_alct, vp, ROUND_DOWN(errva, PAGE_SIZE), PAGE_SIZE, &tmp);
+
+        if (err != E_OK) return err;
+
+        vp = tmp;
+
         struct page_t *page = NULL;
 
         err = page_alloc(&page);
 
         if (err != E_OK) return err;
-        
-        ptb_map(ptb, ROUND_DOWN(errva, PAGE_SIZE), page->addr, 1, 1);
 
-        
+        err = ptb_map(ptb, vp->addr, page->addr, 1, 1);
+
+        if (err != E_OK) return err;
+
+        vp->map_page = page;
+
+        vp->type = UM_NORMAL;
     }
     else if (vp->type == UM_NORMAL)
     {
         warn("um page fault in um_normal type in vpage.\n");
+        while (1)
+            ;
     }
     else if (vp->type == UM_RCU)
     {
-        
+        //     struct vpage_t *tmp = NULL;
+
+        //     err = vm_slice(&um->vp_alct, vp, ROUND_DOWN(errva, PAGE_SIZE), PAGE_SIZE, &tmp);
+
+        //     if (err != E_OK) return err;
+
+        //     vp = tmp;
+
+        struct page_t *page = NULL;
+
+        err = page_alloc(&page);
+
+        if (err != E_OK) return err;
+
+        phyops_memcpy_v2p(page->addr, ROUND_DOWN(errva, PAGE_SIZE), PAGE_SIZE);
+
+        err = ptb_unmap(ptb, vp->addr);
+
+        assert(err == E_OK);
+
+        err = ptb_map(ptb, vp->addr, page->addr, 1, 1);
+
+        if (err != E_OK) return err;
+
+        vp->map_page = page;
+
+        vp->type = UM_NORMAL;
+    }
+    else
+    {
+        panic("um page fault bug.\n");
     }
 
     return err;

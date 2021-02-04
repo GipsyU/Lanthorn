@@ -1,15 +1,15 @@
 #include <mm.h>
+#include <proc.h>
+#include <syscall.h>
 #include <type.h>
+
 int main(void)
 {
-    addr_t addr;
+    long pid = 0;
 
-    int err = malloc(&addr, 0x1000);
+    fork(&pid);
 
-    char *s = addr;
-
-    s[0] = 'a';
-    s[1] = 'b';
+    syscall(SYS_write, pid);
 
     return 0;
 }

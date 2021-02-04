@@ -1,4 +1,5 @@
 #include <arch/basic.h>
+#include <arch/phyops.h>
 #include <error.h>
 #include <log.h>
 #include <memory.h>
@@ -6,7 +7,7 @@
 #include <spinlock.h>
 #include <util.h>
 
-static int vpage_new(struct vpage_alct_t *alct,  addr_t addr, size_t size, struct vpage_t **vpage)
+static int vpage_new(struct vpage_alct_t *alct, addr_t addr, size_t size, struct vpage_t **vpage)
 {
     int err = alct->mm_ops.alloc((addr_t *)vpage, sizeof(struct vpage_t));
 
@@ -331,15 +332,17 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
     return err;
 }
 
-int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
+int vm_fork(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct, struct ptb_t *ptb)
 {
     int err = E_OK;
+
     spin_lock(&old_alct->lock);
 
     vm_init(new_alct, old_alct->mm_ops.alloc, old_alct->mm_ops.free);
 
     rbt_rep(&old_alct->alloced_rbt, p)
     {
+
         struct vpage_t *vpo = container_of(p, struct vpage_t, rbt_node);
 
         struct vpage_t *vpn = NULL;
@@ -355,7 +358,17 @@ int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
 
         vpn->size = vpo->size;
 
-        vpn->map_page = vpo->map_page;
+        struct page_t *page;
+
+        page_alloc(&page);
+
+        vpn->map_page = page;
+
+        vpn->type = UM_NORMAL;
+
+        phyops_memcpy_p2p(page->addr, vpo->map_page->addr, PAGE_SIZE);
+
+        ptb_map(ptb, vpn->addr, vpn->map_page->addr, 1, 1);
 
         vm_insert_alloced(new_alct, vpn);
     }
@@ -373,6 +386,8 @@ int vm_dump(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct)
         vpn->addr = vpo->addr;
 
         vpn->size = vpo->size;
+
+        vpn->mx_size = vpo->mx_size;
 
         vm_insert_free(new_alct, vpn);
     }
@@ -399,6 +414,8 @@ static int _vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpo, addr_t boun
 
     *vpl = vpo;
 
+    (*vpr)->type = vpo->type;
+
     err = vm_insert_alloced(alct, *vpl);
 
     assert(err == E_OK);
@@ -414,6 +431,8 @@ error:
 
 int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size_t size, struct vpage_t **res)
 {
+    assert(vpage->type == UM_NOPM);
+
     spin_lock(&alct->lock);
 
     int err = E_OK;

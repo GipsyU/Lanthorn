@@ -7,10 +7,18 @@
 #include <msg.h>
 #include <proc.h>
 #include <string.h>
+#include <syscall.h>
 
 extern void test(void);
 
 extern int syscall_init(void);
+
+static int tmp(long x)
+{
+    print("%p\n", x);
+
+    return E_OK;
+}
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
@@ -63,6 +71,8 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("init msg success.\n");
     }
 
+    syscall_register(SYS_write, tmp, 1);
+    
     test();
 
     info("Lanthorn kernel init finished.\n");

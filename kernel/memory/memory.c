@@ -50,6 +50,8 @@ static int page_fault_hdl(uint errno)
 {
     addr_t errv = mmu_err_addr();
 
+    info("page fault errno: %p.\n", errno);
+
     if ((errno & PF_P) == 0)
     {
         info("page fault: present, addr = %p.\n", errv);
@@ -62,6 +64,21 @@ static int page_fault_hdl(uint errno)
         {
             um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
         }
+    }
+    else if (errno & PF_W)
+    {
+        info("page fault: write protect, addr = %p.\n", errv);
+
+        int err = um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
+
+        assert(err == E_OK);
+    }
+    else
+    {
+        error("page fault.\n");
+
+        while (1)
+            ;
     }
 
     return E_OK;
@@ -222,6 +239,8 @@ int page_alloc(struct page_t **page)
     assert(atomic_read(&(*page)->cnt) == 0);
 
     atomic_add(&(*page)->cnt, 1);
+
+    info("page alloc success, phy addr = %p.\n", (*page)->addr);
 
     return err;
 }

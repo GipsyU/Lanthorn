@@ -6,6 +6,7 @@
 #include <memory.h>
 #include <proc.h>
 #include <string.h>
+#include <syscall.h>
 #include <thread.h>
 #include <util.h>
 
@@ -17,7 +18,7 @@ static int p0_init(void)
 {
     int err = E_OK;
 
-    // list_init(&proc_0.thraed_ls);
+    list_init(&proc_0.thread_ls);
 
     return err;
 }
@@ -54,6 +55,16 @@ static int p1_init(void)
 
     err = ptb_map(&proc_1->ptb, exea, page->addr, 1, 1);
 
+    struct vpage_t *vpage = NULL;
+
+    err = vm_search_addr(&proc_1->um.vp_alct, 0, &vpage);
+
+    assert(err == E_OK);
+
+    vpage->map_page = page;
+
+    vpage->type = UM_NORMAL;
+
     if (err != E_OK) return err;
 
     addr_t t;
@@ -80,7 +91,7 @@ static int p1_init(void)
 
     elf_load((void *)_binary_usr_init_elf_start, tmp);
 
-    phyops_memcpy(page->addr, tmp, PAGE_SIZE);
+    phyops_memcpy_v2p(page->addr, tmp, PAGE_SIZE);
 
     return err;
 }
@@ -133,24 +144,78 @@ int proc_new(struct proc_t **proc)
 
 // }
 
-int proc_fork(struct proc_t **res)
+static uint fork_over = 0;
+
+struct thread_t *threado;
+
+void tt(void)
 {
-    struct proc_t *n, *o;
+    for (uint i = 0;; ++i)
+    {
+        if (i % 100000000 == 0)
+        {
+            debug("%p\n", proc_now());
+        }
+    }
+}
 
-    int err = proc_new(&n);
+static int do_fork(struct proc_t *po)
+{
+    struct proc_t *pn;
 
-    if (err != E_OK) return err;
+    int err = proc_new(&pn);
 
-    o = proc_now();
+    assert(err == E_OK);
 
-    err = um_dump(&o->um, &n->um);
+    err = ptb_fork(&po->ptb, &pn->ptb);
 
-    if (err != E_OK) return err;
+    assert(err == E_OK);
+
+    list_rep(&po->thread_ls, p)
+    {
+        struct thread_t *threado = container_of(p, struct thread_t, proc_ln);
+
+        struct thread_t *threadn = NULL;
+
+        err = thread_fork(threado, pn, &threadn);
+
+        assert(err == E_OK);
+    }
+
+    um_fork(&po->um, &pn->um, &pn->ptb);
+
+    list_rep(&pn->thread_ls, p)
+    {
+        struct thread_t *thread = container_of(p, struct thread_t, proc_ln);
+
+        schd_run(thread);
+    }
+
+    schd_wake(555);
+}
+
+int proc_fork(addr_t *res)
+{
+    struct thread_t *thread;
+
+    threado = thread_now();
+
+    thread_kern_new(&thread, do_fork, 1, proc_now());
+
+    schd_sleep(thread_now(), 555);
+
+    *res = (addr_t)proc_now();
+
+    return E_OK;
 }
 
 int proc_init(void)
 {
-    int err = p0_init();
+    int err = schd_init();
+
+    if (err != E_OK) return err;
+
+    err = p0_init();
 
     if (err != E_OK) return err;
 
@@ -161,6 +226,8 @@ int proc_init(void)
     err = p1_init();
 
     if (err != E_OK) return err;
+
+    syscall_register(SYS_fork, proc_fork, 1);
 
     return err;
 }

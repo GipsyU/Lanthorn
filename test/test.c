@@ -6,7 +6,6 @@
 #include <string.h>
 #include <thread.h>
 
-extern int thread_test(void);
 extern int mmu_test(void);
 extern int proc_test(void);
 extern int rbt_test(void);
@@ -23,12 +22,11 @@ int test(void)
 
     // mmu_test();
 
-
     proc_test();
 
     // msg_test();
 
-    debug("test over.\n");
+    info("test over.\n");
 
     return E_OK;
 }
