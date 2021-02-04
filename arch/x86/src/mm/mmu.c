@@ -25,9 +25,13 @@ __attribute__((__aligned__(PAGE_SIZE))) addr_t volatile PDE[NR_PXE] = {[0] = (0)
 
 __attribute__((__aligned__(PAGE_SIZE))) pte_t volatile PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
-__attribute__((__aligned__(PAGE_SIZE))) u8 volatile TMP[PAGE_SIZE / sizeof(u8)]; // virtual memory sapce
+__attribute__((__aligned__(PAGE_SIZE))) u8 volatile TMP1[PAGE_SIZE / sizeof(u8)];
 
-struct spinlock_t tmp_lock;
+__attribute__((__aligned__(PAGE_SIZE))) u8 volatile TMP2[PAGE_SIZE / sizeof(u8)];
+
+struct spinlock_t tmp1_lock;
+
+struct spinlock_t tmp2_lock;
 
 void mmu_pde_switch(addr_t pde)
 {
@@ -43,71 +47,95 @@ void mmu_pm_set(addr_t pa, u32 val)
 {
     assert(pa % sizeof(u32) == 0);
 
-    spin_lock(&tmp_lock);
+    spin_lock(&tmp1_lock);
 
-    PTE[PDE_IDX((addr_t)TMP - KERN_BASE)][PTE_IDX((addr_t)TMP)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
+    PTE[PDE_IDX((addr_t)TMP1 - KERN_BASE)][PTE_IDX((addr_t)TMP1)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
 
-    mmu_reflush(TMP);
+    mmu_reflush(TMP1);
 
-    u32 *res = (u32 *)((addr_t)TMP + pa % PAGE_SIZE);
+    u32 *res = (u32 *)((addr_t)TMP1 + pa % PAGE_SIZE);
 
     *res = val;
 
-    spin_unlock(&tmp_lock);
+    spin_unlock(&tmp1_lock);
 }
 
 void mmu_pp_clean(addr_t pa)
 {
     assert(pa % PAGE_SIZE == 0);
 
-    spin_lock(&tmp_lock);
+    spin_lock(&tmp1_lock);
 
-    PTE[PDE_IDX((addr_t)TMP - KERN_BASE)][PTE_IDX((addr_t)TMP)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
+    PTE[PDE_IDX((addr_t)TMP1 - KERN_BASE)][PTE_IDX((addr_t)TMP1)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
 
-    mmu_reflush(TMP);
+    mmu_reflush(TMP1);
 
-    for (uint i = 0; i < PAGE_SIZE; ++i) TMP[i] = 0;
+    for (uint i = 0; i < PAGE_SIZE; ++i) TMP1[i] = 0;
 
-    spin_unlock(&tmp_lock);
+    spin_unlock(&tmp1_lock);
 }
 
-addr_t mmu_get_tmp_map(addr_t pa)
+addr_t mmu_get_tmp1(addr_t pa)
 {
     assert(pa % PAGE_SIZE == 0);
 
-    spin_lock(&tmp_lock);
+    spin_lock(&tmp1_lock);
 
-    PTE[PDE_IDX((addr_t)TMP - KERN_BASE)][PTE_IDX((addr_t)TMP)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
+    PTE[PDE_IDX((addr_t)TMP1 - KERN_BASE)][PTE_IDX((addr_t)TMP1)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
 
-    mmu_reflush(TMP);
+    mmu_reflush(TMP1);
 
-    return (addr_t)TMP;
+    return (addr_t)TMP1;
 }
 
-void mmu_put_tmp_map(addr_t tmp)
+addr_t mmu_get_tmp2(addr_t pa)
 {
-    assert(tmp == (addr_t)TMP);
+    assert(pa % PAGE_SIZE == 0);
 
-    PTE[PDE_IDX((addr_t)TMP - KERN_BASE)][PTE_IDX((addr_t)TMP)] = 0;
+    spin_lock(&tmp2_lock);
 
-    mmu_reflush(TMP);
+    PTE[PDE_IDX((addr_t)TMP2 - KERN_BASE)][PTE_IDX((addr_t)TMP2)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
 
-    spin_unlock(&tmp_lock);
+    mmu_reflush(TMP2);
+
+    return (addr_t)TMP2;
+}
+
+void mmu_put_tmp1(addr_t tmp)
+{
+    assert(tmp == (addr_t)TMP1);
+
+    PTE[PDE_IDX((addr_t)TMP1 - KERN_BASE)][PTE_IDX((addr_t)TMP1)] = 0;
+
+    mmu_reflush(TMP1);
+
+    spin_unlock(&tmp1_lock);
+}
+
+void mmu_put_tmp2(addr_t tmp)
+{
+    assert(tmp == (addr_t)TMP2);
+
+    PTE[PDE_IDX((addr_t)TMP2 - KERN_BASE)][PTE_IDX((addr_t)TMP2)] = 0;
+
+    mmu_reflush(TMP2);
+
+    spin_unlock(&tmp2_lock);
 }
 
 u32 mmu_pm_get(addr_t pa)
 {
     assert(pa % sizeof(u32) == 0);
 
-    spin_lock(&tmp_lock);
+    spin_lock(&tmp1_lock);
 
-    PTE[PDE_IDX((addr_t)TMP - KERN_BASE)][PTE_IDX((addr_t)TMP)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
+    PTE[PDE_IDX((addr_t)TMP1 - KERN_BASE)][PTE_IDX((addr_t)TMP1)] = ROUND_DOWN(pa, PAGE_SIZE) | PT_P | PT_W;
 
-    mmu_reflush(TMP);
+    mmu_reflush(TMP1);
 
-    u32 *res = (u32 *)((addr_t)TMP + pa % PAGE_SIZE);
+    u32 *res = (u32 *)((addr_t)TMP1 + pa % PAGE_SIZE);
 
-    spin_unlock(&tmp_lock);
+    spin_unlock(&tmp1_lock);
 
     return *res;
 }
@@ -164,7 +192,9 @@ static int map_dev(void)
 
 int mmu_init(addr_t *pde)
 {
-    spin_init(&tmp_lock);
+    spin_init(&tmp1_lock);
+
+    spin_init(&tmp2_lock);
 
     int err = enable_4k_page();
 

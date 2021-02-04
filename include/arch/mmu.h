@@ -6,6 +6,8 @@
 #define PT_W 2 // Writeable
 #define PT_U 4 // User access
 #define PF_P 1
+#define PF_W 2
+
 
 void mmu_pp_clean(addr_t pa);
 
@@ -31,8 +33,12 @@ void mmu_pte_set(addr_t pde, addr_t va, addr_t ptepa, uint usr, uint wtb);
 
 int mmu_pte_get(addr_t pde, addr_t va, addr_t *pte);
 
-addr_t mmu_get_tmp_map(addr_t pa);
+addr_t mmu_get_tmp1(addr_t pa);
 
-void mmu_put_tmp_map(addr_t tmp);
+addr_t mmu_get_tmp2(addr_t pa);
+
+void mmu_put_tmp1(addr_t tmp);
+
+void mmu_put_tmp2(addr_t tmp);
 
 #endif
