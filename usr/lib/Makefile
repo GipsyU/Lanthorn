@@ -1,1 +1,1 @@
-lib-y := syscall.o usr.o mm.o msg.o proc.o string.o
+lib-y := syscall.o usr.o mm.o msg.o proc.o string.o stdio.o

@@ -13,9 +13,9 @@ extern void test(void);
 
 extern int syscall_init(void);
 
-static int tmp(long x)
+static int tmp(char *s)
 {
-    print("%p\n", x);
+    print("%s", s);
 
     return E_OK;
 }
@@ -72,7 +72,7 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     }
 
     syscall_register(SYS_write, tmp, 1);
-    
+
     test();
 
     info("Lanthorn kernel init finished.\n");
