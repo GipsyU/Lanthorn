@@ -1,5 +1,6 @@
 #include <arch/task.h>
 #include <error.h>
+
 struct context_t
 {
     u32 edi;
@@ -11,7 +12,7 @@ struct context_t
 
 extern void context_switch(struct context_t **o, struct context_t *n);
 
-int task_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t pre, addr_t run, addr_t suf)
+int task_kern_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t exe, uint nargs, ...)
 {
     task->saddr = saddr;
 
@@ -19,17 +20,19 @@ int task_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t pre, addr_
 
     task->sp = saddr + ssize;
 
-    addr_t *_sp = (void *)(task->sp -= sizeof(suf));
+    long *_sp = (void *)(task->sp -= sizeof(long) * nargs);
 
-    *_sp = suf;
+    long *args = (void *)(((addr_t)&nargs) + sizeof(nargs));
 
-    _sp = (void *)(task->sp -= sizeof(run));
+    for (uint i = 0; i < nargs; ++i) _sp[i] = args[i];
 
-    *_sp = run;
+    _sp = (void *)(task->sp -= sizeof(exe));
+
+    *_sp = NULL;
 
     struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
 
-    context->eip = pre;
+    context->eip = exe;
 
     context->ebp = saddr + ssize;
 
@@ -59,6 +62,5 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
 void task_switch(struct task_t *o, struct task_t *n)
 {
-    context_switch((struct context_t **)&o->sp,(struct context_t *) n->sp);
+    context_switch((struct context_t **)&o->sp, (struct context_t *)n->sp);
 }
-
