@@ -1,7 +1,7 @@
 #include <msg.h>
 #include <syscall.h>
 
-int msg_newmsg(msgd_t *msgd, addr_t addr, size_t size)
+int msg_newmsg(msgd_t *msgd, void *addr, int size)
 {
     return syscall(SYS_msg_newmsg, msgd, addr, size);
 }

@@ -22,9 +22,9 @@ int test(void)
 
     // mmu_test();
 
-    proc_test();
+    msg_test();
 
-    // msg_test();
+    proc_test();
 
     info("test over.\n");
 

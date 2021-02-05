@@ -6,7 +6,7 @@ typedef addr_t msgd_t;
 
 typedef addr_t msgboxd_t;
 
-int msg_newmsg(msgd_t *msgd, addr_t addr, size_t size);
+int msg_newmsg(msgd_t *msgd, void *addr, int size);
 
 int msg_newbox(msgboxd_t *msgboxd);
 

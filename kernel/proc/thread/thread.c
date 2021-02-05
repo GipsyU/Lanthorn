@@ -184,8 +184,6 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, s
 
     if (err != E_OK) return err;
 
-    debug("%p\n", *thread);
-
     mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
 
     addr_t kstack = NULL;
