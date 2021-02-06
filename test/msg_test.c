@@ -3,15 +3,15 @@
 #include <msg.h>
 #include <thread.h>
 
-static struct msgbox_t *box = 0;
+static uint boxid = 1234567;
 
 int T1(void)
 {
-    struct msg_t *msg;
+    uint msgid;
 
     char s[10] = "MSG.\n";
 
-    int err = msg_newmsg(&msg, s, 6);
+    int err = msg_newmsg(&msgid, s, 6);
 
     if (err != E_OK)
     {
@@ -19,13 +19,13 @@ int T1(void)
     }
     else
     {
-        debug("T1 msg new success.\n");
+        debug("T1 msg new success %p.\n", msgid);
     }
 
-    while (box == 0)
+    while (boxid == 1234567)
         ;
 
-    err = msg_send(box, msg);
+    err = msg_send(boxid, msgid);
 
     if (err == E_OK)
     {
@@ -35,30 +35,26 @@ int T1(void)
     {
         error("%s.\n", strerror(err));
     }
-    while (1)
-        ;
     return E_OK;
 }
 
 int T2(void)
 {
-    debug("OK.\n");
+    uint msgid;
 
-    struct msg_t *msg;
-
-    struct msgbox_t *bbox;
+    uint bbox = 0;
 
     int err = msg_newbox(&bbox);
 
     if (err != E_OK) error("T2.\n");
 
-    box = bbox;
+    boxid = bbox;
 
     while (1)
     {
-        if (msg_recieve(bbox, &msg) == E_OK)
+        if (msg_recieve(bbox, &msgid) == E_OK)
         {
-            print("%s", msg->addr);
+            print("%d\n", msgid);
         }
     }
 }

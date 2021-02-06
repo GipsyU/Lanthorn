@@ -6,95 +6,143 @@
 #include <syscall.h>
 #include <util.h>
 
-struct
+#define MSG_MAX 256
+static struct
 {
-    struct id_aclt_t msg_id_alct;
-
-    struct id_aclt_t box_id_alct;
+    struct msg_t msg[MSG_MAX];
+    struct msgbox_t box[MSG_MAX];
+    struct spinlock_t lock;
 } MSG;
 
-int msg_newmsg(struct msg_t **msg, addr_t addr, size_t size)
-{
-    int err = kmalloc((addr_t *)msg, sizeof(struct msg_t));
-
-    if (err != E_OK) return err;
-
-    err = id_alloc(&MSG.msg_id_alct, (addr_t)*msg, &(*msg)->id);
-
-    if (err != E_OK) return err;
-
-    list_init(&(*msg)->box_ln);
-
-    if (addr < KERN_BASE)
-    {
-        err = kmalloc(&(*msg)->addr, size);
-
-        if (err != E_OK) return err;
-
-        memcpy((*msg)->addr, addr, size);
-    }
-    else
-    {
-        (*msg)->addr = addr;
-    }
-
-    (*msg)->size = size;
-
-    return E_OK;
-}
-
-int msg_newbox(struct msgbox_t **msgbox)
-{
-    int err = kmalloc((addr_t *)msgbox, sizeof(struct msgbox_t));
-
-    if (err != E_OK) return err;
-
-    err = id_alloc(&MSG.box_id_alct, (addr_t)*msgbox, &(*msgbox)->id);
-
-    if (err != E_OK) return err;
-
-    spin_init(&(*msgbox)->lock);
-
-    list_init(&(*msgbox)->msg_ls);
-
-    (*msgbox)->nmsg = 0;
-
-    return err;
-}
-
-int msg_send(struct msgbox_t *msgbox, struct msg_t *msg)
+int msg_newmsg(uint *id, addr_t addr, size_t size)
 {
     int err = E_OK;
 
-    assert(msg->addr >= KERN_BASE);
+    for (uint i = 0; i < MSG_MAX; ++i)
+    {
+        if (spin_trylock(&MSG.msg[i].lock))
+        {
+            list_init(&MSG.msg[i].box_ln);
 
-    spin_lock(&msgbox->lock);
+            if (addr < KERN_BASE)
+            {
+                err = kmalloc(&MSG.msg[i].addr, size);
 
-    list_push_back(&msgbox->msg_ls, &msg->box_ln);
+                assert(err = E_OK);
 
-    msgbox->nmsg++;
+                memcpy(MSG.msg[i].addr, addr, size);
+            }
+            else
+            {
+                MSG.msg[i].addr = addr;
+            }
+            
+            MSG.msg[i].size = size;
 
-    spin_unlock(&msgbox->lock);
+            MSG.msg[i].state = MSG_UNSEND;
+
+            *id = i;
+
+            spin_unlock(&MSG.msg[i].lock);
+
+            return E_OK;
+        }
+    }
+
+    return E_NOSLOT;
+}
+int msg_newbox(uint *id)
+{
+    int err = E_OK;
+
+    for (uint i = 0; i < MSG_MAX; ++i)
+    {
+        if (spin_trylock(&MSG.box[i].lock))
+        {
+            list_init(&MSG.box[i].msg_ls);
+
+            MSG.box[i].nmsg = 0;
+
+            MSG.box[i].state = BOX_USED;
+
+            *id = i;
+
+            spin_unlock(&MSG.box[i].lock);
+
+            return E_OK;
+        }
+    }
+
+    return E_NOSLOT;
+}
+
+int msg_send(uint box_id, uint msg_id)
+{
+    struct msgbox_t *msgbox = NULL;
+
+    spin_lock(&MSG.msg[msg_id].lock);
+
+
+    if (MSG.msg[msg_id].state != MSG_UNSEND)
+    {
+        spin_unlock(&MSG.msg[msg_id].lock);
+
+        return E_INVAL;
+    }
+    
+    assert(MSG.msg[msg_id].addr >= KERN_BASE);
+
+    spin_lock(&MSG.box[box_id].lock);
+
+    if (MSG.box[box_id].state != BOX_USED)
+    {
+        spin_unlock(&MSG.box[box_id].lock);
+
+        spin_unlock(&MSG.msg[msg_id].lock);
+
+        return E_INVAL;
+    }
+
+    list_push_back(&MSG.box[box_id].msg_ls, &MSG.msg[msg_id].box_ln);
+
+    MSG.box[box_id].nmsg++;
+
+    MSG.msg[msg_id].state = MSG_SENDED;
+
+    spin_unlock(&MSG.box[box_id].lock);
+
+    spin_unlock(&MSG.msg[msg_id].lock);
 
     return E_OK;
 }
 
-int msg_recieve(struct msgbox_t *msgbox, struct msg_t **msg)
+int msg_recieve(uint box_id, uint *msg_id)
 {
-    spin_lock(&msgbox->lock);
+    spin_lock(&MSG.box[box_id].lock);
 
-    if (msgbox->nmsg == 0)
+    if (MSG.box[box_id].state != BOX_USED)
     {
-        spin_unlock(&msgbox->lock);
+        spin_unlock(&MSG.box[box_id].lock);
+
+        return E_INVAL;
+    }
+
+    if (MSG.box[box_id].nmsg == 0)
+    {
+        spin_unlock(&MSG.box[box_id].lock);
 
         return E_NOMSG;
     }
 
-    *msg = container_of(list_pop_front(&msgbox->msg_ls), struct msg_t, box_ln);
+    struct msg_t *msg = container_of(list_pop_front(&MSG.box[box_id].msg_ls), struct msg_t, box_ln);
 
-    msgbox->nmsg--;
+    assert(msg->state == MSG_SENDED);
 
-    spin_unlock(&msgbox->lock);
+    MSG.box[box_id].nmsg--;
+
+    *msg_id = msg->id;
+
+    spin_unlock(&MSG.box[box_id].lock);
 
     return E_OK;
 }
@@ -109,19 +157,25 @@ int msg_recieve(struct msgbox_t *msgbox, struct msg_t **msg)
 
 int msg_init(void)
 {
-    addr_t addr = NULL;
+    for (uint i = 0; i < MSG_MAX; ++i)
+    {
+        spin_init(&MSG.msg[i].lock);
 
-    int err = kmalloc(&addr, PAGE_SIZE);
+        MSG.msg[i].id = i;
 
-    if (err != E_OK) return err;
+        MSG.msg[i].state = MSG_UNUSED;
+    }
 
-    id_init(&MSG.msg_id_alct, addr, PAGE_SIZE);
+    for (uint i = 0; i < MSG_MAX; ++i)
+    {
+        spin_init(&MSG.box[i].lock);
 
-    err = kmalloc(&addr, PAGE_SIZE);
+        MSG.box[i].id = i;
+        
+        MSG.box[i].state = BOX_UNUSED;
+    }
 
-    if (err != E_OK) return err;
-
-    id_init(&MSG.box_id_alct, addr, PAGE_SIZE);
+    spin_init(&MSG.lock);
 
     syscall_register(SYS_msg_newmsg, msg_newmsg, 3);
 
