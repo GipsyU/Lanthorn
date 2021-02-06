@@ -68,7 +68,7 @@ static int uitoa(char *s, unsigned int x, int redix)
 
 int printf(const char *fmt, ...)
 {
-    char *args, tmp;
+    char *args, *tmp;
 
     va_start(args, fmt);
 
@@ -117,7 +117,7 @@ int printf(const char *fmt, ...)
 
         case 's':
 
-            tmp = (char *)va_arg(args, char *);
+            tmp = va_arg(args, char *);
 
             strcpy(&s[p], tmp, strlen(tmp));
 

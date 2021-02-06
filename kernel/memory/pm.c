@@ -116,7 +116,7 @@ static int buddy_put(struct page_alct_t *alct, struct page_t *page)
 
     assert(page->buddy.state == BUD_ALLOCED);
 
-    info("put memory into buddy sys, addr:%p, order:%d.\n", page->addr, page->buddy.order);
+    // info("put memory into buddy sys, addr:%p, order:%d.\n", page->addr, page->buddy.order);
 
     for (struct page_t *f; page->buddy.pos != BUD_NOBUD; page = f)
     {

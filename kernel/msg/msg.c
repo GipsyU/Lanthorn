@@ -24,18 +24,11 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
         {
             list_init(&MSG.msg[i].box_ln);
 
-            if (addr < KERN_BASE)
-            {
-                err = kmalloc(&MSG.msg[i].addr, size);
+            err = kmalloc(&MSG.msg[i].addr, size);
 
-                assert(err = E_OK);
+            assert(err == E_OK);
 
-                memcpy(MSG.msg[i].addr, addr, size);
-            }
-            else
-            {
-                MSG.msg[i].addr = addr;
-            }
+            memcpy(MSG.msg[i].addr, addr, size);
             
             MSG.msg[i].size = size;
 
@@ -73,6 +66,8 @@ int msg_newbox(uint *id)
         }
     }
 
+    debug("OK");
+
     return E_NOSLOT;
 }
 
@@ -81,7 +76,6 @@ int msg_send(uint box_id, uint msg_id)
     struct msgbox_t *msgbox = NULL;
 
     spin_lock(&MSG.msg[msg_id].lock);
-
 
     if (MSG.msg[msg_id].state != MSG_UNSEND)
     {
@@ -138,6 +132,8 @@ int msg_recieve(uint box_id, uint *msg_id)
 
     assert(msg->state == MSG_SENDED);
 
+    msg->state = MSG_RECIEVED;
+
     MSG.box[box_id].nmsg--;
 
     *msg_id = msg->id;
@@ -147,13 +143,23 @@ int msg_recieve(uint box_id, uint *msg_id)
     return E_OK;
 }
 
-// int msg_read(struct msg_t *msg, addr_t cache, size_t size)
-// {
-// }
+int msg_read(uint msg_id, addr_t cache, size_t size)
+{
+    spin_lock(&MSG.msg[msg_id].lock);
+    
+    if (MSG.msg[msg_id].state != MSG_RECIEVED)
+    {
+        spin_unlock(&MSG.msg[msg_id].lock);
 
-// int msg_write(struct msg_t *msg)
-// {
-// }
+        return E_INVAL;
+    }
+
+    memcpy(cache, MSG.msg[msg_id].addr, MSG.msg[msg_id].size);
+
+    spin_unlock(&MSG.msg[msg_id].lock);
+
+    return E_OK;
+}
 
 int msg_init(void)
 {
@@ -184,6 +190,8 @@ int msg_init(void)
     syscall_register(SYS_msg_send, msg_send, 2);
 
     syscall_register(SYS_msg_recieve, msg_recieve, 2);
+
+    syscall_register(SYS_msg_read, msg_read, 3);
 
     return E_OK;
 }

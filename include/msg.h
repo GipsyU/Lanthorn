@@ -11,7 +11,8 @@ struct msg_t
     {
         MSG_UNUSED,
         MSG_UNSEND,
-        MSG_SENDED
+        MSG_SENDED,
+        MSG_RECIEVED
     } state;
     uint from;
     uint to;
@@ -42,6 +43,8 @@ int msg_newbox(uint *id);
 int msg_send(uint box_id, uint msg_id);
 
 int msg_recieve(uint box_id, uint *msg_id);
+
+int msg_read(uint msg_id, addr_t cache, size_t size);
 
 int msg_init(void);
 

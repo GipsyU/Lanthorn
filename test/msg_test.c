@@ -54,7 +54,15 @@ int T2(void)
     {
         if (msg_recieve(bbox, &msgid) == E_OK)
         {
-            print("%d\n", msgid);
+            debug ("recieved.\n");
+
+            addr_t addr;
+
+            assert( kmalloc(&addr, PAGE_SIZE) == E_OK);
+
+            msg_read(msgid, addr, PAGE_SIZE);
+
+            print("%s", addr);
         }
     }
 }
@@ -63,11 +71,9 @@ int msg_test(void)
 {
     struct thread_t *t1, *t2;
 
-    thread_kern_new(&t1, T1, 0);
+    // thread_kern_new(&t1, T1, 0);
 
-    thread_kern_new(&t2, T2, 0);
-
-    debug("ok\n");
+    // thread_kern_new(&t2, T2, 0);
 
     return E_OK;
 }

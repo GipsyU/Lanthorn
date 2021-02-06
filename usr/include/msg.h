@@ -2,16 +2,14 @@
 #define _USR_MSG_H_
 #include <type.h>
 
-typedef addr_t msgd_t;
+int msg_newmsg(uint *id, addr_t addr, size_t size);
 
-typedef addr_t msgboxd_t;
+int msg_newbox(uint *id);
 
-int msg_newmsg(msgd_t *msgd, void *addr, int size);
+int msg_send(uint box_id, uint msg_id);
 
-int msg_newbox(msgboxd_t *msgboxd);
+int msg_recieve(uint box_id, uint *msg_id);
 
-int msg_send(msgboxd_t msgboxd, msgd_t msgd);
-
-int msg_revcieve(msgboxd_t msgboxd, msgd_t *msgd);
+int msg_read(uint msg_id, addr_t cache, size_t size);
 
 #endif
