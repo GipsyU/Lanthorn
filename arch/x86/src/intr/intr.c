@@ -167,7 +167,7 @@ int intr_init(void)
         islog[i] = 1;
     }
 
-    // islog[INTR_TIMER] = 0;
+    islog[INTR_TIMER] = 0;
 
     return err;
 }

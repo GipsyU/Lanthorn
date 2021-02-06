@@ -64,3 +64,10 @@ void task_switch(struct task_t *o, struct task_t *n)
 {
     context_switch((struct context_t **)&o->sp, (struct context_t *)n->sp);
 }
+
+int task_init(struct task_t *task)
+{
+    task->ncli = 1;
+
+    return E_OK;
+}

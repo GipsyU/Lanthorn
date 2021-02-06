@@ -80,3 +80,17 @@ void sysctrl_shutdown(void)
 {
     outw(0x2000,0x604);
 }
+
+void cpu_pushcli(void)
+{
+    cli();
+
+    cpu_get_task(cpu_id())->ncli++;
+}
+
+void cpu_popcli(void)
+{
+    cpu_get_task(cpu_id())->ncli--;
+
+    if (cpu_get_task(cpu_id())->ncli == 0) sti();
+}

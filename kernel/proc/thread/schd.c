@@ -168,13 +168,13 @@ int schd_schdule(void)
 
             thread->cpuid = cpu_id();
 
-            cpu_set_task(cpuid, &thread->task);
-
-            proc_switch(thread->proc);
-
             info("schedule thread %p.\n", thread);
 
             spin_unlock(&scheduler.lock);
+
+            proc_switch(thread->proc);
+
+            cpu_set_task(cpuid, &thread->task);
 
             task_switch(cpu_schd(cpuid), &thread->task);
         }

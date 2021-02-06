@@ -76,5 +76,14 @@ struct tss_t
     u16 iomb; // I/O map base address
 };
 
+static inline void sti(void)
+{
+    asm volatile("sti");
+}
+
+static inline void cli(void)
+{
+    asm volatile("cli");
+}
 
 #endif

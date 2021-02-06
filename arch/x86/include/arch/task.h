@@ -8,6 +8,7 @@ struct task_t
 {
     addr_t saddr;
     size_t ssize;
+    uint ncli;
     addr_t sp;
 };
 

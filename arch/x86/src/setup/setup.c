@@ -14,6 +14,8 @@ extern u8 kern_start[];
 extern u8 kern_end[];
 extern int mp_init(int *num_cpu);
 extern int lapic_init(void);
+extern int task_init(struct task_t *task);
+
 extern int gdt_init(struct seg_t *gdt, struct tss_t *tss);
 
 static struct boot_arg_t boot_arg;
@@ -93,6 +95,19 @@ static int setup_lp(void)
     struct cpu_t *cpu;
 
     cpu_get(&cpu, cpuid);
+
+    err = task_init(cpu_schd(cpuid));
+
+    if (err != E_OK)
+    {
+        error("cpu%d init task failed, err = %s.\n", cpuid, strerror(err));
+    }
+    else
+    {
+        info("cpu%d init task success.\n", cpuid);
+    }
+
+    cpu_set_task(cpuid, cpu_schd(cpuid));
     
     err = gdt_init(cpu->gdt, &cpu->tss);
 

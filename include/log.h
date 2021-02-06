@@ -25,6 +25,7 @@ void print(const char *fmt, ...);
     {                                                                                                                  \
         print("[PANIC] %s:%d ", __FILE__, __LINE__);                                                                   \
         print(__VA_ARGS__);                                                                                            \
+        asm volatile("cli");                                                                                           \
         while (1)                                                                                                      \
             ;                                                                                                          \
     }
