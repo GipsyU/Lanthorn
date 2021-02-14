@@ -13,6 +13,8 @@ extern void test(void);
 
 extern int syscall_init(void);
 
+extern int sysctrl_init(void);
+
 static int tmp(char *s)
 {
     print("%s", s);
@@ -71,6 +73,18 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
         info("init msg success.\n");
     }
 
+    err = sysctrl_init();
+
+    if (err != E_OK)
+    {
+        error("init sysctrl failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init sysctrl success.\n");
+    }
+    
+    
     syscall_register(SYS_write, tmp, 1);
 
     test();
@@ -79,6 +93,6 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     sysctrl_shutdown();
 
-    while (1)
+    while (1) 
         ;
 }

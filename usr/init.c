@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <syscall.h>
+#include <sysctrl.h>
 #include <type.h>
 
 char S[] = "TEST.\n";
@@ -40,16 +41,18 @@ int main(void)
             {
                 printf("%d.\n", id);
 
-                char s[20]= "FORK MSG\n";
-                
+                char s[20] = "FORK MSG\n";
+
                 msg_read(id, s, 100);
-                
+
                 printf("%s", s);
             }
         }
     }
 
     printf("%p.\n", pid);
+
+    sysctrl_poweroff();
 
     return 0;
 }
