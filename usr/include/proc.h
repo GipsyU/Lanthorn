@@ -11,4 +11,6 @@ int fork(long *pid);
 
 int thread_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg);
 
+int thread_exit(void);
+
 #endif

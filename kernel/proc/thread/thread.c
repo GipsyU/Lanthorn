@@ -228,20 +228,13 @@ int thread_free(struct thread_t *thread)
     return err;
 }
 
-static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
+static int sys_thread_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
 {
     size_t ustk_sz = DFT_STK_SZ;
 
     if (attr != NULL) ustk_sz = attr->stk_sz;
 
     return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, arg);
-}
-
-int thread_init(void)
-{
-    syscall_register(SYS_thread_new, thread_sys_new, 4);
-
-    return E_OK;
 }
 
 int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res)
@@ -293,7 +286,23 @@ int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **
     return err;
 }
 
+static int sys_thread_exit(void)
+{
+    schd_kill(thread_now());
+
+    panic("Bug.\n");
+}
+
 // int thread_kill(struct thread_t *thread)
 // {
 
 // }
+
+int thread_init(void)
+{
+    syscall_register(SYS_thread_new, sys_thread_new, 4);
+
+    syscall_register(SYS_thread_exit, sys_thread_exit, 0);
+
+    return E_OK;
+}

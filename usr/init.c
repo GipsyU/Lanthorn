@@ -8,6 +8,8 @@ char S[] = "TEST.\n";
 void run(void)
 {
     printf("test.\n");
+    thread_exit();
+    printf("test.\n");
     while (1)
         ;
 }
