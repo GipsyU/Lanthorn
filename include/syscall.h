@@ -21,6 +21,7 @@
 #define SYS_msg_read 15
 #define SYS_msg_newbox 16
 #define SYS_msg_newmsg 17
+#define SYS_thread_new 18
 
 #ifndef __USER__
 

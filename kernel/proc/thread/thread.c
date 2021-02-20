@@ -8,10 +8,13 @@
 #include <proc.h>
 #include <spinlock.h>
 #include <string.h>
+#include <syscall.h>
 #include <thread.h>
 #include <util.h>
 
 extern struct proc_t proc_0;
+
+#define DFT_STK_SZ (PAGE_SIZE * 1024)
 
 static void pre(void)
 {
@@ -130,35 +133,36 @@ int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
 
     if (nargs == 0)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs);
     }
 
     if (nargs == 1)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0]);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0]);
     }
 
     if (nargs == 2)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1]);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+                       args[1]);
     }
 
     if (nargs == 3)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
-                       args[2]);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+                       args[1], args[2]);
     }
 
     if (nargs == 4)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
-                       args[2], args[3]);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+                       args[1], args[2], args[3]);
     }
 
     if (nargs == 5)
     {
-        task_kern_init(&(*thread)->task, stack, PAGE_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0], args[1],
-                       args[2], args[3], args[4]);
+        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+                       args[1], args[2], args[3], args[4]);
     }
 
     if (nargs > 5)
@@ -178,13 +182,13 @@ int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
 /**
  * FIXME:CLEAN UP
  */
-int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz)
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routine, size_t ustk_sz, addr_t arg)
 {
     int err = thread_new(thread);
 
     if (err != E_OK) return err;
 
-    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread);
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread, sizeof(struct thread_t));
 
     addr_t kstack = NULL;
 
@@ -196,15 +200,15 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, s
 
     (*thread)->ks_size = KERN_STACK_SIZE;
 
-    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, kstack);
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, kstack, KERN_STACK_SIZE);
 
     addr_t ustk_a = NULL;
 
-    err = umalloc(&proc->um, &ustk_a, PAGE_SIZE);
+    err = umalloc(&proc->um, &ustk_a, ustk_sz);
 
     if (err != E_OK) return err;
 
-    task_user_init(&(*thread)->task, kstack, PAGE_SIZE, ustk_a, PAGE_SIZE, pre, exe);
+    task_user_init(&(*thread)->task, kstack, KERN_STACK_SIZE, ustk_a, ustk_sz, pre, routine);
 
     (*thread)->proc = proc;
 
@@ -224,8 +228,19 @@ int thread_free(struct thread_t *thread)
     return err;
 }
 
+static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
+{
+    size_t ustk_sz = DFT_STK_SZ;
+
+    if (attr != NULL) ustk_sz = attr->stk_sz;
+
+    return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, arg);
+}
+
 int thread_init(void)
 {
+    syscall_register(SYS_thread_new, thread_sys_new, 4);
+
     return E_OK;
 }
 
@@ -257,7 +272,7 @@ int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **
 
     addr_t *dst = threadn->ks_addr;
 
-    for (uint i = 0; i < PAGE_SIZE / 4; ++i)
+    for (uint i = 0; i < KERN_STACK_SIZE / 4; ++i)
     {
         if (src[i] >= thread->ks_addr && src[i] < thread->ks_addr + thread->ks_size)
         {

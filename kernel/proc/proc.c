@@ -43,7 +43,7 @@ static int p1_init(void)
 
     if (err != E_OK) return err;
 
-    err = thread_user_new(&thread, proc_1, 0, PAGE_SIZE);
+    err = thread_user_new(&thread, proc_1, 0, PAGE_SIZE * 1024, NULL);
 
     if (err != E_OK) return err;
 
@@ -122,10 +122,7 @@ int proc_new(struct proc_t **proc)
 
     if (err != E_OK) return err;
 
-    for (addr_t addr = KERN_BASE; addr != 0; addr += PAGE_SIZE * PAGE_SIZE / sizeof(addr_t))
-    {
-        mmu_sync_kern_space(proc_0.ptb.pde, (*proc)->ptb.pde, addr);
-    }
+    mmu_sync_kern_space(proc_0.ptb.pde, (*proc)->ptb.pde, KERN_BASE, 0 - KERN_BASE);
 
     list_init(&(*proc)->thread_ls);
 
@@ -143,21 +140,6 @@ int proc_new(struct proc_t **proc)
 //     err = kmfree(proc);
 
 // }
-
-static uint fork_over = 0;
-
-struct thread_t *threado;
-
-void tt(void)
-{
-    for (uint i = 0;; ++i)
-    {
-        if (i % 100000000 == 0)
-        {
-            debug("%p\n", proc_now());
-        }
-    }
-}
 
 static int do_fork(struct proc_t *po)
 {
@@ -197,8 +179,6 @@ static int do_fork(struct proc_t *po)
 int proc_fork(addr_t *res)
 {
     struct thread_t *thread;
-
-    threado = thread_now();
 
     thread_kern_new(&thread, do_fork, 1, proc_now());
 

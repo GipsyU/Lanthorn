@@ -44,7 +44,7 @@ struct thread_t *thread_now(void);
 
 int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...);
 
-int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz);
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz, addr_t arg);
 
 int thread_init(void);
 
