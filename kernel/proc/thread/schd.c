@@ -168,7 +168,7 @@ int schd_schdule(void)
 
             thread->cpuid = cpu_id();
 
-            // info("schedule thread %p.\n", thread);
+            info("schedule thread %p.\n", thread);
 
             spin_unlock(&scheduler.lock);
 

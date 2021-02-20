@@ -259,11 +259,14 @@ int mmu_unmap(addr_t pde, addr_t va)
     return E_OK;
 }
 
-void mmu_sync_kern_space(addr_t kpde, addr_t pde, addr_t addr)
+void mmu_sync_kern_space(addr_t kpde, addr_t pde, addr_t addr, size_t size)
 {
-    assert(addr >= KERN_BASE);
+    assert(addr >= KERN_BASE && !(addr + size > 0 && addr + size < KERN_BASE));
 
-    mmu_pm_set(pde + PDE_OFFSET(addr), mmu_pm_get(kpde + PDE_OFFSET(addr)));
+    for (addr_t offset = 0; offset < size; offset += PAGE_SIZE * PAGE_SIZE / sizeof(addr_t))
+    {
+        mmu_pm_set(pde + PDE_OFFSET(addr + offset), mmu_pm_get(kpde + PDE_OFFSET(addr + offset)));
+    }
 }
 
 int mmu_v2p(addr_t pde, addr_t v, addr_t *p)

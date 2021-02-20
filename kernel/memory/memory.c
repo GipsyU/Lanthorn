@@ -58,7 +58,7 @@ static int page_fault_hdl(uint errno)
 
         if (errv >= KERN_BASE)
         {
-            mmu_sync_kern_space(proc_0.ptb.pde, mmu_get_pde(), errv);
+            mmu_sync_kern_space(proc_0.ptb.pde, mmu_get_pde(), errv, PAGE_SIZE);
         }
         else
         {
@@ -142,7 +142,7 @@ int kmalloc_page(struct vpage_t **vp, size_t size)
 
     size = ROUND_UP(size, PAGE_SIZE);
 
-    int err = pm_alloc(&pm_alct, size / PAGE_SIZE, &pp);
+    int err = pm_alloc(&pm_alct, size, &pp);
 
     if (err != E_OK) goto error0;
 
@@ -232,7 +232,7 @@ int page_get_ptr(addr_t pa, struct page_t **page)
 
 int page_alloc(struct page_t **page)
 {
-    int err = pm_alloc(&pm_alct, 1, page);
+    int err = pm_alloc(&pm_alct, PAGE_SIZE, page);
 
     if (err != E_OK) return err;
 

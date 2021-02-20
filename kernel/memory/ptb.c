@@ -104,10 +104,7 @@ int ptb_fork(struct ptb_t *ptbo, struct ptb_t *ptbn)
 
     ptb_init(ptbn, pden->addr);
 
-    for (addr_t addr = KERN_BASE; addr != 0; addr += PAGE_SIZE * PAGE_SIZE / sizeof(addr_t))
-    {
-        mmu_sync_kern_space(proc_0.ptb.pde, ptbn->pde, addr);
-    }
+    mmu_sync_kern_space(proc_0.ptb.pde, ptbn->pde, KERN_BASE, 0 - KERN_BASE);
 
     return E_OK;
 }

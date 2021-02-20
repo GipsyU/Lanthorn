@@ -358,17 +358,22 @@ int vm_fork(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct, struct
 
         vpn->size = vpo->size;
 
-        struct page_t *page;
+        vpn->type = vpo->type;
+        
+        if (vpn->type == UM_NORMAL)
+        {
+             struct page_t *page;
 
-        page_alloc(&page);
+            err = page_alloc(&page);
 
-        vpn->map_page = page;
+            if (err != E_OK) return err;
 
-        vpn->type = UM_NORMAL;
+            vpn->map_page = page;
 
-        phyops_memcpy_p2p(page->addr, vpo->map_page->addr, PAGE_SIZE);
+            phyops_memcpy_p2p(page->addr, vpo->map_page->addr, PAGE_SIZE);
 
-        ptb_map(ptb, vpn->addr, vpn->map_page->addr, 1, 1);
+            ptb_map(ptb, vpn->addr, vpn->map_page->addr, 1, 1);
+        }
 
         vm_insert_alloced(new_alct, vpn);
     }

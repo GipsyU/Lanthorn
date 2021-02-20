@@ -320,6 +320,8 @@ int pm_alloc(struct page_alct_t *alct, size_t size, struct page_t **page)
 
     spin_unlock(&alct->lock);
 
+    info("pm alloc success, addr = %p, size = %p.\n", (*page)->addr, (*page)->size);
+
     return err;
 }
 

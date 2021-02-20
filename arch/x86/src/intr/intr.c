@@ -124,6 +124,11 @@ void intr_hdl(struct intr_regs_t *regs)
             regs->eax = handler(NULL);
     }
 
+    if (islog[regs->intrno])
+    {
+        info("end intrno: %d\n", regs->intrno);
+    }
+
     lapic_eoi();
 
     return;

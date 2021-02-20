@@ -19,7 +19,7 @@ int mmu_map(addr_t pde, addr_t va, addr_t pa, uint usr, uint wtb);
 
 int mmu_unmap(addr_t pde, addr_t va);
 
-void mmu_sync_kern_space(addr_t kpde, addr_t pde, addr_t addr);
+void mmu_sync_kern_space(addr_t kpde, addr_t pde, addr_t addr, size_t size);
 
 void mmu_pde_switch(addr_t pde);
 
