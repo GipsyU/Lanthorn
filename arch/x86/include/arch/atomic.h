@@ -97,7 +97,7 @@ static inline int atomic_sub_and_test(struct atomic_t *v, int i)
     unsigned char c;
 
     asm volatile("subl %2,%0; sete %1" : "+m"(v->counter), "=qm"(c) : "ir"(i) : "memory");
-    
+
     return c;
 }
 
@@ -109,6 +109,14 @@ static inline int atomic_cmpxchg(struct atomic_t *v, int old, int new)
 static inline int atomic_xchg(struct atomic_t *v, int new)
 {
     return xchg(&v->counter, new);
+}
+
+static inline int atomic_add_return(struct atomic_t *v, int i)
+{
+    int __i;
+    __i = i;
+    asm volatile("xaddl %0, %1" : "+r"(i), "+m"(v->counter) : : "memory");
+    return i + __i;
 }
 
 #endif

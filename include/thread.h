@@ -15,6 +15,7 @@ enum T_STATE
     RUNNABEL,
     RUNNING,
     SLEEPING,
+    BLOCKED,
     KILLED
 };
 
@@ -29,6 +30,7 @@ struct thread_t
     struct proc_t *proc;
     struct list_node_t schd_ln;
     struct list_node_t proc_ln;
+    struct list_node_t mutex_wait_ln;
 };
 
 struct schd_t
@@ -61,6 +63,8 @@ int schd_kill(struct thread_t *thread);
 int schd_sleep(struct thread_t *thread, long wake_sig);
 
 int schd_wake(long wake_sig);
+
+int schd_block(struct thread_t *thread);
 
 int schd_init(void);
 

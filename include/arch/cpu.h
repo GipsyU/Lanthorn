@@ -11,8 +11,4 @@ void cpu_set_task(uint cpuid, struct task_t *task);
 
 struct task_t *cpu_schd(uint cpuid);
 
-void cpu_pushcli(void);
-
-void cpu_popcli(void);
-
 #endif

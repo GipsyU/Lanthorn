@@ -1,1 +1,1 @@
-obj-y := thread.o schd.o
+obj-y := thread.o schd.o mutex.o

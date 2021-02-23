@@ -21,7 +21,7 @@ int schd_run(struct thread_t *thread)
 
         panic("schd run bug.\n");
     }
-    else if (thread->state == UNSCHDED)
+    else if (thread->state == UNSCHDED || thread->state == BLOCKED)
     {
         set_runnable(thread);
     }
@@ -215,6 +215,48 @@ int schd_init(void)
     list_init(&scheduler.sleeping);
 
     intr_register(INTR_TIMER, schd_intr);
+
+    return E_OK;
+}
+
+int schd_block(struct thread_t *thread)
+{
+    assert(thread == thread_now());
+
+    spin_lock(&scheduler.lock);
+
+    if (thread->state == KILLED || thread->state == UNSCHDED || thread->state == SLEEPING || thread->state == BLOCKED)
+    {
+        error("schd block bug.\n");
+    }
+    else if (thread->state == RUNNABEL)
+    {
+        thread->state = BLOCKED;
+
+        list_delete(&thread->schd_ln);
+
+        list_push_back(&scheduler.sleeping, &thread->schd_ln);
+    }
+    else if (thread->state == RUNNING)
+    {
+        uint cpuid = cpu_id();
+
+        thread->state = BLOCKED;
+
+        list_push_back(&scheduler.sleeping, &thread->schd_ln);
+
+        spin_unlock(&scheduler.lock);
+
+        task_switch(&thread->task, cpu_schd(cpuid));
+
+        return E_OK;
+    }
+    else
+    {
+        error("schd block bug.\n");
+    }
+
+    spin_unlock(&scheduler.lock);
 
     return E_OK;
 }

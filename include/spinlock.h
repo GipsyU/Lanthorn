@@ -2,7 +2,7 @@
 #define _SPINLOCK_H_
 
 #include <arch/atomic.h>
-#include <arch/cpu.h>
+#include <arch/intr.h>
 #include <log.h>
 
 struct spinlock_t
@@ -32,14 +32,14 @@ static inline int spin_trylock(struct spinlock_t *spinlock)
 
 static inline void spin_unlock(struct spinlock_t *spinlock)
 {
-    cpu_pushcli();
+    intr_irq_save_disable();
 
     if (atomic_xchg(&spinlock->lock, 0) == 0)
     {
         panic("spin unlock panic\n");
     }
 
-    cpu_popcli();
+    intr_irq_restore();
 }
 
 #endif

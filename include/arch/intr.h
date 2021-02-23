@@ -12,9 +12,13 @@ int intr_register(int intrno, int (*hdl)(uint));
 
 int intr_unregister(int intrno);
 
-int intr_enable(void);
+void intr_irq_enable(void);
 
-int intr_disable(void);
+void intr_irq_disable(void);
+
+void intr_irq_restore(void);
+
+void intr_irq_save_disable(void);
 
 void intr_end(void);
 

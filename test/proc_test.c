@@ -2,9 +2,11 @@
 #include <error.h>
 #include <log.h>
 #include <memory.h>
+#include <mutex.h>
 #include <proc.h>
 #include <spinlock.h>
 #include <thread.h>
+
 void T11(void)
 {
     for (uint i = 0;; ++i)
@@ -57,7 +59,7 @@ void lock(void)
 
     spin_init(&lock);
 
-    while(1)
+    while (1)
     {
         spin_lock(&lock);
 
@@ -65,19 +67,63 @@ void lock(void)
     }
 }
 
+struct mutex_t mutex;
+
+static int mutex_test_1(void)
+{
+    while(1)
+    {
+        mutex_lock(&mutex);
+        debug("t1 get.\n");
+        int t = 100000000;
+        while(t--);
+
+        debug("t1 put.\n");
+        mutex_unlock(&mutex);
+    }
+}
+
+static int mutex_test_2(void)
+{
+    while(1)
+    {
+        mutex_lock(&mutex);
+
+        debug("t2 get.\n");
+        int t = 100000000;
+        while(t--);
+
+        debug("t2 put.\n");
+
+        mutex_unlock(&mutex);
+    }
+
+}
+
+static int mutex_test_3(void)
+{
+    while(1)
+    {
+        mutex_lock(&mutex);
+        debug("t2 get.\n");
+        debug("t2 put.\n");
+        mutex_unlock(&mutex);
+    }
+
+}
 int proc_test(void)
 {
     int err = E_OK;
 
-    struct thread_t *t11, *t12, *t21, *t22;
+    struct thread_t *t1, *t2;
 
-    // err = thread_kern_new(&t11, lock, 0);
+    mutex_init(&mutex);
 
-    // err = thread_kern_new(&t12, T12);
+    // thread_kern_new(&t1, mutex_test_1, 0);
 
-    // err = thread_kern_new(&t21, T21);
-
-    // err = thread_kern_new(&t22, T22);
-
+    // thread_kern_new(&t1, mutex_test_2, 0);
+    
+    thread_kern_new(&t1, mutex_test_3, 0);
+    
     schd_schdule();
 }

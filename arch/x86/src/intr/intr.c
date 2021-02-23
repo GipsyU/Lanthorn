@@ -1,4 +1,5 @@
 #include <arch/basic.h>
+#include <arch/cpu.h>
 #include <arch/intr.h>
 #include <cpu.h>
 #include <error.h>
@@ -208,12 +209,26 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
     return (addr_t)iret;
 }
 
-int intr_enable(void)
+void intr_irq_enable(void)
 {
     asm volatile("sti" : : : "memory");
 }
 
-int intr_disable(void)
+void intr_irq_disable(void)
 {
     asm volatile("cli" : : : "memory");
+}
+
+void intr_irq_restore(void)
+{
+    cpu_get_task(cpu_id())->ncli--;
+
+    if (cpu_get_task(cpu_id())->ncli == 0) intr_irq_disable();
+}
+
+void intr_irq_save_disable(void)
+{
+    intr_irq_disable();
+
+    cpu_get_task(cpu_id())->ncli++;
 }

@@ -117,7 +117,6 @@ static int disable_pic(void)
     return E_OK;
 }
 
-
 int lapic_init(void)
 {
     int err = E_OK;
