@@ -2,6 +2,7 @@
 #define _SPINLOCK_H_
 
 #include <arch/atomic.h>
+#include <arch/cpu.h>
 #include <arch/intr.h>
 #include <log.h>
 
@@ -10,10 +11,10 @@ struct spinlock_t
     struct atomic_t lock;
 };
 
-static inline int trylock(struct spinlock_t *spinlock)
+struct spin_rwlock_t
 {
-    return atomic_cmpxchg(&spinlock->lock, 0, 1) == 0;
-}
+    struct atomic_t lock;
+};
 
 static inline void spin_init(struct spinlock_t *spinlock)
 {
@@ -22,24 +23,56 @@ static inline void spin_init(struct spinlock_t *spinlock)
 
 static inline void spin_lock(struct spinlock_t *spinlock)
 {
-    while(atomic_xchg(&spinlock->lock, 1) == 1);
+    while (atomic_xchg(&spinlock->lock, 1) == 1) cpu_relax();
 }
 
 static inline int spin_trylock(struct spinlock_t *spinlock)
 {
-    return trylock(spinlock);
+    __sync_synchronize();
+
+    cpu_relax();
+
+    return atomic_xchg(&spinlock->lock, 1) == 0;
 }
 
 static inline void spin_unlock(struct spinlock_t *spinlock)
 {
-    intr_irq_save_disable();
+    assert(atomic_read(&spinlock->lock) == 1);
 
-    if (atomic_xchg(&spinlock->lock, 0) == 0)
-    {
-        panic("spin unlock panic\n");
-    }
-
-    intr_irq_restore();
+    atomic_set(&spinlock->lock, 0);
 }
 
+// static inline void spin_rwlock_init(struct spin_rwlock_t *lock)
+// {
+//     atomic_set(lock, 0);
+// }
+
+// static inline void spin_read_lock(struct spin_rwlock_t *lock)
+// {
+//     while (1)
+//     {
+//         if (atomic_add_unless(lock, 1, -1)) return;
+//     }
+
+//     cpu_relax();
+// }
+
+// static inline void spin_write_lock(struct spin_rwlock_t *lock)
+// {
+//     while (1)
+//     {
+//         if (atomic_add_if(lock, -1, 0)) return;
+
+//         assert(atomic_read(lock) == -1);
+//     }
+
+//     cpu_relax();
+// }
+
+// static inline void spin_read_unlock(struct spin_rwlock_t *lock)
+// {
+//     assert(atomic_read(lock) > 0);
+
+//     atomic
+// }
 #endif
