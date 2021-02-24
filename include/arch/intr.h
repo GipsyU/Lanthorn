@@ -18,7 +18,7 @@ void intr_irq_disable(void);
 
 void intr_irq_restore(void);
 
-void intr_irq_save_disable(void);
+void intr_irq_save(void);
 
 void intr_end(void);
 

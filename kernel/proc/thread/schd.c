@@ -13,7 +13,9 @@ static void set_runnable(struct thread_t *thread)
 
 int schd_run(struct thread_t *thread)
 {
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
+
+    info("set thread %p runnable.\n", thread);
 
     if (thread->state == RUNNABEL || thread->state == RUNNING || thread->state == SLEEPING || thread->state == KILLED)
     {
@@ -30,7 +32,7 @@ int schd_run(struct thread_t *thread)
         error("schd run bug.\n");
     }
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }
@@ -41,7 +43,7 @@ int schd_sleep(struct thread_t *thread, long wake_sig)
 
     assert(thread == thread_now());
 
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
 
     if (thread->state == KILLED || thread->state == UNSCHDED || thread->state == SLEEPING)
     {
@@ -67,7 +69,7 @@ int schd_sleep(struct thread_t *thread, long wake_sig)
 
         list_push_back(&scheduler.sleeping, &thread->schd_ln);
 
-        spin_unlock(&scheduler.lock);
+        spin_unlock_irqrestore(&scheduler.lock);
 
         task_switch(&thread->task, cpu_schd(cpuid));
 
@@ -78,14 +80,14 @@ int schd_sleep(struct thread_t *thread, long wake_sig)
         error("schd sleep bug.\n");
     }
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }
 
 int schd_kill(struct thread_t *thread)
 {
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
 
     if (thread->state == KILLED)
     {
@@ -105,7 +107,7 @@ int schd_kill(struct thread_t *thread)
 
         thread->state = KILLED;
 
-        spin_unlock(&scheduler.lock);
+        spin_unlock_irqrestore(&scheduler.lock);
 
         task_switch(&thread->task, cpu_schd(cpuid));
 
@@ -120,14 +122,14 @@ int schd_kill(struct thread_t *thread)
         error("schd error.\n");
     }
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }
 
 int schd_wake(long wake_sig)
 {
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
 
     list_rep_s(&scheduler.sleeping, p)
     {
@@ -145,7 +147,7 @@ int schd_wake(long wake_sig)
         }
     }
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }
@@ -158,7 +160,7 @@ int schd_schdule(void)
 
     while (1)
     {
-        spin_lock(&scheduler.lock);
+        spin_lock_irqsave(&scheduler.lock);
 
         if (list_isempty(&scheduler.runnable) == 0)
         {
@@ -170,7 +172,7 @@ int schd_schdule(void)
 
             info("schedule thread %p.\n", thread);
 
-            spin_unlock(&scheduler.lock);
+            spin_unlock_irqrestore(&scheduler.lock);
 
             proc_switch(thread->proc);
 
@@ -180,7 +182,7 @@ int schd_schdule(void)
         }
         else
         {
-            spin_unlock(&scheduler.lock);
+            spin_unlock_irqrestore(&scheduler.lock);
         }
     }
 }
@@ -193,13 +195,13 @@ static int schd_intr(uint errno)
 
     struct thread_t *thread = container_of(task, struct thread_t, task);
 
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
 
     assert(thread->state == RUNNING);
 
     set_runnable(thread);
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     task_switch(task, cpu_schd(cpuid));
 
@@ -223,7 +225,9 @@ int schd_block(struct thread_t *thread)
 {
     assert(thread == thread_now());
 
-    spin_lock(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
+
+    info("block thread %p.\n", thread);
 
     if (thread->state == KILLED || thread->state == UNSCHDED || thread->state == SLEEPING || thread->state == BLOCKED)
     {
@@ -243,8 +247,6 @@ int schd_block(struct thread_t *thread)
 
         thread->state = BLOCKED;
 
-        list_push_back(&scheduler.sleeping, &thread->schd_ln);
-
         spin_unlock(&scheduler.lock);
 
         task_switch(&thread->task, cpu_schd(cpuid));
@@ -256,7 +258,7 @@ int schd_block(struct thread_t *thread)
         error("schd block bug.\n");
     }
 
-    spin_unlock(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }

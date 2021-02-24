@@ -226,7 +226,7 @@ void intr_irq_restore(void)
     if (cpu_get_task(cpu_id())->ncli == 0) intr_irq_enable();
 }
 
-void intr_irq_save_disable(void)
+void intr_irq_save(void)
 {
     intr_irq_disable();
 

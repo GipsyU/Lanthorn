@@ -14,6 +14,7 @@ const char *strerror(int err) {
         ERRCASE(E_EXIST);
         ERRCASE(E_FAILE);
         ERRCASE(E_NOMSG);
+        ERRCASE(E_BLOCK);
         default: return "E_UNKNOWN";
     }
     #undef ERRCASE

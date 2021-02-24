@@ -26,6 +26,22 @@ static inline void spin_lock(struct spinlock_t *spinlock)
     while (atomic_xchg(&spinlock->lock, 1) == 1) cpu_relax();
 }
 
+static inline void spin_lock_irqsave(struct spinlock_t *spinlock)
+{
+    intr_irq_save();
+
+    while (atomic_xchg(&spinlock->lock, 1) == 1) cpu_relax();
+}
+
+static inline void spin_unlock_irqrestore(struct spinlock_t *spinlock)
+{
+    assert(atomic_read(&spinlock->lock) == 1);
+
+    atomic_set(&spinlock->lock, 0);
+
+    intr_irq_restore();
+}
+
 static inline int spin_trylock(struct spinlock_t *spinlock)
 {
     __sync_synchronize();

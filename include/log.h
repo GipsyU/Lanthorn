@@ -1,5 +1,6 @@
 #ifndef _LOG_H_
 #define _LOG_H_
+#include <arch/sysctrl.h>
 void print(const char *fmt, ...);
 #define info(...)                                                                                                      \
     {                                                                                                                  \
@@ -26,6 +27,7 @@ void print(const char *fmt, ...);
         asm volatile("cli");                                                                                           \
         print("[PANIC] %s:%d ", __FILE__, __LINE__);                                                                   \
         print(__VA_ARGS__);                                                                                            \
+        sysctrl_shutdown();                                                                                            \
         while (1)                                                                                                      \
             ;                                                                                                          \
     }
