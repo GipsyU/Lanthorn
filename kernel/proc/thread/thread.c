@@ -293,14 +293,9 @@ static int sys_thread_exit(void)
     panic("Bug.\n");
 }
 
-// int thread_kill(struct thread_t *thread)
-// {
-
-// }
-
 int thread_init(void)
 {
-    syscall_register(SYS_thread_new, sys_thread_new, 4);
+    syscall_register(SYS_thread_create, sys_thread_new, 4);
 
     syscall_register(SYS_thread_exit, sys_thread_exit, 0);
 

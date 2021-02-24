@@ -3,21 +3,26 @@
 
 #define NR_SYSCALL 64
 
-#define SYS_none 0
-#define SYS_fork 1
-#define SYS_kill 2
-#define SYS_malloc 3
-#define SYS_mfree 4
-#define SYS_poweroff 5
-#define SYS_servercall 6
-#define SYS_msg_send 7
-#define SYS_msg_recieve 8
-#define SYS_msg_read 9
-#define SYS_msg_newbox 10
-#define SYS_msg_newmsg 11
-#define SYS_thread_exit 12
-#define SYS_thread_new 13
-#define SYS_write 14
+enum SYS_CALL
+{
+    SYS_none,
+    SYS_fork,
+    SYS_kill,
+    SYS_malloc,
+    SYS_mfree,
+    SYS_poweroff,
+    SYS_srv_call,
+    SYS_srv_register,
+    SYS_srv_unregister,
+    SYS_msg_send,
+    SYS_msg_recieve,
+    SYS_msg_read,
+    SYS_msg_newbox,
+    SYS_msg_newmsg,
+    SYS_thread_exit,
+    SYS_thread_create,
+    SYS_write
+};
 
 #ifndef __USER__
 
