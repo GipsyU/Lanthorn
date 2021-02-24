@@ -50,6 +50,16 @@ uint strlen(const char *s)
     return _s - s;
 }
 
+uint strlen_s(const char *s, uint maxlen)
+{
+    for (uint i = 0; i < maxlen; ++i)
+    {
+        if (s[i] == 0) return i;
+    }
+
+    return maxlen;
+}
+
 void strcpy(char *dst, const char *src, size_t size)
 {
     while (size--)

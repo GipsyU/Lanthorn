@@ -46,6 +46,8 @@ int msg_recieve(uint box_id, uint *msg_id);
 
 int msg_read(uint msg_id, addr_t cache, size_t size);
 
+int msg_size(uint msg_id, size_t *size);
+
 int msg_init(void);
 
 #endif

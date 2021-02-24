@@ -11,7 +11,6 @@ static struct
 {
     struct msg_t msg[MSG_MAX];
     struct msgbox_t box[MSG_MAX];
-    struct spinlock_t lock;
 } MSG;
 
 int msg_newmsg(uint *id, addr_t addr, size_t size)
@@ -22,23 +21,28 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
     {
         if (spin_trylock(&MSG.msg[i].lock))
         {
-            list_init(&MSG.msg[i].box_ln);
+            if (MSG.msg[i].state == MSG_UNUSED)
+            {
+                list_init(&MSG.msg[i].box_ln);
 
-            err = kmalloc(&MSG.msg[i].addr, size);
+                err = kmalloc(&MSG.msg[i].addr, size);
 
-            assert(err == E_OK);
+                assert(err == E_OK);
 
-            memcpy(MSG.msg[i].addr, addr, size);
-            
-            MSG.msg[i].size = size;
+                memcpy(MSG.msg[i].addr, addr, size);
+                
+                MSG.msg[i].size = size;
 
-            MSG.msg[i].state = MSG_UNSEND;
+                MSG.msg[i].state = MSG_UNSEND;
 
-            *id = i;
+                *id = i;
+
+                spin_unlock(&MSG.msg[i].lock);
+
+                return E_OK;
+            }
 
             spin_unlock(&MSG.msg[i].lock);
-
-            return E_OK;
         }
     }
 
@@ -52,21 +56,24 @@ int msg_newbox(uint *id)
     {
         if (spin_trylock(&MSG.box[i].lock))
         {
-            list_init(&MSG.box[i].msg_ls);
+            if (MSG.box[i].state == BOX_UNUSED)
+            {
+                list_init(&MSG.box[i].msg_ls);
 
-            MSG.box[i].nmsg = 0;
+                MSG.box[i].nmsg = 0;
 
-            MSG.box[i].state = BOX_USED;
+                MSG.box[i].state = BOX_USED;
 
-            *id = i;
+                *id = i;
+
+                spin_unlock(&MSG.box[i].lock);
+
+                return E_OK;
+            }
 
             spin_unlock(&MSG.box[i].lock);
-
-            return E_OK;
         }
     }
-
-    debug("OK");
 
     return E_NOSLOT;
 }
@@ -146,6 +153,33 @@ int msg_recieve(uint box_id, uint *msg_id)
 int msg_read(uint msg_id, addr_t cache, size_t size)
 {
     spin_lock(&MSG.msg[msg_id].lock);
+
+    if (MSG.msg[msg_id].state != MSG_RECIEVED)
+    {
+        spin_unlock(&MSG.msg[msg_id].lock);
+
+        return E_INVAL;
+    }
+
+    if (MSG.msg[msg_id].size > size)
+    {
+        spin_unlock(&MSG.msg[msg_id].lock);
+
+        return E_NOCACHE;
+    }
+
+    uint *x = MSG.msg[msg_id].addr;
+
+    memcpy(cache, MSG.msg[msg_id].addr, MSG.msg[msg_id].size);
+
+    spin_unlock(&MSG.msg[msg_id].lock);
+
+    return E_OK;
+}
+
+int msg_size(uint msg_id, size_t *size)
+{
+    spin_lock(&MSG.msg[msg_id].lock);
     
     if (MSG.msg[msg_id].state != MSG_RECIEVED)
     {
@@ -154,7 +188,7 @@ int msg_read(uint msg_id, addr_t cache, size_t size)
         return E_INVAL;
     }
 
-    memcpy(cache, MSG.msg[msg_id].addr, MSG.msg[msg_id].size);
+    *size = MSG.msg[msg_id].size;
 
     spin_unlock(&MSG.msg[msg_id].lock);
 
@@ -180,8 +214,6 @@ int msg_init(void)
         
         MSG.box[i].state = BOX_UNUSED;
     }
-
-    spin_init(&MSG.lock);
 
     syscall_register(SYS_msg_newmsg, msg_newmsg, 3);
 
