@@ -42,37 +42,36 @@ static inline void spin_unlock(struct spinlock_t *spinlock)
     atomic_set(&spinlock->lock, 0);
 }
 
-// static inline void spin_rwlock_init(struct spin_rwlock_t *lock)
-// {
-//     atomic_set(lock, 0);
-// }
+static inline void spin_rwlock_init(struct spin_rwlock_t *lock)
+{
+    atomic_set(&lock->lock, 0);
+}
 
-// static inline void spin_read_lock(struct spin_rwlock_t *lock)
-// {
-//     while (1)
-//     {
-//         if (atomic_add_unless(lock, 1, -1)) return;
-//     }
+static inline void spin_read_lock(struct spin_rwlock_t *lock)
+{
+    while (atomic_add_unless(&lock->lock, 1, -1) == 0) cpu_relax();
 
-//     cpu_relax();
-// }
+    assert(atomic_read(&lock->lock) > 0);
+}
 
-// static inline void spin_write_lock(struct spin_rwlock_t *lock)
-// {
-//     while (1)
-//     {
-//         if (atomic_add_if(lock, -1, 0)) return;
+static inline void spin_write_lock(struct spin_rwlock_t *lock)
+{
+    while (atomic_add_if(&lock->lock, -1, 0) == 0) cpu_relax();
 
-//         assert(atomic_read(lock) == -1);
-//     }
+    assert(atomic_read(&lock->lock) == -1);
+}
 
-//     cpu_relax();
-// }
+static inline void spin_read_unlock(struct spin_rwlock_t *lock)
+{
+    assert(atomic_read(&lock->lock) > 0);
 
-// static inline void spin_read_unlock(struct spin_rwlock_t *lock)
-// {
-//     assert(atomic_read(lock) > 0);
+    atomic_add(&lock->lock, -1);
+}
 
-//     atomic
-// }
+static inline void spin_write_unlock(struct spin_rwlock_t *lock)
+{
+    assert(atomic_read(&lock->lock) == -1);
+
+    atomic_set(&lock->lock, 0);
+}
 #endif
