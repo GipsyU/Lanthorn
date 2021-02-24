@@ -10,17 +10,17 @@
         {                                                                                                              \
         case 1: {                                                                                                      \
             volatile u8 *__ptr = (volatile u8 *)(ptr);                                                                 \
-            asm volatile("xchgb %0,%1" : "=q"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                               \
+            asm volatile("lock;\nxchgb %0,%1" : "=q"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
         case 2: {                                                                                                      \
             volatile u16 *__ptr = (volatile u16 *)(ptr);                                                               \
-            asm volatile("xchgw %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                               \
+            asm volatile("lock;\nxchgw %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
         case 4: {                                                                                                      \
             volatile u32 *__ptr = (volatile u32 *)(ptr);                                                               \
-            asm volatile("xchgl %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                               \
+            asm volatile("lock;\nxchgl %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
         }                                                                                                              \
@@ -38,17 +38,17 @@
         {                                                                                                              \
         case 1: {                                                                                                      \
             volatile u8 *__ptr = (volatile u8 *)(ptr);                                                                 \
-            asm volatile("cmpxchgb %2,%1" : "=a"(__ret), "+m"(*__ptr) : "q"(__new), "0"(__old) : "memory");            \
+            asm volatile("lock;\ncmpxchgb %2,%1" : "=a"(__ret), "+m"(*__ptr) : "q"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \
         case 2: {                                                                                                      \
             volatile u16 *__ptr = (volatile u16 *)(ptr);                                                               \
-            asm volatile("cmpxchgw %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");            \
+            asm volatile("lock;\ncmpxchgw %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \
         case 4: {                                                                                                      \
             volatile u32 *__ptr = (volatile u32 *)(ptr);                                                               \
-            asm volatile("cmpxchgl %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");            \
+            asm volatile("lock;\ncmpxchgl %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \
         }                                                                                                              \
@@ -79,14 +79,8 @@ static inline void atomic_set(struct atomic_t *v, int i)
 
 static inline void atomic_add(struct atomic_t *v, int i)
 {
-    asm volatile("addl %1,%0" : "+m"(v->counter) : "ir"(i));
+    asm volatile("lock;\naddl %1,%0" : "+m"(v->counter) : "ir"(i));
 }
-
-static inline void atomic_sub(struct atomic_t *v, int i)
-{
-    asm volatile("subl %1,%0" : "+m"(v->counter) : "ir"(i));
-}
-
 /**
  * Atomically subtracts @i from @v and returns
  * true if the result is zero, or false for all
@@ -96,7 +90,7 @@ static inline int atomic_sub_and_test(struct atomic_t *v, int i)
 {
     unsigned char c;
 
-    asm volatile("subl %2,%0; sete %1" : "+m"(v->counter), "=qm"(c) : "ir"(i) : "memory");
+    asm volatile("lock;\nsubl %2,%0; sete %1" : "+m"(v->counter), "=qm"(c) : "ir"(i) : "memory");
 
     return c;
 }
@@ -106,17 +100,63 @@ static inline int atomic_cmpxchg(struct atomic_t *v, int old, int new)
     return cmpxchg(&v->counter, old, new);
 }
 
+static inline int __xchg(volatile int *addr, int newval)
+{
+    uint result;
+
+    // The + in "+m" denotes a read-modify-write operand.
+    asm volatile("lock; xchgl %0, %1" : "+m"(*addr), "=a"(result) : "1"(newval) : "cc");
+    return result;
+}
+
 static inline int atomic_xchg(struct atomic_t *v, int new)
 {
-    return xchg(&v->counter, new);
+    return __xchg(&v->counter, new);
 }
 
 static inline int atomic_add_return(struct atomic_t *v, int i)
 {
     int __i;
     __i = i;
-    asm volatile("xaddl %0, %1" : "+r"(i), "+m"(v->counter) : : "memory");
+    asm volatile("lock;\nxaddl %0, %1" : "+r"(i), "+m"(v->counter) : : "memory");
     return i + __i;
+}
+
+/**
+ * atomic_add_unless - add unless the number is already a given value
+ * @v: pointer of type atomic_t
+ * @a: the amount to add to v...
+ * @u: ...unless v is equal to u.
+ *
+ * Atomically adds @a to @v, so long as @v was not already @u.
+ * Returns non-zero if @v was not @u, and zero otherwise.
+ */
+static inline int atomic_add_unless(struct atomic_t *v, int a, int u)
+{
+    int c, old;
+    c = atomic_read(v);
+    for (;;)
+    {
+        if (c == (u)) break;
+        old = atomic_cmpxchg((v), c, c + (a));
+        if (old == c) break;
+        c = old;
+    }
+    return c != (u);
+}
+
+static inline int atomic_add_if(struct atomic_t *v, int a, int i)
+{
+    int c, old;
+    c = atomic_read(v);
+    for (;;)
+    {
+        if (c != (i)) break;
+        old = atomic_cmpxchg((v), c, c + (a));
+        if (old == c) break;
+        c = old;
+    }
+    return c == (i);
 }
 
 #endif

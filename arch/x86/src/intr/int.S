@@ -1,4 +1,4 @@
-#define SEL_KDATA (4<<3)
+#define SEL_KDATA (2<<3)
 
 .globl intr_etr
 intr_etr:
@@ -11,6 +11,9 @@ intr_etr:
     movw $(SEL_KDATA), %ax
     movw %ax, %ds
     movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
+    movw %ax, %ss
 
     pushl %esp
     call intr_hdl

@@ -11,4 +11,6 @@ void cpu_set_task(uint cpuid, struct task_t *task);
 
 struct task_t *cpu_schd(uint cpuid);
 
+#define cpu_relax() asm volatile("rep;nop;");
+
 #endif

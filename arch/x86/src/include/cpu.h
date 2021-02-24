@@ -4,8 +4,6 @@
 #include <arch/task.h>
 #include <x86.h>
 
-#define cpu_relax() asm volatile("rep; nop")
-
 struct cpu_t
 {
     uint cpuid;
