@@ -118,11 +118,11 @@ void intr_hdl(struct intr_regs_t *regs)
 
         else if (regs->intrno == INTR_PGFAULT)
 
-            regs->eax = handler(regs->err);
+            handler(regs->err);
 
         else
 
-            regs->eax = handler(NULL);
+            handler(NULL);
     }
 
     if (islog[regs->intrno])
@@ -223,7 +223,7 @@ void intr_irq_restore(void)
 {
     cpu_get_task(cpu_id())->ncli--;
 
-    if (cpu_get_task(cpu_id())->ncli == 0) intr_irq_disable();
+    if (cpu_get_task(cpu_id())->ncli == 0) intr_irq_enable();
 }
 
 void intr_irq_save_disable(void)

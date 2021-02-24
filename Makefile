@@ -170,7 +170,8 @@ KBUILD_CFLAGS := -static -nostdinc\
 				 -fno-pic \
 				 -fno-pie \
 				 -fno-builtin \
-				 -Werror-implicit-function-declaration
+				 -Werror-implicit-function-declaration \
+				 -O2
 
 KBUILD_CFLAGS += $(call cc-disable-warning, main) $(call cc-disable-warning,discarded-qualifiers) \
 				$(call cc-disable-warning, int-conversion)
