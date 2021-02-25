@@ -52,7 +52,7 @@ int T2(void)
 
     while (1)
     {
-        if (msg_recieve(bbox, &msgid) == E_OK)
+        if (msg_recieve(bbox, &msgid, 1) == E_OK)
         {
             debug ("recieved.\n");
 
@@ -60,7 +60,7 @@ int T2(void)
 
             assert( kmalloc(&addr, PAGE_SIZE) == E_OK);
 
-            msg_read(msgid, addr, PAGE_SIZE);
+            msg_read(msgid, addr, PAGE_SIZE, 0);
 
             print("%s", addr);
         }

@@ -28,10 +28,12 @@ struct msgbox_t
     enum BOX_STATE
     {
         BOX_UNUSED,
-        BOX_USED
+        BOX_RCVABLE,
+        BOX_RCV_BLK
     } state;
     uint nmsg;
-    struct proc_t *proc;
+    struct proc_t *owner;
+    struct thread_t *blk_thread;
     struct spinlock_t lock;
     struct list_node_t msg_ls;
 };
@@ -42,9 +44,9 @@ int msg_newbox(uint *id);
 
 int msg_send(uint box_id, uint msg_id);
 
-int msg_recieve(uint box_id, uint *msg_id);
+int msg_recieve(uint box_id, uint *msg_id, uint is_block);
 
-int msg_read(uint msg_id, addr_t cache, size_t size);
+int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size);
 
 int msg_size(uint msg_id, size_t *size);
 
