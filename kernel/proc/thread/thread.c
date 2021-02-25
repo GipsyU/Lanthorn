@@ -14,7 +14,6 @@
 
 extern struct proc_t proc_0;
 
-#define DFT_STK_SZ (PAGE_SIZE * 1024)
 
 static void pre(void)
 {
@@ -79,7 +78,7 @@ static void thread_enclosure(addr_t func, uint nargs, ...)
         error("thread_enclosure error.\n");
     }
 
-    info("thread end, killed.\n");
+    info("thread %p end, killed.\n", thread_now());
 
     schd_kill(thread_now());
 
@@ -113,9 +112,13 @@ static int thread_new(struct thread_t **res)
     return err;
 }
 
-int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
+int thread_kern_new(struct proc_t *proc, struct thread_t **thread, addr_t exe, uint nargs, ...)
 {
-    int err = thread_new(thread);
+    if (proc == NULL) proc = &proc_0;
+
+    struct thread_t *_thread;
+
+    int err = thread_new(&_thread);
 
     if (err != E_OK) return err;
 
@@ -125,43 +128,43 @@ int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
 
     if (err != E_OK) return err;
 
-    (*thread)->ks_addr = stack;
+    _thread->ks_addr = stack;
 
-    (*thread)->ks_size = KERN_STACK_SIZE;
+    _thread->ks_size = KERN_STACK_SIZE;
 
     long *args = (void *)(((addr_t)&nargs) + sizeof(nargs));
 
     if (nargs == 0)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs);
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs);
     }
 
     if (nargs == 1)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0]);
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0]);
     }
 
     if (nargs == 2)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
                        args[1]);
     }
 
     if (nargs == 3)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
                        args[1], args[2]);
     }
 
     if (nargs == 4)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
                        args[1], args[2], args[3]);
     }
 
     if (nargs == 5)
     {
-        task_kern_init(&(*thread)->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
+        task_kern_init(&_thread->task, stack, KERN_STACK_SIZE, thread_enclosure, nargs + 2, exe, nargs, args[0],
                        args[1], args[2], args[3], args[4]);
     }
 
@@ -170,11 +173,13 @@ int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...)
         error("thread kern new error.\n");
     }
 
-    (*thread)->proc = &proc_0;
+    _thread->proc = proc;
 
-    list_push_back(&proc_0.thread_ls, &(*thread)->proc_ln);
+    list_push_back(&proc->thread_ls, &_thread->proc_ln);
 
-    schd_run(*thread);
+    schd_run(_thread);
+
+    if (thread != NULL) *thread = _thread;
 
     return err;
 }
@@ -299,5 +304,7 @@ int thread_init(void)
 
     syscall_register(SYS_thread_exit, sys_thread_exit, 0);
 
-    return E_OK;
+    int err = schd_init();
+
+    return err;
 }

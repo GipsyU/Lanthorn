@@ -90,4 +90,14 @@ static inline void spin_write_unlock(struct spin_rwlock_t *lock)
 
     atomic_set(&lock->lock, 0);
 }
+
+static inline int spin_read_islock(struct spin_rwlock_t *lock)
+{
+    return atomic_read(&lock->lock) > 0;
+}
+
+static inline int spin_write_islock(struct spin_rwlock_t *lock)
+{
+    return atomic_read(&lock->lock) == -1;
+}
 #endif

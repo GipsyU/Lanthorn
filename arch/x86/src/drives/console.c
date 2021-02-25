@@ -1,4 +1,5 @@
 #include <arch/console.h>
+#include <arch/cpu.h>
 #include <io.h>
 #include <cpu.h>
 
@@ -57,7 +58,7 @@ int console_init(void)
 {
 	serial_init(DEFAULT_PORT, DEFAULT_BAUD);
 
-	for (int i = 0; i < 13; ++i)
+	for (uint i = 0; i < sizeof(clear); ++i)
 	{
 		console_put_char(clear[i]);
 	}

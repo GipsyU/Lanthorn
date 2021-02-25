@@ -170,6 +170,8 @@ int ptb_map(struct ptb_t *ptb, addr_t va, addr_t pa, uint usr, uint wtb);
 
 int ptb_init(struct ptb_t *tb, addr_t pde);
 
+int ptb_setup(struct ptb_t *tb);
+
 int ptb_fork(struct ptb_t *ptbo, struct ptb_t *ptbn);
 
 int ptb_unmap(struct ptb_t *ptb, addr_t va);

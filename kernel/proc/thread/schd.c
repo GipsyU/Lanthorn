@@ -4,6 +4,8 @@
 #include <thread.h>
 #include <util.h>
 
+static struct schd_t scheduler;
+
 static void set_runnable(struct thread_t *thread)
 {
     thread->state = RUNNABEL;
@@ -29,7 +31,7 @@ int schd_run(struct thread_t *thread)
     }
     else
     {
-        error("schd run bug.\n");
+        panic("schd run bug.\n");
     }
 
     spin_unlock_irqrestore(&scheduler.lock);
@@ -91,7 +93,7 @@ int schd_kill(struct thread_t *thread)
 
     if (thread->state == KILLED)
     {
-        warn("killed twice.\n");
+        panic("killed twice.\n");
     }
     else if (thread->state == RUNNABEL || thread->state == SLEEPING)
     {
@@ -107,7 +109,7 @@ int schd_kill(struct thread_t *thread)
 
         thread->state = KILLED;
 
-        spin_unlock_irqrestore(&scheduler.lock);
+        spin_unlock(&scheduler.lock);
 
         task_switch(&thread->task, cpu_schd(cpuid));
 
@@ -115,11 +117,11 @@ int schd_kill(struct thread_t *thread)
     }
     else if (thread->state == UNSCHDED)
     {
-        error("schd error.\n");
+        panic("schd error.\n");
     }
     else
     {
-        error("schd error.\n");
+        panic("schd error.\n");
     }
 
     spin_unlock_irqrestore(&scheduler.lock);
@@ -160,7 +162,9 @@ int schd_schdule(void)
 
     while (1)
     {
-        spin_lock_irqsave(&scheduler.lock);
+        intr_irq_disable();
+
+        spin_lock(&scheduler.lock);
 
         if (list_isempty(&scheduler.runnable) == 0)
         {
@@ -170,19 +174,19 @@ int schd_schdule(void)
 
             thread->cpuid = cpu_id();
 
-            info("schedule thread %p.\n", thread);
-
-            spin_unlock_irqrestore(&scheduler.lock);
+            // info("schedule thread %p.\n", thread);
 
             proc_switch(thread->proc);
 
             cpu_set_task(cpuid, &thread->task);
 
+            spin_unlock(&scheduler.lock);
+
             task_switch(cpu_schd(cpuid), &thread->task);
         }
         else
         {
-            spin_unlock_irqrestore(&scheduler.lock);
+            spin_unlock(&scheduler.lock);
         }
     }
 }

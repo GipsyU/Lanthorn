@@ -9,6 +9,8 @@
 
 #define KERN_STACK_SIZE (8 * PAGE_SIZE)
 
+#define DFT_STK_SZ (PAGE_SIZE * 1024)
+
 enum T_STATE
 {
     UNSCHDED,
@@ -28,6 +30,7 @@ struct thread_t
     long wake_sig;
     struct task_t task;
     struct proc_t *proc;
+    struct spinlock_t lock;
     struct list_node_t schd_ln;
     struct list_node_t proc_ln;
     struct list_node_t mutex_wait_ln;
@@ -40,11 +43,9 @@ struct schd_t
     struct list_node_t sleeping;
 };
 
-static struct schd_t scheduler;
-
 struct thread_t *thread_now(void);
 
-int thread_kern_new(struct thread_t **thread, addr_t exe, uint nargs, ...);
+int thread_kern_new(struct proc_t *proc, struct thread_t **thread, addr_t exe, uint nargs, ...);
 
 int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t exe, size_t ustk_sz, addr_t arg);
 

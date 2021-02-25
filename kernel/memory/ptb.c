@@ -94,6 +94,25 @@ int ptb_init(struct ptb_t *tb, addr_t pde)
     return E_OK;
 }
 
+int ptb_setup(struct ptb_t *tb)
+{
+    struct page_t *pde;
+
+    int err = page_alloc(&pde);
+
+    if (err != E_OK) return err;
+
+    spin_init(&tb->lock);
+
+    rbt_init(&tb->rbt);
+
+    tb->pde = pde->addr;
+
+    mmu_sync_kern_space(proc_0.ptb.pde, tb->pde, KERN_BASE, 0 - KERN_BASE);
+
+    return err;
+}
+
 int ptb_fork(struct ptb_t *ptbo, struct ptb_t *ptbn)
 {
     struct page_t *pden;
