@@ -12,6 +12,8 @@ enum SYS_CALL
     SYS_mfree,
     SYS_poweroff,
     SYS_srv_call,
+    SYS_srv_called,
+    SYS_srv_reply,
     SYS_srv_register,
     SYS_srv_unregister,
     SYS_msg_send,
