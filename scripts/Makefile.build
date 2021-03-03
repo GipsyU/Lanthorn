@@ -113,9 +113,16 @@ $(obj)/%.i: $(src)/%.c FORCE
 
 quiet_cmd_cc_o_c = CC $(quiet_modtag)  $@
 	  cmd_cc_o_c = $(CC) $(c_flags) -c -o $@ $<
+	
+quiet_cmd_cc_o_cpp = CC $(quiet_modtag)  $@
+	  cmd_cc_o_cpp = $(CC) $(c_flags) -c -o $@ $<
 
 define rule_cc_o_c
 	$(call cmd_and_fixdep,cc_o_c)
+endef
+
+define rule_cc_o_cpp
+	$(call cmd_and_fixdep,cc_o_cpp)
 endef
 
 define rule_as_o_S
@@ -125,6 +132,9 @@ endef
 # Built-in and composite module parts
 $(obj)/%.o: $(src)/%.c FORCE
 	$(call if_changed_rule,cc_o_c)
+
+$(obj)/%.o: $(src)/%.cpp FORCE
+	$(call if_changed_rule,cc_o_cpp)
 
 quiet_cmd_cc_lst_c = MKLST   $@
       cmd_cc_lst_c = $(CC) $(c_flags) -g -c -o $*.o $< && \

@@ -124,6 +124,10 @@ void intr_hdl(struct intr_regs_t *regs)
 
             handler(NULL);
     }
+    else
+    {
+        panic("no intr routine");
+    }
 
     if (islog[regs->intrno])
     {

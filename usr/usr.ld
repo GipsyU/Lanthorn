@@ -7,7 +7,7 @@ SECTIONS
 	. = 0x0;
 	.starttext : {*(.starttext)}
 	.text : { *(.text, .text*) }
-	.rodata : { *(.rodata) }
+	.rodata : { *(.rodata, .rodata*) }
 	.bss : { *(.bss) }
-	/DISCARD/ : { *(.comment) *(.eh_frame) }
+	/DISCARD/ : { *(.comment) *(.eh_frame) *(.note*) }
 }

@@ -21,8 +21,8 @@ int elf_load(struct elf_t *elf, addr_t addr)
 
     for (uint i = 0; i < elf->phnum; ++i, ++prog)
     {
+        memset(addr + prog->paddr, 0, prog->memsz);
         memcpy(addr + prog->paddr, (addr_t)elf + prog->off, prog->filesz);
-        memset(addr + prog->paddr, 0, prog->memsz - prog->filesz);
     }
 
     return E_OK;
