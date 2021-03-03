@@ -177,6 +177,12 @@ extern char _binary_usr_init_elf_size[];
 
 extern char _binary_usr_devsrv_elf_start[];
 extern char _binary_usr_devsrv_elf_size[];
+
+extern char _binary_usr_filesrv_elf_start[];
+extern char _binary_usr_filesrv_elf_size[];
+
+extern char _binary_usr_test_elf_start[];
+extern char _binary_usr_test_elf_size[];
 int proc_init(void)
 {
     int err = proc_rbt_init();
@@ -203,7 +209,7 @@ int proc_init(void)
     else
         panic("init thread failed.\n");
 
-    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size);
+    // err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size);
 
     if (err == E_OK)
         info("init usr init process success.\n");
@@ -211,13 +217,25 @@ int proc_init(void)
     else
         panic("init usr init process failed.\n");
 
-    err = proc_create_from_mm("dev_service", _binary_usr_devsrv_elf_start, _binary_usr_devsrv_elf_size);
+    // err = proc_create_from_mm("dev_service", _binary_usr_devsrv_elf_start, _binary_usr_devsrv_elf_size);
 
-    if (err == E_OK)
-        info("init device service process success.\n");
+    // if (err == E_OK)
+    //     info("init device service process success.\n");
 
-    else
-        panic("init device service process failed.\n");
+    // else
+    //     panic("init device service process failed.\n");
+
+    // err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size);
+
+    // if (err == E_OK)
+    //     info("init file service process success.\n");
+
+    // else
+    //     panic("init file service process failed.\n");
+
+    err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
+
+    assert(err == E_OK);
 
     syscall_register(SYS_fork, proc_fork, 1);
 

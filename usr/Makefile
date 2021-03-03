@@ -1,11 +1,11 @@
 quiet_cmd_cc_elf_o = CC      $@
       cmd_cc_elf_o = $(CC) -m32 -c $< -o $@
 
-LANTHORNINCLUDE := 
+LANTHORNINCLUDE :=
 
-usr-y := init.elf test/ devsrv/
+usr-y := init.elf test/ devsrv/ filesrv/
 
-usr-y := $(addprefix $(obj)/, $(usr-y))
+usr-y := $(addprefix $(src)/, $(usr-y))
 
 usr_lib := $(src)/lib
 
@@ -19,7 +19,7 @@ usr_sg_elfs := $(filter-out %/, $(usr-y))
 
 LDFLAGS_usr.elf += -r -b binary
 
-KBUILD_CFLAGS += -I$(src)/include -D__USER__
+KBUILD_CFLAGS += -I$(src)/include -I$(src)/arch/$(SRCARCH)/include -D__USER__
 
 KBUILD_AFLAGS += -D__USER__
 

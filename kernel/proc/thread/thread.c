@@ -233,7 +233,7 @@ int thread_free(struct thread_t *thread)
     return err;
 }
 
-static int sys_thread_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
+static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
 {
     size_t ustk_sz = DFT_STK_SZ;
 
@@ -291,18 +291,49 @@ int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **
     return err;
 }
 
-static int sys_thread_exit(void)
+static int thread_sys_exit(void)
 {
     schd_kill(thread_now());
 
     panic("Bug.\n");
 }
 
+static int thread_sys_block(uint tid)
+{
+    struct thread_t *thread = (void *)tid;
+    
+    if (thread->proc != proc_now()) return E_INVAL;
+
+    return schd_block(tid);
+}
+
+static int thread_sys_tid(uint *tid)
+{
+    *tid = (uint)thread_now();
+    
+    return E_OK;
+}
+
+static int thread_sys_wake(uint tid)
+{
+    struct thread_t *thread = (void *)tid;
+    
+    if (thread->proc != proc_now()) return E_INVAL;
+
+    return schd_run(tid);
+}
+
 int thread_init(void)
 {
-    syscall_register(SYS_thread_create, sys_thread_new, 4);
+    syscall_register(SYS_thread_create, thread_sys_new, 4);
+    
+    syscall_register(SYS_thread_block, thread_sys_block, 1);
 
-    syscall_register(SYS_thread_exit, sys_thread_exit, 0);
+    syscall_register(SYS_thread_wake, thread_sys_wake, 1);
+
+    syscall_register(SYS_thread_tid, thread_sys_tid, 1);
+
+    syscall_register(SYS_thread_exit, thread_sys_exit, 0);
 
     int err = schd_init();
 

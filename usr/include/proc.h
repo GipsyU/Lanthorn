@@ -13,4 +13,10 @@ int thread_create(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t 
 
 int thread_exit(void);
 
+int thread_tid(uint *tid);
+
+int thread_block(uint tid);
+
+int thread_wake(uint tid);
+
 #endif
