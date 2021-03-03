@@ -15,3 +15,18 @@ int thread_exit(void)
 {
     return syscall(SYS_thread_exit);
 }
+
+int thread_tid(uint *tid)
+{
+    return syscall(SYS_thread_tid, tid);
+}
+
+int thread_block(uint tid)
+{
+    return syscall(SYS_thread_block, tid);
+}
+
+int thread_wake(uint tid)
+{
+    return syscall(SYS_thread_wake, tid);
+}
