@@ -29,7 +29,6 @@
 #define panic(...)                                                                                                     \
     do                                                                                                                 \
     {                                                                                                                  \
-        asm volatile("cli");                                                                                           \
         printf("[PANIC] %s:%d ", __FILE__, __LINE__);                                                                   \
         printf(__VA_ARGS__);                                                                                            \
         sysctrl_poweroff();                                                                                            \

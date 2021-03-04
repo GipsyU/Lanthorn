@@ -9,7 +9,6 @@ struct mutex_t
     struct atomic_t count;
     struct spinlock_t wait_lock;
     struct list_node_t wait_ls;
-    uint owner;
 };
 
 void mutex_init(struct mutex_t *mutex);
@@ -17,4 +16,7 @@ void mutex_init(struct mutex_t *mutex);
 void mutex_lock(struct mutex_t *mutex);
 
 void mutex_unlock(struct mutex_t *mutex);
+
+uint mutex_islock(struct mutex_t *mutex);
+
 #endif

@@ -17,18 +17,11 @@ void mutex_init(struct mutex_t *mutex)
     spin_init(&mutex->wait_lock);
 
     list_init(&mutex->wait_ls);
-
-    mutex->owner = NULL;
 }
 
 void mutex_lock(struct mutex_t *mutex)
 {
-    if (atomic_sub_and_test(&mutex->count, 1))
-    {
-        thread_tid(&mutex->owner);
-
-        return;
-    }
+    if (atomic_sub_and_test(&mutex->count, 1)) return;
 
     spin_lock(&mutex->wait_lock);
 
@@ -43,8 +36,11 @@ void mutex_lock(struct mutex_t *mutex)
     spin_unlock(&mutex->wait_lock);
 
     thread_block(tid->tid);
+}
 
-    assert(mutex->owner == tid->tid); 
+uint mutex_islock(struct mutex_t *mutex)
+{
+    return atomic_read(&mutex->count) != 1;
 }
 
 void mutex_unlock(struct mutex_t *mutex)
@@ -52,10 +48,6 @@ void mutex_unlock(struct mutex_t *mutex)
     uint _tid;
 
     thread_tid(&_tid);
-
-    assert(mutex->owner == _tid);
-
-    mutex->owner == NULL;
 
     if (atomic_add_return(&mutex->count, 1) == 1) return;
 
@@ -65,7 +57,7 @@ void mutex_unlock(struct mutex_t *mutex)
 
     spin_unlock(&mutex->wait_lock);
 
-    mutex->owner = tid->tid;
-
     thread_wake(tid->tid);
+
+    return;
 }
