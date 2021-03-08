@@ -122,6 +122,10 @@ int file_new(struct file_t **file, char *name, uint type, addr_t addr, size_t si
 
     strcpy(_file->name, name, strlen(name));
 
+    _file->data = addr;
+
+    _file->size = size;
+
     *file = _file;
 
     return err;
@@ -197,4 +201,19 @@ int file_create(char *name, uint type, addr_t addr, size_t size)
     }
 
     return err;
+}
+
+int file_read(char *name, addr_t *addr, size_t *size)
+{
+    struct file_t *file;
+
+    int err = file_find(name, &file);
+
+    if (err != E_OK) return err;
+
+    *addr = file->data;
+
+    *size = file->size;
+
+    return 0;
 }

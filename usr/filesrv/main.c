@@ -10,8 +10,9 @@
 
 int main(void)
 {
-
     init();
+
+    srv_read();
 
     return 0;
 }

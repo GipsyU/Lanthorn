@@ -29,12 +29,18 @@ struct file_t
     struct rwlock_t lock;
 };
 
+extern struct file_t *root_file;
+
 int init(void);
+
+int file_read(char *name, addr_t *addr, size_t *size);
 
 int file_new(struct file_t **file, char *name, uint type, addr_t addr, size_t size);
 
 int file_find(char *name, struct file_t **res);
 
 int file_create(char *name, uint type, addr_t addr, size_t size);
+
+void srv_read(void);
 
 #endif

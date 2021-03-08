@@ -15,21 +15,18 @@ struct init_file_t
 
 static int load_file(void)
 {
-    printf("%d.\n", _binary_usr_filesrv_mkfs_fileimg_size);
-
     for (struct init_file_t *file = (void *)_binary_usr_filesrv_mkfs_fileimg_start;
          (addr_t)file < (addr_t)_binary_usr_filesrv_mkfs_fileimg_end; file = (addr_t)file + file->size + sizeof(struct init_file_t))
     {
-        printf("%p\n", file);
         printf("%s\n", file->name);
 
         printf("%d\n", file->size);
 
-        // file_create(file->name, FILE_ENTITY, (addr_t)file + sizeof(struct init_file_t), file->size);
+        file_create(file->name, FILE_ENTITY, (addr_t)file + sizeof(struct init_file_t), file->size);
 
-        // struct file_t *_file;
+        struct file_t *_file;
 
-        // int err = file_find(file->name, &_file);
+        int err = file_find(file->name, &_file);
     }
 
     return 0;
@@ -39,9 +36,9 @@ int init(void)
 {
     printf("file service is setting up.\n");
 
-    srv_register("filesrv/open", 2);
+    srv_register("filesrv/read", 1);
 
-    // file_new(&root_file, "/", FILE_DIR, NULL, NULL);
+    file_new(&root_file, "/", FILE_DIR, NULL, NULL);
 
     load_file();
 
