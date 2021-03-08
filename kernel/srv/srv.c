@@ -120,58 +120,7 @@ static int srv_sys_register(char *name, uint nparam)
     return E_OK;
 }
 
-static int srv_called(char *name, struct srv_called_t *srvcalled)
-{
-    struct srv_t *srv;
-
-    spin_read_lock(&SRV.rbt_rwlock);
-
-    int err = rbt_find(&SRV.srv_rbt, name, &srv);
-
-    if (err != E_OK) goto ret1;
-
-    if ((err = (srv->owner != proc_now() ? E_INVAL : err)) != E_OK) goto ret1;
-
-    uint msg_id;
-
-    size_t msg_sz;
-
-    struct srv_call_t srvcall;
-
-    assert(msg_recieve(srv->boxid, &msg_id, 1) == E_OK);
-
-    assert(msg_size(msg_id, &msg_sz) == E_OK);
-
-    assert(msg_sz >= sizeof(srvcall));
-
-    err = msg_read(msg_id, &srvcall, 0, sizeof(srvcall));
-
-    assert(err == E_OK);
-
-    if (srvcall.arg_sz > 0)
-    {
-        err = umalloc(&proc_now()->um, &srvcalled->cache, srvcall.arg_sz);
-
-        if (err != E_OK) goto ret1;
-
-        err = msg_read(msg_id, srvcalled->cache, sizeof(struct srv_call_t), srvcall.arg_sz);
-
-        assert(err == E_OK);
-    }
-
-    memcpy(&srvcalled->sz, &srvcall.sz, sizeof(srvcall.sz));
-
-    srvcalled->sid = srvcall.retboxid;
-
-    srvcalled->arg_sz = srvcall.arg_sz;
-
-ret1:
-    spin_read_unlock(&SRV.rbt_rwlock);
-
-    return err;
-}
-
-static int srv_sys_call(char *name, addr_t *param, addr_t *cache)
+static int srv_call(char *name, addr_t *param, struct srv_replyee_t *replyee, uint iskern)
 {
     struct srv_t *srv;
 
@@ -228,49 +177,144 @@ static int srv_sys_call(char *name, addr_t *param, addr_t *cache)
 
     if (err != E_OK) return err;
 
-    addr_t _cache = NULL;
-
-    size_t cache_size;
-
-    err = msg_size(retmsgid, &cache_size);
+    struct srv_reply_t reply;
 
     if (err != E_OK) return err;
 
-    err = umalloc(&proc_now()->um, &_cache, cache_size);
+    err = msg_read(retmsgid, &reply, 0, sizeof(reply));
 
     if (err != E_OK) return err;
 
-    msg_read(retmsgid, _cache, 0, cache_size);
+    size_t sz = 0;
 
-    *cache = _cache;
+    for (uint i = 0; i < reply.narg; ++i) sz += reply.sz[i];
 
-    return E_OK;
-}
+    if (iskern)
+        err = kmalloc(&replyee->cache, sz);
 
-static int srv_reply(uint sid, addr_t addr, size_t size)
-{
-    uint msg;
-
-    int err = msg_newmsg(&msg, addr, size);
+    else
+        err = umalloc(&proc_now()->um, &replyee->cache, sz);
 
     if (err != E_OK) return err;
 
-    err = msg_send(sid, msg);
+    err = msg_read(retmsgid, replyee->cache, sizeof(reply), sz);
+
+    replyee->err = reply.err;
+
+    replyee->narg = reply.narg;
+
+    memcpy(replyee->sz, reply.sz, sizeof(reply.sz));
 
     return err;
 }
 
-static int srv_sys_reply(uint sid, addr_t addr, size_t size)
+static int srv_called(char *name, struct srv_callee_t *srvcalled)
 {
-    return srv_reply(sid, addr, size);
+    struct srv_t *srv;
+
+    spin_read_lock(&SRV.rbt_rwlock);
+
+    int err = rbt_find(&SRV.srv_rbt, name, &srv);
+
+    if (err != E_OK) goto ret1;
+
+    if ((err = (srv->owner != proc_now() ? E_INVAL : err)) != E_OK) goto ret1;
+
+    uint msg_id;
+
+    size_t msg_sz;
+
+    struct srv_call_t srvcall;
+
+    assert(msg_recieve(srv->boxid, &msg_id, 1) == E_OK);
+
+    assert(msg_size(msg_id, &msg_sz) == E_OK);
+
+    assert(msg_sz >= sizeof(srvcall));
+
+    err = msg_read(msg_id, &srvcall, 0, sizeof(srvcall));
+
+    assert(err == E_OK);
+
+    if (srvcall.arg_sz > 0)
+    {
+        err = umalloc(&proc_now()->um, &srvcalled->cache, srvcall.arg_sz);
+
+        if (err != E_OK) goto ret1;
+
+        err = msg_read(msg_id, srvcalled->cache, sizeof(struct srv_call_t), srvcall.arg_sz);
+
+        assert(err == E_OK);
+    }
+
+    memcpy(&srvcalled->sz, &srvcall.sz, sizeof(srvcall.sz));
+
+    srvcalled->sid = srvcall.retboxid;
+
+    srvcalled->arg_sz = srvcall.arg_sz;
+
+ret1:
+    spin_read_unlock(&SRV.rbt_rwlock);
+
+    return err;
 }
 
-// int srv_sys_call(char *name, addr_t *param, addr_t *cache)
-// {
-//     retur
-// }
+static int srv_reply(struct srv_replyer_t *replyer)
+{
+    uint sz = sizeof(struct srv_reply_t);
 
-static int srv_sys_called(char *name, struct srv_called_t *srvcalled)
+    for (uint i = 0; i < replyer->narg; ++i) sz += replyer->sz[i];
+
+    struct srv_reply_t *reply;
+
+    int err = kmalloc((void *)&reply, sz);
+
+    if (err != E_OK) return err;
+
+    uint offset = sizeof(struct srv_reply_t);
+
+    for (uint i = 0; i < replyer->narg; ++i)
+    {
+        memcpy((addr_t)reply + offset, replyer->ad[i], replyer->sz[i]);
+
+        offset += replyer->sz[i];
+    }
+
+    reply->err = replyer->err;
+
+    reply->narg = replyer->narg;
+
+    memcpy(&reply->sz, &replyer->sz, sizeof(replyer->sz));
+
+    uint msg;
+
+    err = msg_newmsg(&msg, reply, sz);
+
+    if (err != E_OK) return err;
+
+    err = msg_send(replyer->sid, msg);
+
+    return err;
+}
+
+static int srv_sys_reply(struct srv_replyer_t *replyer)
+{
+    return srv_reply(replyer);
+}
+
+int srv_kern_call(char *name, struct srv_replyee_t *replyee, ...)
+{
+    addr_t param = (addr_t)&replyee + sizeof(replyee);
+
+    return srv_call(name, param, replyee, 1);
+}
+
+static int srv_sys_call(char *name, addr_t *param, struct srv_replyee_t *replyee)
+{
+    return srv_call(name, param, replyee, 0);
+}
+
+static int srv_sys_called(char *name, struct srv_callee_t *srvcalled)
 {
     return srv_called(name, srvcalled);
 }
@@ -283,7 +327,7 @@ int srv_init(void)
 
     syscall_register(SYS_srv_called, srv_sys_called, 2);
 
-    syscall_register(SYS_srv_reply, srv_sys_reply, 3);
+    syscall_register(SYS_srv_reply, srv_sys_reply, 1);
 
     syscall_register(SYS_srv_register, srv_sys_register, 2);
 

@@ -28,14 +28,41 @@ struct srv_call_t
     uint sz[MAX_CALL_PARAM];
 };
 
-struct srv_called_t
+struct srv_callee_t
 {
     uint sid;
+    uint caller;
     uint arg_sz;
     uint sz[MAX_CALL_PARAM];
     addr_t cache;
 };
 
+struct srv_replyer_t
+{
+    int err;
+    uint sid;
+    uint narg;
+    uint sz[MAX_CALL_PARAM];
+    uint ad[MAX_CALL_PARAM];
+};
+
+struct srv_reply_t
+{
+    int err;
+    uint narg;
+    uint sz[MAX_CALL_PARAM];
+};
+
+struct srv_replyee_t
+{
+    int err;
+    uint narg;
+    uint sz[MAX_CALL_PARAM];
+    addr_t cache;
+};
+
 int srv_init(void);
+
+int srv_kern_call(char *name, struct srv_replyee_t *replyee, ...);
 
 #endif
