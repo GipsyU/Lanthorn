@@ -7,7 +7,17 @@ struct thread_attr_t
     size_t stk_sz;
 };
 
+#define PROC_NAME_MAX_LEN 32
+struct proc_create_attr_t
+{
+    char name[PROC_NAME_MAX_LEN];
+    char **argv;
+    char **envp;
+};
+
 int fork(long *pid);
+
+int proc_create(char *path, struct proc_create_attr_t *attr);
 
 int thread_create(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg);
 

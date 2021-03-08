@@ -5,6 +5,7 @@
 #include <log.h>
 #include <memory.h>
 #include <proc.h>
+#include <srv.h>
 #include <string.h>
 #include <syscall.h>
 #include <thread.h>
@@ -172,6 +173,30 @@ int proc_fork(addr_t *res)
     return E_OK;
 }
 
+struct proc_create_attr_t
+{
+    char name[PROC_NAME_MAX_LEN];
+    char **argv;
+    char **envp;
+};
+
+static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
+{
+    struct srv_replyee_t replyee;
+
+    int err = srv_kern_call("filesrv/read", &replyee, path, strlen(path) + 1);
+
+    if (err != E_OK) return err;
+
+    err = replyee.err;
+
+    if (err != E_OK) return err;
+
+    err = proc_create_from_mm("anonymous proc", replyee.cache, replyee.sz[0]);
+
+    return err;
+}
+
 extern char _binary_usr_init_elf_start[];
 extern char _binary_usr_init_elf_size[];
 
@@ -209,14 +234,6 @@ int proc_init(void)
     else
         panic("init thread failed.\n");
 
-    // err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size);
-
-    if (err == E_OK)
-        info("init usr init process success.\n");
-
-    else
-        panic("init usr init process failed.\n");
-
     // err = proc_create_from_mm("dev_service", _binary_usr_devsrv_elf_start, _binary_usr_devsrv_elf_size);
 
     // if (err == E_OK)
@@ -235,9 +252,19 @@ int proc_init(void)
 
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
+    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size);
+
+    if (err == E_OK)
+        info("init usr init process success.\n");
+
+    else
+        panic("init usr init process failed.\n");
+
     assert(err == E_OK);
 
     syscall_register(SYS_fork, proc_fork, 1);
+
+    syscall_register(SYS_proc_create, proc_sys_create, 2);
 
     return err;
 }

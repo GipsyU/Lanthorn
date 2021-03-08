@@ -30,3 +30,8 @@ int thread_wake(uint tid)
 {
     return syscall(SYS_thread_wake, tid);
 }
+
+int proc_create(char *path, struct proc_create_attr_t *attr)
+{
+    return syscall(SYS_proc_create, path, attr);
+}

@@ -6,11 +6,13 @@
 enum SYS_CALL
 {
     SYS_none,
+    SYS_exec,
     SYS_fork,
     SYS_kill,
     SYS_malloc,
     SYS_mfree,
     SYS_poweroff,
+    SYS_proc_create,
     SYS_srv_call,
     SYS_srv_called,
     SYS_srv_reply,
@@ -26,7 +28,8 @@ enum SYS_CALL
     SYS_thread_exit,
     SYS_thread_tid,
     SYS_thread_wake,
-    SYS_write
+    SYS_write,
+    SYS_log
 };
 
 #ifndef __USER__
