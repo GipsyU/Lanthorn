@@ -354,11 +354,7 @@ quiet_cmd_vmlanthorn = LD      $@
 vmlanthorn:  $(vmlanthorn-all) usr/usr.elf
 	+$(call cmd,vmlanthorn)
 
-PHONY += usr
-
-usr/usr.elf:usr
-
-usr:
+usr/usr.elf:
 	$(Q)$(MAKE) $(build)=usr usr/usr.elf
 
 $(sort $(vmlanthorn-all)): $(vmlanthorn-dirs) ;

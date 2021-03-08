@@ -225,15 +225,15 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    // err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size);
+    err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size);
 
-    // if (err == E_OK)
-    //     info("init file service process success.\n");
+    if (err == E_OK)
+        info("init file service process success.\n");
 
-    // else
-    //     panic("init file service process failed.\n");
+    else
+        panic("init file service process failed.\n");
 
-    err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
+    // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
     assert(err == E_OK);
 

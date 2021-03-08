@@ -2,7 +2,7 @@
 #include <proc.h>
 #include <mm.h>
 #include <log.h>
-#include <util.h>
+#include <utils.h>
 
 struct mutex_tid_t
 {

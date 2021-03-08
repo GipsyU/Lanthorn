@@ -14,7 +14,7 @@ quiet_cmd_lanthorn = LD      $@
 all:lanthorn
 
 lanthorn : arch/x86/boot/built-in.o vmlanthorn
-	$(call if_changed,lanthorn)
+	$(call cmd,lanthorn)
 
 arch/x86/boot/built-in.o : boot
 
