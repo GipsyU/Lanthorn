@@ -84,6 +84,8 @@ struct uvm_layout_t
     addr_t free_e;
     addr_t stk_s;
     addr_t stk_e;
+    addr_t args_s;
+    addr_t args_e;
 };
 
 static struct uvm_layout_t init_uvmlo = {
@@ -92,9 +94,11 @@ static struct uvm_layout_t init_uvmlo = {
     .heap_s = 0,
     .heap_e = 0,
     .free_s = 0,
-    .free_e = KERN_BASE,
-    .stk_s = KERN_BASE,
-    .stk_e = KERN_BASE
+    .free_e = KERN_BASE - PAGE_SIZE,
+    .stk_s = KERN_BASE - PAGE_SIZE,
+    .stk_e = KERN_BASE - PAGE_SIZE,
+    .args_s = KERN_BASE - PAGE_SIZE,
+    .args_e = KERN_BASE,
 };
 
 struct um_t

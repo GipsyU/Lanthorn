@@ -71,13 +71,15 @@ err1:
     return err;
 }
 
-static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size)
+static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size, addr_t args)
 {
     size = ROUND_UP(size, PAGE_SIZE);
 
+    struct proc_t *proc = proc_now();
+
     addr_t exea = NULL;
 
-    int err = umalloc(&proc_now()->um, &exea, size);
+    int err = umalloc(&proc->um, &exea, size);
 
     assert(err == E_OK && exea == 0);
 
@@ -86,6 +88,40 @@ static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size)
     assert(err == E_OK);
 
     elf_load((void *)start, exea);
+
+    memcpy(proc->um.layout.args_s, args, proc->um.layout.args_e - proc->um.layout.args_s);
+
+    int *argc = (int *)proc->um.layout.args_s;
+
+    char **argv = (char **)(proc->um.layout.args_s + sizeof(addr_t));
+
+    char **envp = (char **)(proc->um.layout.args_s + sizeof(addr_t) * (1 + *argc));
+
+    for (int i = 0; i < *argc; ++i)
+    {
+        char *s = NULL;
+
+        err = umalloc(&proc->um, (void *)&s, strlen(argv[i]) + 1);
+
+        if (err != E_OK) return err;
+
+        memcpy(s, argv[i], strlen(argv[i]) + 1);
+
+        argv[i] = s;
+    }
+
+    for (; *envp; ++envp)
+    {
+        char *s = NULL;
+
+        err = umalloc(&proc->um, (void *)&s, strlen(*envp) + 1);
+
+        if (err != E_OK) return err;
+
+        memcpy(s, *envp, strlen(*envp) + 1);
+
+        *envp = s;
+    }
 
     struct thread_t *thread = NULL;
 
@@ -96,7 +132,7 @@ static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size)
     return 0;
 }
 
-static int proc_create_from_mm(char *name, addr_t exea, size_t exes)
+static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv, char **envp)
 {
     if (strlen_s(name, PROC_NAME_MAX_LEN) == PROC_NAME_MAX_LEN) return E_TOOLONG;
 
@@ -106,7 +142,47 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes)
 
     if (err != E_OK) return err;
 
-    err = thread_kern_new(proc, NULL, inner_setup_uthread_from_mm_thread, 2, exea, exes);
+    addr_t args = NULL;
+
+    err = kmalloc(&args, proc->um.layout.args_e - proc->um.layout.args_s);
+
+    if (err != E_OK) return err;
+
+    int *_argc = (int *)args;
+
+    *_argc = 0;
+
+    char **_argv = (char **)(args + sizeof(_argc));
+
+    if (argv != NULL)
+    {
+        for (; *argv; (*_argc) += 1, argv++)
+        {
+            err = kmalloc((void *)&_argv[*_argc], strlen(*argv) + 1);
+
+            if (err != E_OK) return err;
+
+            strcpy(_argv[*_argc], *argv, strlen(*argv) + 1);
+        }
+    }
+
+    char **_envp = (char **)(args + sizeof(addr_t) * (1 + *_argc));
+
+    if (envp != NULL)
+    {
+        for (int i = 0; *envp; ++i, envp++)
+        {
+            err = kmalloc((void *)&_envp[i], strlen(*envp) + 1);
+
+            _envp[i + 1] = NULL;
+
+            if (err != E_OK) return err;
+
+            strcpy(_envp[i], *envp, strlen(*envp) + 1);
+        }
+    }
+
+    err = thread_kern_new(proc, NULL, inner_setup_uthread_from_mm_thread, 3, exea, exes, args);
 
     return err;
 }
@@ -180,6 +256,29 @@ struct proc_create_attr_t
     char **envp;
 };
 
+struct proc_create_attr_t proc_create_dft_attr = {.name = "anonymous proc", .argv = NULL, .envp = NULL};
+
+static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
+{
+    struct srv_replyee_t replyee;
+
+    int err = srv_kern_call("filesrv/read", &replyee, path, strlen(path) + 1);
+
+    if (err != E_OK) return err;
+
+    err = replyee.err;
+
+    if (err != E_OK) return err;
+
+    struct proc_create_attr_t *_attr = attr;
+
+    if (_attr == NULL) _attr = &proc_create_dft_attr;
+
+    err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp);
+
+    return err;
+}
+
 static int proc_sys_exit(void)
 {
     struct proc_t *proc = proc_now();
@@ -194,23 +293,6 @@ static int proc_sys_exit(void)
     schd_kill(thread_now());
 
     panic("bug.\n");
-}
-
-static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
-{
-    struct srv_replyee_t replyee;
-
-    int err = srv_kern_call("filesrv/read", &replyee, path, strlen(path) + 1);
-
-    if (err != E_OK) return err;
-
-    err = replyee.err;
-
-    if (err != E_OK) return err;
-
-    err = proc_create_from_mm("anonymous proc", replyee.cache, replyee.sz[0]);
-
-    return err;
 }
 
 extern char _binary_usr_init_elf_start[];
@@ -258,7 +340,7 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size);
+    err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size, NULL, NULL);
 
     if (err == E_OK)
         info("init file service process success.\n");
@@ -268,7 +350,7 @@ int proc_init(void)
 
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
-    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size);
+    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL);
 
     if (err == E_OK)
         info("init usr init process success.\n");
@@ -281,7 +363,7 @@ int proc_init(void)
     syscall_register(SYS_fork, proc_fork, 1);
 
     syscall_register(SYS_proc_create, proc_sys_create, 2);
-    
+
     syscall_register(SYS_proc_exit, proc_sys_exit, 0);
 
     return err;

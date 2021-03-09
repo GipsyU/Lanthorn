@@ -156,9 +156,24 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
 {
     info("um page fault, addr = %p.\n", errva);
 
+    int err = E_OK;
+
+    if (errva >= um->layout.args_s && errva < um->layout.args_e)
+    {
+        struct page_t *page = NULL;
+
+        err = page_alloc(&page);
+
+        if (err != E_OK) return err;
+
+        err = ptb_map(ptb, um->layout.args_s, page->addr, 1, 1);
+
+        return err;
+    }
+
     if (errva < um->layout.heap_s || errva >= um->layout.heap_e)
     {
-        error("um page fault error");
+        panic("um page fault error");
 
         while (1)
             ;
@@ -168,7 +183,7 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
 
     struct vpage_t *vp = NULL;
 
-    int err = vm_search_addr(&um->vp_alct, errva, &vp);
+    err = vm_search_addr(&um->vp_alct, errva, &vp);
 
     if (err != E_OK) return err;
 

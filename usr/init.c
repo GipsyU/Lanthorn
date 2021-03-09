@@ -3,9 +3,11 @@
 #include <type.h>
 #include <error.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    printf("Hello World.\n");
+    printf("Hello Lanthron.\n");
+
+    printf("This is init proc.\n");
 
     while(proc_create("/bin/shell.elf", NULL) != E_OK);
 

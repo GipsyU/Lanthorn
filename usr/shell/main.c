@@ -55,7 +55,13 @@ int main(void)
 
         path[strlen("/bin/") + strlen(parse[0]) + strlen(".elf")] = '\0';
 
-        int err = proc_create(path, NULL);
+        struct proc_create_attr_t attr;
+
+        strcpy(attr.name, "hello world proc", sizeof("hello world proc"));
+
+        attr.argv = parse + 1;
+        
+        int err = proc_create(path, &attr);
 
         printf("%s.\n", strerror(err));
     }
