@@ -13,4 +13,5 @@
 
 int printf(const char *fmt, ...);
 
+int gets(const char *s);
 #endif

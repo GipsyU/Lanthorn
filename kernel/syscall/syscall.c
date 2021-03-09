@@ -7,11 +7,13 @@ static addr_t syscalls[NR_SYSCALL];
 
 static uint syscall_nparam[NR_SYSCALL];
 
+static uint syscall_nolog[NR_SYSCALL];
+
 static int syscall_hdl(uint *args)
 {
     assert(args[0] < NR_SYSCALL);
 
-    info("syscall: sysno: %d.\n", args[0]);
+    if (syscall_nolog[args[0]] == 0) info("syscall: sysno: %d.\n", args[0]);
 
     if (syscalls[args[0]] != NULL)
     {
@@ -81,6 +83,10 @@ int syscall_unregister(uint id)
 int syscall_init(void)
 {
     intr_register(INTR_SYSCALL, (void *)syscall_hdl);
+
+    syscall_nolog[SYS_read] = 1;
+
+    syscall_nolog[SYS_write] = 1;
 
     return E_OK;
 }

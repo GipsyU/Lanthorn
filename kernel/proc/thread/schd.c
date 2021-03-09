@@ -17,7 +17,7 @@ int schd_run(struct thread_t *thread)
 {
     spin_lock_irqsave(&scheduler.lock);
 
-    info("set thread %p runnable.\n", thread);
+    // info("set thread %p runnable.\n", thread);
 
     if (thread->state == RUNNABEL || thread->state == RUNNING || thread->state == SLEEPING || thread->state == KILLED)
     {
@@ -231,7 +231,7 @@ int schd_block(struct thread_t *thread)
 
     spin_lock_irqsave(&scheduler.lock);
 
-    info("block thread %p.\n", thread);
+    // info("block thread %p.\n", thread);
 
     if (thread->state == KILLED || thread->state == UNSCHDED || thread->state == SLEEPING || thread->state == BLOCKED)
     {

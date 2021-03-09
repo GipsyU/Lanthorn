@@ -8,6 +8,11 @@ static int puts(const char *s)
     return syscall(SYS_write, s);
 }
 
+int gets(const char *s)
+{
+    return syscall(SYS_read, s);
+}
+
 static int itoa(char *s, int x, int redix)
 {
     int p = 0;

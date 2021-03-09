@@ -29,6 +29,7 @@ enum SYS_CALL
     SYS_thread_tid,
     SYS_thread_wake,
     SYS_write,
+    SYS_read,
     SYS_log
 };
 

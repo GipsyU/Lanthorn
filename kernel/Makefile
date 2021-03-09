@@ -1,1 +1,1 @@
-obj-y := main.o memory/ proc/ syscall/ msg/ sysctrl/ srv/
+obj-y := main.o memory/ proc/ syscall/ msg/ sysctrl/ srv/ tmp.o
