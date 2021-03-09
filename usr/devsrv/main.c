@@ -13,10 +13,5 @@ int main(void)
 
     uint sid;
 
-    // while (srv_called("devsrv/test", &cache, &sid) == 0)
-    // {
-        
-    // }
-
     return 0;
 }

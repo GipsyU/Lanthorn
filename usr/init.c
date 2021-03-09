@@ -7,9 +7,9 @@ int main(void)
 {
     printf("Hello World.\n");
 
-    while(proc_create("/bin/helloworld.elf", NULL) != E_OK);
+    while(proc_create("/bin/shell.elf", NULL) != E_OK);
 
-    printf("proc create done.\n");
+    printf("create shell success.\n");
 
     return 0;
 }
