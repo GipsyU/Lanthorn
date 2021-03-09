@@ -3,6 +3,7 @@
 #include <string.h>
 #include <log.h>
 #include <cpu.h>
+#include <io.h>
 
 struct mp
 {                    // floating pointer
@@ -213,8 +214,8 @@ int mp_init(int *num_cpu)
 
         if (type == MPIOAPIC)
         {
-            // ioapic = (struct mpioapic*)p;
-            // ioapicid = ioapic->apicno;
+            struct mpioapic *ioapic = (struct mpioapic*)addr;
+
             addr += sizeof(struct mpioapic);
         }
 
@@ -233,6 +234,6 @@ int mp_init(int *num_cpu)
             addr += 8;
         }        
     }
-    
+
     return err;
 }

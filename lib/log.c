@@ -1,5 +1,5 @@
 #include <arch/basic.h>
-#include <arch/console.h>
+#include <arch/uart.h>
 #include <log.h>
 #include <util.h>
 
@@ -7,14 +7,14 @@ static void itoa(int x, int redix)
 {
     if (x == 0)
     {
-        console_put_char('0');
+        uart_putc('0');
 
         return;
     }
 
     if (x < 0)
     {
-        console_put_char('-');
+        uart_putc('-');
 
         x = -x;
     }
@@ -25,7 +25,7 @@ static void itoa(int x, int redix)
 
     for (; x > 0; x /= redix, ++p) *p = "0123456789abcdef"[x % redix];
 
-    for (--p; p >= s; --p) console_put_char(*p);
+    for (--p; p >= s; --p) uart_putc(*p);
 
     return;
 }
@@ -34,7 +34,7 @@ static void uitoa(u32 x, int redix)
 {
     if (x == 0)
     {
-        console_put_char('0');
+        uart_putc('0');
 
         return;
     }
@@ -45,14 +45,14 @@ static void uitoa(u32 x, int redix)
 
     for (; x > 0; x /= redix, ++p) *p = "0123456789abcdef"[x % redix];
 
-    for (--p; p >= s; --p) console_put_char(*p);
+    for (--p; p >= s; --p) uart_putc(*p);
 
     return;
 }
 
 static void console_put_str(const char *s)
 {
-    for (; *s; s++) console_put_char(*s);
+    for (; *s; s++) uart_putc(*s);
 
     return;
 }
@@ -67,7 +67,7 @@ void print(const char *fmt, ...)
     {
         if (*fmt != '%')
         {
-            console_put_char(*fmt);
+            uart_putc(*fmt);
 
             continue;
         }
@@ -102,7 +102,7 @@ void print(const char *fmt, ...)
 
         case 'c':
 
-            console_put_char(va_arg(args, char));
+            uart_putc(va_arg(args, char));
 
             break;
 
@@ -114,7 +114,7 @@ void print(const char *fmt, ...)
 
         case '%':
 
-            console_put_char('%');
+            uart_putc('%');
 
             break;
 

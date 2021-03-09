@@ -4,6 +4,7 @@
 #include <cpu.h>
 #include <error.h>
 #include <log.h>
+#include <io.h>
 
 #define STS_T32A 0x9 // Available 32-bit TSS
 #define STS_IG32 0xE // 32-bit Interrupt Gate
@@ -139,11 +140,15 @@ void intr_hdl(struct intr_regs_t *regs)
     return;
 }
 
+extern int ioapic_enable(uint intr, int cpuid);
+
 int intr_register(int intrno, int (*hdl)(uint errno))
 {
     int err = E_OK;
 
     intr_table[intrno] = hdl;
+
+    if (intrno > 32 && intrno < 48) ioapic_enable(intrno - 32, 0);
 
     return err;
 }
@@ -178,6 +183,10 @@ int intr_init(void)
     }
 
     islog[INTR_TIMER] = 0;
+
+    islog[INTR_COM1] = 0;
+
+    islog[INTR_SYSCALL] = 0;
 
     return err;
 }

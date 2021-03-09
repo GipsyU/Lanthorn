@@ -1,1 +1,1 @@
-obj-y := console.o
+obj-y := uart.o

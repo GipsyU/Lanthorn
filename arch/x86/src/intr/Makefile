@@ -1,1 +1,1 @@
-obj-y := int.o intr.o lapic.o
+obj-y := int.o intr.o lapic.o ioapic.o

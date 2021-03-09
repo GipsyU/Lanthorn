@@ -9,6 +9,7 @@
 #include <srv.h>
 #include <string.h>
 #include <syscall.h>
+#include <arch/uart.h>
 
 extern void test(void);
 
@@ -19,6 +20,16 @@ extern int sysctrl_init(void);
 static int tmp(char *s)
 {
     print("%s", s);
+
+    return E_OK;
+}
+
+static int tmp1(uint x)
+{
+    char c;
+    uart_getc(&c);
+
+    print("%c", c);
 
     return E_OK;
 }
@@ -97,7 +108,9 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     }
 
     syscall_register(SYS_write, tmp, 1);
-
+    
+    intr_register(INTR_COM1, tmp1);
+  
     test();
 
     info("Lanthorn kernel init finished.\n");

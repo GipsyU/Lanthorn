@@ -7,7 +7,7 @@
 #include <arch/cpu.h>
 
 extern void __attribute__((noreturn)) main(struct boot_arg_t);
-extern void console_init(void);
+extern int uart_init(void);
 extern int mmu_init(addr_t *pde);
 extern int intr_init(void);
 extern u8 kern_start[];
@@ -17,6 +17,8 @@ extern int lapic_init(void);
 extern int task_init(struct task_t *task);
 
 extern int gdt_init(struct seg_t *gdt, struct tss_t *tss);
+
+extern int ioapic_init(void);
 
 static struct boot_arg_t boot_arg;
 
@@ -138,7 +140,7 @@ void __attribute__((noreturn)) setup(void)
 {
     int err = E_OK;
 
-    console_init();
+    uart_init();
 
     info("start setup x86 arch.\n");
 
@@ -173,6 +175,17 @@ void __attribute__((noreturn)) setup(void)
     else
     {
         info("init intr success.\n");
+    }
+
+    err = ioapic_init();
+
+    if (err != E_OK)
+    {
+        error("init ioapic failed, err = %s.\n", strerror(err));
+    }
+    else
+    {
+        info("init ioapic success.\n");
     }
 
     err = setup_lp();
