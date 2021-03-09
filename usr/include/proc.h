@@ -21,6 +21,8 @@ int proc_create(char *path, struct proc_create_attr_t *attr);
 
 int thread_create(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg);
 
+int proc_exit(void);
+
 int thread_exit(void);
 
 int thread_tid(uint *tid);

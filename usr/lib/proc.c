@@ -35,3 +35,8 @@ int proc_create(char *path, struct proc_create_attr_t *attr)
 {
     return syscall(SYS_proc_create, path, attr);
 }
+
+int proc_exit(void)
+{
+    return syscall(SYS_proc_exit);
+}

@@ -180,6 +180,22 @@ struct proc_create_attr_t
     char **envp;
 };
 
+static int proc_sys_exit(void)
+{
+    struct proc_t *proc = proc_now();
+
+    list_rep_s(&proc->thread_ls, p)
+    {
+        struct thread_t *t = container_of(p, struct thread_t, proc_ln);
+
+        if (t != thread_now() && t->state != KILLED) schd_kill(t);
+    }
+
+    schd_kill(thread_now());
+
+    panic("bug.\n");
+}
+
 static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
 {
     struct srv_replyee_t replyee;
@@ -265,6 +281,8 @@ int proc_init(void)
     syscall_register(SYS_fork, proc_fork, 1);
 
     syscall_register(SYS_proc_create, proc_sys_create, 2);
+    
+    syscall_register(SYS_proc_exit, proc_sys_exit, 0);
 
     return err;
 }

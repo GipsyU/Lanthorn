@@ -13,6 +13,7 @@ enum SYS_CALL
     SYS_mfree,
     SYS_poweroff,
     SYS_proc_create,
+    SYS_proc_exit,
     SYS_srv_call,
     SYS_srv_called,
     SYS_srv_reply,

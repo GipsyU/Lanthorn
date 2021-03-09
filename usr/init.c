@@ -11,5 +11,5 @@ int main(void)
 
     printf("create shell success.\n");
 
-    return 0;
+    while(1);
 }
