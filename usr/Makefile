@@ -3,7 +3,7 @@ quiet_cmd_cc_elf_o = CC      $@
 
 LANTHORNINCLUDE :=
 
-usr-y := init.elf devsrv/ helloworld.elf poweroff.elf test/ shell/
+usr-y := init.elf devsrv/ helloworld.elf poweroff.elf cat.elf test/ shell/
 
 usr-y := $(addprefix $(src)/, $(usr-y))
 

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static int get_cmd(char cmd[], char *args[])
+static void get_cmd(char cmd[], char *args[])
 {
     cmd[0] = '\0';
 
@@ -25,13 +25,22 @@ static int get_cmd(char cmd[], char *args[])
     }
 
     args[p] = NULL;
+}
 
-    return E_OK;
+static void get_elf_path(char *parse[], char path[])
+{
+    memcpy(path, "/bin/", strlen("/bin/"));
+
+    memcpy(path + strlen("/bin/"), parse[0], strlen(parse[0]));
+
+    memcpy(path + strlen("/bin/") + strlen(parse[0]), ".elf", strlen(".elf"));
+
+    path[strlen("/bin/") + strlen(parse[0]) + strlen(".elf")] = '\0';
 }
 
 int main(void)
 {
-    char pwd[] = "/";
+    char pwd[128] = "/";
 
     while (1)
     {
@@ -41,28 +50,28 @@ int main(void)
 
         char *parse[32];
 
-        get_cmd(cmd, parse);
-
-        if (parse[0] == NULL) continue;
-
         char path[128];
 
-        memcpy(path, "/bin/", strlen("/bin/"));
+        get_cmd(cmd, parse);
 
-        memcpy(path + strlen("/bin/"), parse[0], strlen(parse[0]));
-
-        memcpy(path + strlen("/bin/") + strlen(parse[0]), ".elf", strlen(".elf"));
-
-        path[strlen("/bin/") + strlen(parse[0]) + strlen(".elf")] = '\0';
+        get_elf_path(parse, path);
 
         struct proc_create_attr_t attr;
 
-        strcpy(attr.name, "hello world proc", sizeof("hello world proc"));
+        strcpy(attr.name, parse[0], strlen(parse[0]) + 1);
 
         attr.argv = parse + 1;
+
+        char *envp[32];
+
+        envp[0] = pwd;
+
+        envp[1] = 0;
+
+        attr.envp = envp;
         
         int err = proc_create(path, &attr);
 
-        printf("%s.\n", strerror(err));
+        if (err != E_OK) printf("shell exec filed, err = %s.\n", strerror(err));
     }
 }

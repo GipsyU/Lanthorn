@@ -82,5 +82,7 @@ void service_enable(void)
 
     if (err != E_OK) panic("bug\n");
 
+    info("filesrv: enable service success.\n");
+
     thread_exit();
 }
