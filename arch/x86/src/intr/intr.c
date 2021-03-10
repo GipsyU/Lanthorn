@@ -3,8 +3,9 @@
 #include <arch/intr.h>
 #include <cpu.h>
 #include <error.h>
-#include <log.h>
 #include <io.h>
+#include <log.h>
+#include <string.h>
 
 #define STS_T32A 0x9 // Available 32-bit TSS
 #define STS_IG32 0xE // 32-bit Interrupt Gate
@@ -199,8 +200,10 @@ void intr_end(void)
 }
 extern void intr_ret(void);
 
-addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga)
+addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga, addr_t argsz)
 {
+    assert(argsz % sizeof(addr_t) == 0);
+
     struct intr_regs_t *regs = (void *)(ksp - sizeof(struct intr_regs_t));
 
     regs->cs = SEL_UCODE;
@@ -211,11 +214,11 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arg
 
     regs->eflags = FL_IF;
 
-    addr_t *arg = usp - sizeof(arga);
+    addr_t *arg = usp - argsz;
 
-    *arg = arga;
+    memcpy(arg, arga, argsz);
 
-    regs->esp = usp - sizeof(arga) - sizeof(arga);
+    regs->esp = usp - argsz - sizeof(addr_t);
 
     regs->ebp = ubp;
 

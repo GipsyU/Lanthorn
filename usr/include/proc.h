@@ -21,7 +21,7 @@ int fork(long *pid);
 
 int proc_create(char *path, struct proc_create_attr_t *attr);
 
-int thread_create(uint *tid, addr_t routine, struct thread_attr_t *attr);
+int thread_create(uint *tid, addr_t routine, uint nparam, ...);
 
 int proc_exit(void);
 

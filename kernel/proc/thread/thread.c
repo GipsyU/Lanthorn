@@ -14,7 +14,6 @@
 
 extern struct proc_t proc_0;
 
-
 static void pre(void)
 {
     info("thread begin\n");
@@ -184,13 +183,16 @@ int thread_kern_new(struct proc_t *proc, struct thread_t **thread, addr_t exe, u
     return err;
 }
 
-int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routine, size_t ustk_sz, addr_t arga, size_t argsz)
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routine, size_t ustk_sz, addr_t arga,
+                    size_t argsz)
 {
-    int err = thread_new(thread);
+    struct thread_t *_thread = NULL;
+
+    int err = thread_new(&_thread);
 
     if (err != E_OK) return err;
 
-    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, *thread, sizeof(struct thread_t));
+    mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, _thread, sizeof(struct thread_t));
 
     addr_t kstack = NULL;
 
@@ -198,9 +200,9 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routin
 
     if (err != E_OK) return err;
 
-    (*thread)->ks_addr = kstack;
+    _thread->ks_addr = kstack;
 
-    (*thread)->ks_size = KERN_STACK_SIZE;
+    _thread->ks_size = KERN_STACK_SIZE;
 
     mmu_sync_kern_space(proc_0.ptb.pde, proc->ptb.pde, kstack, KERN_STACK_SIZE);
 
@@ -210,13 +212,15 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routin
 
     if (err != E_OK) return err;
 
-    task_user_init(&(*thread)->task, kstack, KERN_STACK_SIZE, ustk_a, ustk_sz, pre, routine, arga);
+    task_user_init(&_thread->task, kstack, KERN_STACK_SIZE, ustk_a, ustk_sz, pre, routine, arga, argsz);
 
-    (*thread)->proc = proc;
+    _thread->proc = proc;
 
-    list_push_back(&proc->thread_ls, &(*thread)->proc_ln);
+    list_push_back(&proc->thread_ls, &_thread->proc_ln);
 
-    schd_run(*thread);
+    schd_run(_thread);
+
+    if (thread != NULL) *thread = _thread;
 
     return err;
 }
@@ -236,7 +240,7 @@ static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr)
 
     if (attr != NULL && attr->stk_sz != NULL) ustk_sz = attr->stk_sz;
 
-    return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, attr->arga, NULL);
+    return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, attr->arga, attr->argsz);
 }
 
 int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res)
@@ -298,7 +302,7 @@ static int thread_sys_exit(void)
 static int thread_sys_block(uint tid)
 {
     struct thread_t *thread = (void *)tid;
-    
+
     if (thread->proc != proc_now()) return E_INVAL;
 
     return schd_block(tid);
@@ -307,14 +311,14 @@ static int thread_sys_block(uint tid)
 static int thread_sys_tid(uint *tid)
 {
     *tid = (uint)thread_now();
-    
+
     return E_OK;
 }
 
 static int thread_sys_wake(uint tid)
 {
     struct thread_t *thread = (void *)tid;
-    
+
     if (thread->proc != proc_now()) return E_INVAL;
 
     return schd_run(tid);
@@ -323,7 +327,7 @@ static int thread_sys_wake(uint tid)
 int thread_init(void)
 {
     syscall_register(SYS_thread_create, thread_sys_new, 3);
-    
+
     syscall_register(SYS_thread_block, thread_sys_block, 1);
 
     syscall_register(SYS_thread_wake, thread_sys_wake, 1);

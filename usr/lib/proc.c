@@ -1,4 +1,6 @@
+#include <mm.h>
 #include <proc.h>
+#include <stdio.h>
 #include <syscall.h>
 
 int fork(long *pid)
@@ -6,9 +8,17 @@ int fork(long *pid)
     return syscall(SYS_fork, pid);
 }
 
-int thread_create(uint *tid, addr_t routine, struct thread_attr_t *attr)
+int thread_create(uint *tid, addr_t routine, uint nparam, ...)
 {
-    return syscall(SYS_thread_create, tid, routine, attr);
+    struct thread_attr_t attr;
+
+    attr.arga = ((addr_t)&nparam) + sizeof(nparam);
+
+    addr_t *f = (addr_t *)attr.arga;
+
+    attr.argsz = nparam * sizeof(addr_t);
+
+    return syscall(SYS_thread_create, tid, routine, &attr);
 }
 
 int thread_exit(void)

@@ -41,6 +41,6 @@ int file_find(char *name, struct file_t **res);
 
 int file_create(char *name, uint type, addr_t addr, size_t size);
 
-void srv_read(void);
+void service_enable(void);
 
 #endif

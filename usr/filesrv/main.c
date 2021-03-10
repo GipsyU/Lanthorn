@@ -12,7 +12,7 @@ int main(void)
 {
     init();
 
-    srv_read();
+    service_enable();
 
     return 0;
 }
