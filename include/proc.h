@@ -21,6 +21,8 @@ struct thread_attr_t
 {
     uint tid;
     size_t stk_sz;
+    addr_t arga;
+    size_t argsz;
 };
 
 struct proc_t *proc_now(void);

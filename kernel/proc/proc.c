@@ -125,7 +125,7 @@ static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size, addr_t 
 
     struct thread_t *thread = NULL;
 
-    err = thread_user_new(&thread, proc_now(), 0, DFT_STK_SZ, NULL);
+    err = thread_user_new(&thread, proc_now(), 0, DFT_STK_SZ, NULL, NULL);
 
     assert(err == E_OK);
 

@@ -35,7 +35,7 @@ int main(void)
 
     while (1)
     {
-        printf(COLOR_GREEN "gipsyh@Lanthorn" COLOR_NONE ":" COLOR_BLUE "%s$ " COLOR_NONE, pwd);
+        printf(COLOR_GREEN "gipsyh@Lanthorn" COLOR_NONE ":" COLOR_BLUE "%s"COLOR_NONE"$ " , pwd);
 
         char cmd[256];
 

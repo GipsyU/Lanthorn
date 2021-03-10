@@ -199,7 +199,7 @@ void intr_end(void)
 }
 extern void intr_ret(void);
 
-addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
+addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga)
 {
     struct intr_regs_t *regs = (void *)(ksp - sizeof(struct intr_regs_t));
 
@@ -211,7 +211,11 @@ addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp)
 
     regs->eflags = FL_IF;
 
-    regs->esp = usp;
+    addr_t *arg = usp - sizeof(arga);
+
+    *arg = arga;
+
+    regs->esp = usp - sizeof(arga) - sizeof(arga);
 
     regs->ebp = ubp;
 

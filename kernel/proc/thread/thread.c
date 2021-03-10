@@ -184,10 +184,7 @@ int thread_kern_new(struct proc_t *proc, struct thread_t **thread, addr_t exe, u
     return err;
 }
 
-/**
- * FIXME:CLEAN UP
- */
-int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routine, size_t ustk_sz, addr_t arg)
+int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routine, size_t ustk_sz, addr_t arga, size_t argsz)
 {
     int err = thread_new(thread);
 
@@ -213,7 +210,7 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routin
 
     if (err != E_OK) return err;
 
-    task_user_init(&(*thread)->task, kstack, KERN_STACK_SIZE, ustk_a, ustk_sz, pre, routine);
+    task_user_init(&(*thread)->task, kstack, KERN_STACK_SIZE, ustk_a, ustk_sz, pre, routine, arga);
 
     (*thread)->proc = proc;
 
@@ -233,13 +230,13 @@ int thread_free(struct thread_t *thread)
     return err;
 }
 
-static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr, addr_t arg)
+static int thread_sys_new(uint *tid, addr_t routine, struct thread_attr_t *attr)
 {
     size_t ustk_sz = DFT_STK_SZ;
 
-    if (attr != NULL) ustk_sz = attr->stk_sz;
+    if (attr != NULL && attr->stk_sz != NULL) ustk_sz = attr->stk_sz;
 
-    return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, arg);
+    return thread_user_new((struct thread_t **)tid, proc_now(), routine, ustk_sz, attr->arga, NULL);
 }
 
 int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res)
@@ -325,7 +322,7 @@ static int thread_sys_wake(uint tid)
 
 int thread_init(void)
 {
-    syscall_register(SYS_thread_create, thread_sys_new, 4);
+    syscall_register(SYS_thread_create, thread_sys_new, 3);
     
     syscall_register(SYS_thread_block, thread_sys_block, 1);
 

@@ -34,7 +34,7 @@ int main(void)
 
     srv_register("FSSRV/test", 1);
 
-    thread_create(&tid, run, NULL, NULL);
+    thread_create(&tid, run, NULL);
 
     uint msg_id;
 

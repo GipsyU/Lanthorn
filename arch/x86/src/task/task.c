@@ -39,9 +39,9 @@ int task_kern_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t exe, 
     return E_OK;
 }
 
-extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp);
+extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga);
 
-int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size_t uss, addr_t pre, addr_t run)
+int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size_t uss, addr_t pre, addr_t run, addr_t arga)
 {
     task->saddr = ksa;
 
@@ -49,7 +49,7 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
     task->sp = ksa + kss;
 
-    task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss);
+    task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss, arga);
 
     struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
 
