@@ -127,6 +127,8 @@ int file_new(struct file_t **file, char *name, uint type, addr_t addr, size_t si
 
     _file->size = size;
 
+    _file->type = type;
+
     *file = _file;
 
     return err;
@@ -152,8 +154,6 @@ int file_find(char *name, struct file_t **res)
 
         p += strlen(name + p) + 1;
     }
-
-    assert(file->type == FILE_ENTITY);
 
     *res = file;
 
@@ -213,16 +213,19 @@ static void _file_delete(struct file_t *file)
     if (file->type == FILE_ENTITY)
     {
         rbt_delete(&file->ffile->subfile_rbt, &file->fa_rbt_node);
-    
+
         return;
     }
 
-    for (struct file_t *_file = container_of(rbt_first(&file->subfile_rbt), struct file_t, fa_rbt_node); _file != NULL;
-         _file = container_of(rbt_first(&file->subfile_rbt), struct file_t, fa_rbt_node))
+    struct rbt_node_t *node;
+
+    for (node = rbt_first(&file->subfile_rbt); node; node = rbt_first(&file->subfile_rbt))
     {
+        struct file_t *_file = container_of(node, struct file_t, fa_rbt_node);
+
         _file_delete(_file);
     }
-    
+
     rbt_delete(&file->ffile->subfile_rbt, &file->fa_rbt_node);
 }
 
@@ -252,4 +255,51 @@ int file_read(char *name, addr_t *addr, size_t *size)
     *size = file->size;
 
     return 0;
+}
+
+int file_subfile(char *name, addr_t *addr, size_t *size)
+{
+    struct file_t *file;
+
+    int err = file_find(name, &file);
+
+    if (err != E_OK) return err;
+
+    if (file->type != FILE_DIR) return E_INVAL;
+
+    size_t len = 0;
+
+    addr_t cache = NULL;
+
+    struct rbt_node_t *node;
+
+    for (node = rbt_first(&file->subfile_rbt); node != NULL; node = rbt_next(node))
+    {
+        struct file_t *_file = container_of(node, struct file_t, fa_rbt_node);
+
+        len += strlen(_file->name) + 1;
+    }
+
+    if (len == 0) return E_NOTFOUND;
+
+    err = malloc(&cache, len);
+
+    if (err != E_OK) return err;
+
+    size_t offset = 0;
+
+    for (node = rbt_first(&file->subfile_rbt); node != NULL; node = rbt_next(node))
+    {
+        struct file_t *_file = container_of(node, struct file_t, fa_rbt_node);
+
+        strcpy(cache + offset, _file->name, strlen(_file->name) + 1);
+
+        offset += strlen(_file->name) + 1;
+    }
+
+    *addr = cache;
+
+    *size = len;
+
+    return E_OK;
 }

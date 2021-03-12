@@ -56,6 +56,27 @@ static void service_delete_hdl(addr_t args)
     thread_exit();
 }
 
+static void service_subfile_hdl(addr_t args)
+{
+    struct srv_callee_t *callee = (void *)args;
+
+    char *path = callee->cache;
+
+    addr_t addr;
+
+    size_t size;
+
+    int err = file_subfile(path, &addr, &size);
+
+    if (err == E_OK)
+        srv_reply(callee->sid, err, 1, addr, size);
+
+    else
+        srv_reply(callee->sid, err, 0);
+
+    thread_exit();
+}
+
 static void service_listen(char *subsrv, addr_t routine)
 {
     char *service;
@@ -113,6 +134,10 @@ void service_enable(void)
     if (err != E_OK) panic("bug\n");
 
     err = thread_create(NULL, service_listen, 2, "delete", service_delete_hdl);
+
+    if (err != E_OK) panic("bug\n");
+
+    err = thread_create(NULL, service_listen, 2, "subfile", service_subfile_hdl);
 
     if (err != E_OK) panic("bug\n");
 

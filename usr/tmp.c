@@ -6,23 +6,29 @@ int main(void)
 {
     struct srv_replyee_t replyee;
 
-    uint type = 0;
+    // uint type = 0;
 
-    int err = srv_call("fssrv/create", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"), &type, sizeof(uint), s, sizeof(s));
+    // int err = srv_call("fssrv/create", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"), &type, sizeof(uint), s, sizeof(s));
 
-    srv_call("fssrv/read", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
+    // srv_call("fssrv/read", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
     
-    printf("%s", replyee.cache);
+    // printf("%s", replyee.cache);
 
-    err = srv_call("fssrv/delete", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
+    // err = srv_call("fssrv/delete", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
+
+    // printf("%s %s\n", strerror(err), strerror(replyee.err));
+
+    // srv_call("fssrv/read", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
+    
+    // printf("%s %s\n", strerror(err), strerror(replyee.err));
+    
+    // printf("%s", replyee.cache);
+
+    int err = srv_call("fssrv/subfile", &replyee, "/lib/", sizeof("/lib/"));
 
     printf("%s %s\n", strerror(err), strerror(replyee.err));
 
-    srv_call("fssrv/read", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
-    
-    printf("%s %s\n", strerror(err), strerror(replyee.err));
-    
-    printf("%s", replyee.cache);
+    printf("%s\n", replyee.cache);
 
     return 0;
 }

@@ -33,4 +33,6 @@ int main(int argc, char *argv[], char *envp[])
     for (uint i = 0; i < replyee.sz[0]; ++i) printf("%c", res[i]);
 
     printf("\n");
+
+    return E_OK;
 }

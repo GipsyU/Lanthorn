@@ -27,6 +27,11 @@ struct file_t
     struct file_t *ffile;
 };
 
+// struct file_info_t
+// {
+
+// };
+
 extern struct file_t *root_file;
 
 int init(void);
@@ -36,6 +41,10 @@ int file_create(char *name, uint type, addr_t addr, size_t size);
 int file_read(char *name, addr_t *addr, size_t *size);
 
 int file_delete(char *name);
+
+int file_info(char *name);
+
+int file_subfile(char *name, addr_t *addr, size_t *size);
 
 int file_find(char *name, struct file_t **res);
 

@@ -42,6 +42,8 @@ int init(void)
 
     srv_register("fssrv/delete", 1);
 
+    srv_register("fssrv/subfile", 1);
+
     file_new(&root_file, "/", FILE_DIR, NULL, NULL);
 
     load_file();
