@@ -189,15 +189,20 @@ static int srv_call(char *name, addr_t *param, struct srv_replyee_t *replyee, ui
 
     for (uint i = 0; i < reply.narg; ++i) sz += reply.sz[i];
 
-    if (iskern)
-        err = kmalloc(&replyee->cache, sz);
+    if (sz > 0)
+    {
+        if (iskern)
+            err = kmalloc(&replyee->cache, sz);
 
-    else
-        err = umalloc(&proc_now()->um, &replyee->cache, sz);
+        else
+            err = umalloc(&proc_now()->um, &replyee->cache, sz);
+        
+        if (err != E_OK) return err;
 
-    if (err != E_OK) return err;
+        err = msg_read(retmsgid, replyee->cache, sizeof(reply), sz);
 
-    err = msg_read(retmsgid, replyee->cache, sizeof(reply), sz);
+        if (err != E_OK) return err;
+    }
 
     replyee->err = reply.err;
 

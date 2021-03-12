@@ -26,19 +26,49 @@ static void service_read_hdl(addr_t args)
     thread_exit();
 }
 
+static void service_create_hdl(addr_t args)
+{
+    struct srv_callee_t *callee = (void *)args;
+
+    char *path = callee->cache;
+
+    uint *type =  callee->cache + callee->sz[0];
+
+    addr_t addr = callee->cache + callee->sz[0] + callee->sz[1];
+
+    int err = file_create(path, *type, addr, callee->sz[2]);
+
+    srv_reply(callee->sid, err, 0);
+
+    thread_exit();
+}
+
+static void service_delete_hdl(addr_t args)
+{
+    struct srv_callee_t *callee = (void *)args;
+
+    char *path = callee->cache;
+
+    int err = file_delete(path);
+
+    srv_reply(callee->sid, err, 0);
+
+    thread_exit();
+}
+
 static void service_listen(char *subsrv, addr_t routine)
 {
     char *service;
 
-    int err = malloc((void *)&service, strlen("filesrv/") + strlen(subsrv) + 1);
+    int err = malloc((void *)&service, strlen("fssrv/") + strlen(subsrv) + 1);
 
     if (err != E_OK) panic("bug\n");
 
-    strcpy(service, "filesrv/", strlen("filesrv/"));
+    strcpy(service, "fssrv/", strlen("fssrv/"));
 
-    strcpy(service + strlen("filesrv/"), subsrv, strlen(subsrv));
+    strcpy(service + strlen("fssrv/"), subsrv, strlen(subsrv));
 
-    service[strlen("filesrv/") + strlen(subsrv)] = 0;
+    service[strlen("fssrv/") + strlen(subsrv)] = 0;
 
     while (1)
     {
@@ -74,15 +104,19 @@ static void service_listen(char *subsrv, addr_t routine)
 
 void service_enable(void)
 {
-    struct thread_attr_t attr;
-
-    attr.arga = "read";
-
     int err = thread_create(NULL, service_listen, 2, "read", service_read_hdl);
 
     if (err != E_OK) panic("bug\n");
 
-    info("filesrv: enable service success.\n");
+    err = thread_create(NULL, service_listen, 2, "create", service_create_hdl);
+
+    if (err != E_OK) panic("bug\n");
+
+    err = thread_create(NULL, service_listen, 2, "delete", service_delete_hdl);
+
+    if (err != E_OK) panic("bug\n");
+
+    info("fssrv: enable service success.\n");
 
     thread_exit();
 }

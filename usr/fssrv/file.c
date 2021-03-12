@@ -1,9 +1,9 @@
 #include <error.h>
 #include <log.h>
 #include <mm.h>
+#include <stdio.h>
 #include <string.h>
 #include <utils.h>
-#include <stdio.h>
 
 #include "file.h"
 
@@ -13,7 +13,8 @@ static char *path_cut(char *name)
 {
     uint tmplen = strlen(name) + (name[strlen(name) - 1] == '/' ? 0 : 1);
 
-    for (uint i = 1; i < strlen(name); ++i) if (name[i] == '/') ++tmplen;
+    for (uint i = 1; i < strlen(name); ++i)
+        if (name[i] == '/') ++tmplen;
 
     char *s;
 
@@ -133,7 +134,7 @@ int file_new(struct file_t **file, char *name, uint type, addr_t addr, size_t si
 
 int file_find(char *name, struct file_t **res)
 {
-    assert (name[0] == '/');
+    if (name[0] != '/') return E_INVAL;
 
     struct file_t *file = root_file;
 
@@ -143,7 +144,7 @@ int file_find(char *name, struct file_t **res)
 
     uint p = 0;
 
-    while(name[p])
+    while (name[p])
     {
         err = rbt_find(&file->subfile_rbt, name + p, &file);
 
@@ -162,7 +163,9 @@ int file_find(char *name, struct file_t **res)
 int file_create(char *name, uint type, addr_t addr, size_t size)
 {
 
-    assert(name[0] == '/');
+    if (name[0] != '/') return E_INVAL;
+
+    if (name[strlen(name) - 1] == '/' && type == FILE_ENTITY) return E_INVAL;
 
     name = path_cut(name);
 
@@ -172,7 +175,7 @@ int file_create(char *name, uint type, addr_t addr, size_t size)
 
     struct file_t *file = root_file;
 
-    while(name[p])
+    while (name[p])
     {
         err = rbt_find(&file->subfile_rbt, name + p, &file);
 
@@ -180,9 +183,11 @@ int file_create(char *name, uint type, addr_t addr, size_t size)
         {
             struct file_t *tmpfile = NULL;
 
-            if (name[p + strlen(name + p) + 1]) err = file_new(&tmpfile, name + p, FILE_DIR, NULL, NULL);
+            if (name[p + strlen(name + p) + 1])
+                err = file_new(&tmpfile, name + p, FILE_DIR, NULL, NULL);
 
-            else err = file_new(&tmpfile, name + p, type, addr, size);
+            else
+                err = file_new(&tmpfile, name + p, type, addr, size);
 
             if (err != E_OK) return err;
 
@@ -199,6 +204,37 @@ int file_create(char *name, uint type, addr_t addr, size_t size)
 
         p += strlen(name + p) + 1;
     }
+
+    return err;
+}
+
+static void _file_delete(struct file_t *file)
+{
+    if (file->type == FILE_ENTITY)
+    {
+        rbt_delete(&file->ffile->subfile_rbt, &file->fa_rbt_node);
+    
+        return;
+    }
+
+    for (struct file_t *_file = container_of(rbt_first(&file->subfile_rbt), struct file_t, fa_rbt_node); _file != NULL;
+         _file = container_of(rbt_first(&file->subfile_rbt), struct file_t, fa_rbt_node))
+    {
+        _file_delete(_file);
+    }
+    
+    rbt_delete(&file->ffile->subfile_rbt, &file->fa_rbt_node);
+}
+
+int file_delete(char *path)
+{
+    struct file_t *file;
+
+    int err = file_find(path, &file);
+
+    if (err != E_OK) return err;
+
+    _file_delete(file);
 
     return err;
 }

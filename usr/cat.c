@@ -22,7 +22,7 @@ int main(int argc, char *argv[], char *envp[])
 
     path[strlen(envp[0]) + strlen(argv[0])] = 0;
 
-    err = srv_call("filesrv/read", &replyee, path, strlen(path) + 1);
+    err = srv_call("fssrv/read", &replyee, path, strlen(path) + 1);
 
     if (err != E_OK) return err;
 

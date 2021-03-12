@@ -262,7 +262,7 @@ static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
 {
     struct srv_replyee_t replyee;
 
-    int err = srv_kern_call("filesrv/read", &replyee, path, strlen(path) + 1);
+    int err = srv_kern_call("fssrv/read", &replyee, path, strlen(path) + 1);
 
     if (err != E_OK) return err;
 
@@ -301,8 +301,8 @@ extern char _binary_usr_init_elf_size[];
 extern char _binary_usr_devsrv_elf_start[];
 extern char _binary_usr_devsrv_elf_size[];
 
-extern char _binary_usr_filesrv_elf_start[];
-extern char _binary_usr_filesrv_elf_size[];
+extern char _binary_usr_fssrv_elf_start[];
+extern char _binary_usr_fssrv_elf_size[];
 
 extern char _binary_usr_test_elf_start[];
 extern char _binary_usr_test_elf_size[];
@@ -340,7 +340,7 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    err = proc_create_from_mm("file_service", _binary_usr_filesrv_elf_start, _binary_usr_filesrv_elf_size, NULL, NULL);
+    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL);
 
     if (err == E_OK)
         info("init file service process success.\n");

@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <type.h>
 
-extern char _binary_usr_filesrv_mkfs_fileimg_start[];
-extern char _binary_usr_filesrv_mkfs_fileimg_end[];
-extern char _binary_usr_filesrv_mkfs_fileimg_size[];
+extern char _binary_usr_fssrv_mkfs_fileimg_start[];
+extern char _binary_usr_fssrv_mkfs_fileimg_end[];
+extern char _binary_usr_fssrv_mkfs_fileimg_size[];
 
 struct init_file_t
 {
@@ -15,8 +15,8 @@ struct init_file_t
 
 static int load_file(void)
 {
-    for (struct init_file_t *file = (void *)_binary_usr_filesrv_mkfs_fileimg_start;
-         (addr_t)file < (addr_t)_binary_usr_filesrv_mkfs_fileimg_end; file = (addr_t)file + file->size + sizeof(struct init_file_t))
+    for (struct init_file_t *file = (void *)_binary_usr_fssrv_mkfs_fileimg_start;
+         (addr_t)file < (addr_t)_binary_usr_fssrv_mkfs_fileimg_end; file = (addr_t)file + file->size + sizeof(struct init_file_t))
     {
         printf("%s\n", file->name);
 
@@ -36,7 +36,11 @@ int init(void)
 {
     printf("file service is setting up.\n");
 
-    srv_register("filesrv/read", 1);
+    srv_register("fssrv/read", 1);
+
+    srv_register("fssrv/create", 3);
+
+    srv_register("fssrv/delete", 1);
 
     file_new(&root_file, "/", FILE_DIR, NULL, NULL);
 

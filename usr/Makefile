@@ -3,7 +3,7 @@ quiet_cmd_cc_elf_o = CC      $@
 
 LANTHORNINCLUDE :=
 
-usr-y := init.elf devsrv/ helloworld.elf poweroff.elf cat.elf test/ shell/
+usr-y := init.elf devsrv/ helloworld.elf poweroff.elf cat.elf test/ shell/ tmp.elf
 
 usr-y := $(addprefix $(src)/, $(usr-y))
 
@@ -27,18 +27,18 @@ quiet_cmd_usr = LD      $@
       cmd_usr = $(LD) $(LDFLAGS) -r -b binary $^ -o $@
 
 quiet_cmd_cp = CP      $@
-      cmd_cp = cp $@ $(srctree)/$(src)/filesrv/mkfs/root/bin
+      cmd_cp = cp $@ $(srctree)/$(src)/fssrv/mkfs/root/bin
 
-$(obj)/usr.elf : $(usr_sg_elfs) $(usr_dir_elfs) $(obj)/filesrv.elf
+$(obj)/usr.elf : $(usr_sg_elfs) $(usr_dir_elfs) $(obj)/fssrv.elf
 	$(call cmd,usr)
 
 ldflags-y += -T $(srctree)/$(src)/usr.ld
 
-$(obj)/filesrv.elf : $(obj)/filesrv/built-in.o $(usr_lib)/lib.a
+$(obj)/fssrv.elf : $(obj)/fssrv/built-in.o $(usr_lib)/lib.a
 	$(call cmd,ld)
 
-$(obj)/filesrv/built-in.o: $(usr_sg_elfs) $(usr_dir_elfs)
-	$(Q)$(MAKE) $(build)=$(src)/filesrv
+$(obj)/fssrv/built-in.o: $(usr_sg_elfs) $(usr_dir_elfs)
+	$(Q)$(MAKE) $(build)=$(src)/fssrv
 
 $(usr_sg_elfs) : %.elf : %.o $(usr_lib)/lib.a
 	$(call cmd,ld)
