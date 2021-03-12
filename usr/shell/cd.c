@@ -4,7 +4,7 @@
 #include <string.h>
 #include <type.h>
 
-int cd(char *parse[], char *pwd)
+int cmd_cd(char *parse[], char *pwd)
 {
     if (!(parse[1] != NULL && parse[2] == NULL)) return E_INVAL;
 

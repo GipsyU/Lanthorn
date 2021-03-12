@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
-extern int cd(char *parse[], char *pwd);
+extern int cmd_cd(char *parse[], char *pwd);
+
+extern int cmd_pwd(char *parse[], char *pwd);
 
 static void get_cmd(char cmd[], char *args[])
 {
@@ -45,7 +47,16 @@ static int inner_cmd(char *parse[], char *pwd)
 {
     if (strcmp(parse[0], "cd") == 0)
     {
-        int err = cd(parse, pwd);
+        int err = cmd_cd(parse, pwd);
+
+        if (err != E_OK) printf("cd failed, err = %s.\n", strerror(err));
+
+        return E_OK;
+    }
+
+    if (strcmp(parse[0], "pwd") == 0)
+    {
+        int err = cmd_pwd(parse, pwd);
 
         if (err != E_OK) printf("cd failed, err = %s.\n", strerror(err));
 

@@ -1,1 +1,1 @@
-obj-y := main.o cd.o
+obj-y := main.o cd.o pwd.o
