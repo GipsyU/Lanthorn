@@ -10,5 +10,6 @@ _start:
     pushl (0xbffff000)
     call main
 _end:
+    pushl %eax
     call proc_exit
     jmp _end

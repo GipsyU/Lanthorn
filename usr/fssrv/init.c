@@ -16,7 +16,8 @@ struct init_file_t
 static int load_file(void)
 {
     for (struct init_file_t *file = (void *)_binary_usr_fssrv_mkfs_fileimg_start;
-         (addr_t)file < (addr_t)_binary_usr_fssrv_mkfs_fileimg_end; file = (addr_t)file + file->size + sizeof(struct init_file_t))
+         (addr_t)file < (addr_t)_binary_usr_fssrv_mkfs_fileimg_end;
+         file = (addr_t)file + file->size + sizeof(struct init_file_t))
     {
         printf("%s\n", file->name);
 
@@ -43,6 +44,8 @@ int init(void)
     srv_register("fssrv/delete", 1);
 
     srv_register("fssrv/subfile", 1);
+
+    srv_register("fssrv/find", 1);
 
     file_new(&root_file, "/", FILE_DIR, NULL, NULL);
 

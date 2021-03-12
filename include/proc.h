@@ -15,6 +15,8 @@ struct proc_t
     struct ptb_t ptb;
     struct list_node_t thread_ls;
     struct um_t um;
+    struct thread_t *wait_t;
+    int *exit_state;
 };
 
 struct thread_attr_t

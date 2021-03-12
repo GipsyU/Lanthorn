@@ -1,3 +1,5 @@
+#include <error.h>
+#include <log.h>
 #include <mm.h>
 #include <proc.h>
 #include <stdio.h>
@@ -41,12 +43,12 @@ int thread_wake(uint tid)
     return syscall(SYS_thread_wake, tid);
 }
 
-int proc_create(char *path, struct proc_create_attr_t *attr)
+int proc_create(char *path, struct proc_create_attr_t *attr, struct proc_create_res_t *res)
 {
-    return syscall(SYS_proc_create, path, attr);
+    return syscall(SYS_proc_create, path, attr, res);
 }
 
-int proc_exit(void)
+int proc_exit(int err)
 {
-    return syscall(SYS_proc_exit);
+    return syscall(SYS_proc_exit, err);
 }

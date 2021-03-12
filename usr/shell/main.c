@@ -1,9 +1,12 @@
 #include <error.h>
 #include <log.h>
+#include <mm.h>
 #include <proc.h>
 #include <srv.h>
 #include <stdio.h>
 #include <string.h>
+
+extern int cd(char *parse[], char *pwd);
 
 static void get_cmd(char cmd[], char *args[])
 {
@@ -38,13 +41,27 @@ static void get_elf_path(char *parse[], char path[])
     path[strlen("/bin/") + strlen(parse[0]) + strlen(".elf")] = '\0';
 }
 
+static int inner_cmd(char *parse[], char *pwd)
+{
+    if (strcmp(parse[0], "cd") == 0)
+    {
+        int err = cd(parse, pwd);
+
+        if (err != E_OK) printf("cd failed, err = %s.\n", strerror(err));
+
+        return E_OK;
+    }
+
+    return E_NOTFOUND;
+}
+
 int main(void)
 {
     char pwd[128] = "/";
 
     while (1)
     {
-        printf(COLOR_GREEN "gipsyh@Lanthorn" COLOR_NONE ":" COLOR_BLUE "%s"COLOR_NONE"$ " , pwd);
+        printf(COLOR_GREEN "gipsyh@Lanthorn" COLOR_NONE ":" COLOR_BLUE "%s" COLOR_NONE "$ ", pwd);
 
         char cmd[256];
 
@@ -55,6 +72,8 @@ int main(void)
         get_cmd(cmd, parse);
 
         get_elf_path(parse, path);
+
+        if (inner_cmd(parse, pwd) == E_OK) continue;
 
         struct proc_create_attr_t attr;
 
@@ -69,9 +88,15 @@ int main(void)
         envp[1] = 0;
 
         attr.envp = envp;
-        
-        int err = proc_create(path, &attr);
+
+        attr.iswait = 1;
+
+        struct proc_create_res_t res;
+
+        int err = proc_create(path, &attr, &res);
 
         if (err != E_OK) printf("shell exec filed, err = %s.\n", strerror(err));
+
+        if (res.err != E_OK) printf("shell exec error, err = %s.\n", strerror(res.err));
     }
 }

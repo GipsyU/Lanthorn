@@ -32,7 +32,7 @@ static void service_create_hdl(addr_t args)
 
     char *path = callee->cache;
 
-    uint *type =  callee->cache + callee->sz[0];
+    uint *type = callee->cache + callee->sz[0];
 
     addr_t addr = callee->cache + callee->sz[0] + callee->sz[1];
 
@@ -73,6 +73,21 @@ static void service_subfile_hdl(addr_t args)
 
     else
         srv_reply(callee->sid, err, 0);
+
+    thread_exit();
+}
+
+static void service_find_hdl(addr_t args)
+{
+    struct srv_callee_t *callee = (void *)args;
+
+    char *path = callee->cache;
+
+    struct file_t *file;
+
+    int err = file_find(path, &file);
+
+    srv_reply(callee->sid, err, 0);
 
     thread_exit();
 }
@@ -138,6 +153,10 @@ void service_enable(void)
     if (err != E_OK) panic("bug\n");
 
     err = thread_create(NULL, service_listen, 2, "subfile", service_subfile_hdl);
+
+    if (err != E_OK) panic("bug\n");
+
+    err = thread_create(NULL, service_listen, 2, "find", service_find_hdl);
 
     if (err != E_OK) panic("bug\n");
 

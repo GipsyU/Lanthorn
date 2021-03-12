@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 
     printf("This is init proc.\n");
 
-    while(proc_create("/bin/shell.elf", NULL) != E_OK);
+    while(proc_create("/bin/shell.elf", NULL, NULL) != E_OK);
 
     printf("create shell success.\n");
 

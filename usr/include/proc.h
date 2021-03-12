@@ -15,15 +15,21 @@ struct proc_create_attr_t
     char name[PROC_NAME_MAX_LEN];
     char **argv;
     char **envp;
+    int iswait;
+};
+
+struct proc_create_res_t
+{
+    int err;
 };
 
 int fork(long *pid);
 
-int proc_create(char *path, struct proc_create_attr_t *attr);
+int proc_create(char *path, struct proc_create_attr_t *attr, struct proc_create_res_t *res);
 
 int thread_create(uint *tid, addr_t routine, uint nparam, ...);
 
-int proc_exit(void);
+int proc_exit(int err);
 
 int thread_exit(void);
 

@@ -132,7 +132,8 @@ static int inner_setup_uthread_from_mm_thread(addr_t start, size_t size, addr_t 
     return 0;
 }
 
-static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv, char **envp)
+static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv, char **envp, struct thread_t *wait_t,
+                               int *res)
 {
     if (strlen_s(name, PROC_NAME_MAX_LEN) == PROC_NAME_MAX_LEN) return E_TOOLONG;
 
@@ -182,7 +183,25 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv
         }
     }
 
+    if (wait_t != NULL)
+    {
+        proc->exit_state = res;
+
+        proc->wait_t = wait_t;
+
+        debug("%s.\n", name);
+
+        intr_irq_save();
+    }
+
     err = thread_kern_new(proc, NULL, inner_setup_uthread_from_mm_thread, 3, exea, exes, args);
+
+    if (wait_t != NULL)
+    {
+        schd_block(thread_now());
+
+        intr_irq_restore();
+    }
 
     return err;
 }
@@ -254,11 +273,17 @@ struct proc_create_attr_t
     char name[PROC_NAME_MAX_LEN];
     char **argv;
     char **envp;
+    int iswait;
 };
 
-struct proc_create_attr_t proc_create_dft_attr = {.name = "anonymous proc", .argv = NULL, .envp = NULL};
+struct proc_create_res_t
+{
+    int err;
+};
 
-static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
+struct proc_create_attr_t proc_create_dft_attr = {.name = "anonymous proc", .argv = NULL, .envp = NULL, .iswait = 0};
+
+static int proc_sys_create(char *path, struct proc_create_attr_t *attr, struct proc_create_res_t *res)
 {
     struct srv_replyee_t replyee;
 
@@ -274,20 +299,36 @@ static int proc_sys_create(char *path, struct proc_create_attr_t *attr)
 
     if (_attr == NULL) _attr = &proc_create_dft_attr;
 
-    err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp);
+    if (_attr->iswait != 0)
+
+        err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp, thread_now(),
+                                  &res->err);
+
+    else
+
+        err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp, NULL, NULL);
 
     return err;
 }
 
-static int proc_sys_exit(void)
+static int proc_sys_exit(int err)
 {
     struct proc_t *proc = proc_now();
+
+    info("process %p exit, err = %s.\n", proc, strerror(err));
 
     list_rep_s(&proc->thread_ls, p)
     {
         struct thread_t *t = container_of(p, struct thread_t, proc_ln);
 
         if (t != thread_now() && t->state != KILLED) schd_kill(t);
+    }
+
+    if (proc->wait_t != NULL)
+    {
+        *(proc->exit_state) = err;
+
+        schd_run(proc->wait_t);
     }
 
     schd_kill(thread_now());
@@ -340,7 +381,8 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL);
+    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
+                              NULL);
 
     if (err == E_OK)
         info("init file service process success.\n");
@@ -350,7 +392,8 @@ int proc_init(void)
 
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
-    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL);
+    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
+                              NULL);
 
     if (err == E_OK)
         info("init usr init process success.\n");
@@ -362,9 +405,9 @@ int proc_init(void)
 
     syscall_register(SYS_fork, proc_fork, 1);
 
-    syscall_register(SYS_proc_create, proc_sys_create, 2);
+    syscall_register(SYS_proc_create, proc_sys_create, 3);
 
-    syscall_register(SYS_proc_exit, proc_sys_exit, 0);
+    syscall_register(SYS_proc_exit, proc_sys_exit, 1);
 
     return err;
 }
