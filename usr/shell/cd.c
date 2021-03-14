@@ -1,4 +1,5 @@
 #include <error.h>
+#include <log.h>
 #include <mm.h>
 #include <srv.h>
 #include <string.h>
@@ -10,7 +11,7 @@ int cmd_cd(char *parse[], char *pwd)
 
     char *name = parse[1];
 
-    if (name[strlen(name)] != '/')
+    if (name[strlen(name) - 1] != '/')
     {
         int err = malloc((void *)&name, strlen(parse[1]) + 2);
 
@@ -23,27 +24,34 @@ int cmd_cd(char *parse[], char *pwd)
         name[strlen(parse[1]) + 1] = 0;
     }
 
-    char *s = NULL;
+    char *s = name;
 
-    int err = malloc((void *)&s, strlen(pwd) + strlen(name) + 1);
+    if (name[0] != '/')
+    {
+        int err = malloc((void *)&s, strlen(pwd) + strlen(name) + 1);
 
-    if (err != E_OK) return err;
+        if (err != E_OK) return err;
 
-    memcpy(s, pwd, strlen(pwd));
+        memcpy(s, pwd, strlen(pwd));
 
-    memcpy(s + strlen(pwd), name, strlen(name));
+        memcpy(s + strlen(pwd), name, strlen(name));
 
-    s[strlen(pwd) + strlen(name)] = 0;
+        s[strlen(pwd) + strlen(name)] = 0;
+    }
 
     struct srv_replyee_t replyee;
 
-    err = srv_call("fssrv/find", &replyee, s, strlen(s) + 1);
+    int err = srv_call("fssrv/find", &replyee, s, strlen(s) + 1);
 
     if (err != E_OK) return err;
 
     if (replyee.err != E_OK) return replyee.err;
 
-    memcpy(pwd + strlen(pwd), name, strlen(name) + 1);
+    if (name[0] != '/')
+        memcpy(pwd + strlen(pwd), name, strlen(name) + 1);
+
+    else
+        memcpy(pwd, name, strlen(name) + 1);
 
     return err;
 }
