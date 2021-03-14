@@ -1,5 +1,2 @@
-.vscode/*
-scripts/*
-usr/.vscode*
-usr/fssrv/mkfs/root/*
-build*
+usr/fssrv/mkfs/root/bin/*
+build/*

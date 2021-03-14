@@ -142,6 +142,8 @@ static int srv_call(char *name, addr_t *param, struct srv_replyee_t *replyee, ui
 
     struct srv_call_t *srv_call = msgcache;
 
+    srv_call->arg_sz = 0;
+
     for (uint i = 0; i < srv->nparam; ++i)
     {
         srv_call->sz[i] = param[i * 2 + 1];

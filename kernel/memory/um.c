@@ -90,7 +90,7 @@ int umalloc(struct um_t *um, addr_t *addr, size_t size)
         err = umalloc_page(um, addr, ROUND_UP(size, PAGE_SIZE));
     }
 
-    info("umalloc success: addr = %p, size = %p.\n", *addr, size);
+    if (err == E_OK) info("umalloc success: addr = %p, size = %p.\n", *addr, size);
 
     return err;
 }
@@ -155,7 +155,7 @@ int um_fork(struct um_t *um_old, struct um_t *um_new, struct ptb_t *ptb)
 int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
 {
     info("um page fault, addr = %p.\n", errva);
-
+    
     int err = E_OK;
 
     if (errva >= um->layout.args_s && errva < um->layout.args_e)
@@ -174,11 +174,6 @@ int um_page_fault_hdl(struct um_t *um, struct ptb_t *ptb, addr_t errva)
     if (errva < um->layout.heap_s || errva >= um->layout.heap_e)
     {
         panic("um page fault error");
-
-        while (1)
-            ;
-
-        return E_FAULT;
     }
 
     struct vpage_t *vp = NULL;

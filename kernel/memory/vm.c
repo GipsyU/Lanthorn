@@ -170,7 +170,7 @@ static int vm_insert_alloced(struct vpage_alct_t *alct, struct vpage_t *vp)
 
 int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
 {
-    spin_lock(&alct->lock);
+    spin_lock_irqsave(&alct->lock);
 
     struct rbt_node_t *n = alct->alloced_rbt.root;
 
@@ -192,13 +192,13 @@ int vm_search_addr(struct vpage_alct_t *alct, addr_t addr, struct vpage_t **res)
         {
             *res = vpage;
 
-            spin_unlock(&alct->lock);
+            spin_unlock_irqrestore(&alct->lock);
 
             return E_OK;
         }
     }
 
-    spin_unlock(&alct->lock);
+    spin_unlock_irqrestore(&alct->lock);
 
     return E_NOTFOUND;
 }
@@ -262,7 +262,7 @@ int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
 
     int err = E_OK;
 
-    spin_lock(&alct->lock);
+    spin_lock_irqsave(&alct->lock);
 
     struct vpage_t *vp;
 
@@ -273,7 +273,7 @@ int vm_insert(struct vpage_alct_t *alct, addr_t addr, size_t size)
     err = vm_insert_free(alct, vp);
 
 error:
-    spin_unlock(&alct->lock);
+    spin_unlock_irqrestore(&alct->lock);
 
     return err;
 }
@@ -282,7 +282,7 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
 {
     int err = E_OK;
 
-    spin_lock(&alct->lock);
+    spin_lock_irqsave(&alct->lock);
 
     size = ROUND_UP(size, PAGE_SIZE);
 
@@ -312,14 +312,14 @@ int vm_alloc(struct vpage_alct_t *alct, struct vpage_t **vp, size_t size)
     vm_insert_alloced(alct, *vp);
 
 error:
-    spin_unlock(&alct->lock);
+    spin_unlock_irqrestore(&alct->lock);
 
     return err;
 }
 
 int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 {
-    spin_lock(&alct->lock);
+    spin_lock_irqsave(&alct->lock);
 
     int err = E_OK;
 
@@ -327,7 +327,7 @@ int vm_free(struct vpage_alct_t *alct, struct vpage_t *vp)
 
     err = vm_insert_free(alct, vp);
 
-    spin_unlock(&alct->lock);
+    spin_unlock_irqrestore(&alct->lock);
 
     return err;
 }
@@ -336,7 +336,7 @@ int vm_fork(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct, struct
 {
     int err = E_OK;
 
-    spin_lock(&old_alct->lock);
+    spin_lock_irqsave(&old_alct->lock);
 
     vm_init(new_alct, old_alct->mm_ops.alloc, old_alct->mm_ops.free);
 
@@ -397,7 +397,7 @@ int vm_fork(struct vpage_alct_t *old_alct, struct vpage_alct_t *new_alct, struct
         vm_insert_free(new_alct, vpn);
     }
 
-    spin_unlock(&old_alct->lock);
+    spin_unlock_irqrestore(&old_alct->lock);
 
     return err;
 }
@@ -438,7 +438,7 @@ int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size
 {
     assert(vpage->type == UM_NOPM);
 
-    spin_lock(&alct->lock);
+    spin_lock_irqsave(&alct->lock);
 
     int err = E_OK;
 
@@ -473,7 +473,7 @@ int vm_slice(struct vpage_alct_t *alct, struct vpage_t *vpage, addr_t addr, size
     *res = vpage;
 
 error:
-    spin_unlock(&alct->lock);
+    spin_unlock_irqrestore(&alct->lock);
 
     return err;
 }

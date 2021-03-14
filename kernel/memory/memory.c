@@ -50,7 +50,7 @@ static int page_fault_hdl(uint errno)
 {
     addr_t errv = mmu_err_addr();
 
-    info("page fault errno: %p.\n", errno);
+    // debug("page fault errno: %p.\n", errno);
 
     if ((errno & PF_P) == 0)
     {
@@ -67,11 +67,11 @@ static int page_fault_hdl(uint errno)
     }
     else if (errno & PF_W)
     {
-        info("page fault: write protect, addr = %p.\n", errv);
+        panic("page fault: write protect, addr = %p.\n", errv);
 
-        int err = um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
+        // int err = um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
 
-        assert(err == E_OK);
+        // assert(err == E_OK);
     }
     else
     {

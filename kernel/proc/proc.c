@@ -58,6 +58,8 @@ static int proc_new(struct proc_t **proc, char *name)
 
     proc_rbt_insert(_proc, 1);
 
+    _proc->wait_t = NULL;
+
     if (proc != NULL) *proc = _proc;
 
     info("setup process %s success.\n", _proc->name);
@@ -155,6 +157,8 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv
 
     char **_argv = (char **)(args + sizeof(_argc));
 
+    _argv[0] = NULL;
+
     if (argv != NULL)
     {
         for (; *argv; (*_argc) += 1, argv++)
@@ -168,6 +172,8 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv
     }
 
     char **_envp = (char **)(args + sizeof(addr_t) * (1 + *_argc));
+
+    _envp[0] = NULL;
 
     if (envp != NULL)
     {
@@ -188,8 +194,6 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv
         proc->exit_state = res;
 
         proc->wait_t = wait_t;
-
-        debug("%s.\n", name);
 
         intr_irq_save();
     }
@@ -300,13 +304,18 @@ static int proc_sys_create(char *path, struct proc_create_attr_t *attr, struct p
     if (_attr == NULL) _attr = &proc_create_dft_attr;
 
     if (_attr->iswait != 0)
+    {
+        int res_err = E_OK;
 
         err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp, thread_now(),
-                                  &res->err);
+                                  &res_err);
 
+        res->err = res_err;
+    }
     else
-
+    {
         err = proc_create_from_mm(_attr->name, replyee.cache, replyee.sz[0], _attr->argv, _attr->envp, NULL, NULL);
+    }
 
     return err;
 }
@@ -347,6 +356,7 @@ extern char _binary_usr_fssrv_elf_size[];
 
 extern char _binary_usr_test_elf_start[];
 extern char _binary_usr_test_elf_size[];
+
 int proc_init(void)
 {
     int err = proc_rbt_init();

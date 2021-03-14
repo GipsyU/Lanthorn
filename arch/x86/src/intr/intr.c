@@ -128,7 +128,9 @@ void intr_hdl(struct intr_regs_t *regs)
     }
     else
     {
-        panic("no intr routine");
+        // print("eip:%p cs:%p ds:%p err:%p\n", regs->eip, regs->cs , regs->ds, regs->err);
+
+        panic("no intr routine err: %d, eip: %p\n", regs->err, regs->eip);
     }
 
     if (islog[regs->intrno])

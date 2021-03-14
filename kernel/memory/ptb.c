@@ -102,6 +102,8 @@ int ptb_setup(struct ptb_t *tb)
 
     if (err != E_OK) return err;
 
+    mmu_pp_clean(pde->addr);
+
     spin_init(&tb->lock);
 
     rbt_init(&tb->rbt);

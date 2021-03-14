@@ -1,0 +1,10 @@
+{
+    "terminal.integrated.cwd": "build",
+    "files.associations": {
+        "log.h": "c",
+        "error.h": "c",
+        "string.h": "c"
+    },
+    "C_Cpp.formatting": "Default",
+    "C_Cpp.clang_format_style": " { BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, AllowShortIfStatementsOnASingleLine: true, IndentCaseLabels: true, ColumnLimit: 0, AccessModifierOffset: -4, NamespaceIndentation: All, FixNamespaceComments: false }"
+}

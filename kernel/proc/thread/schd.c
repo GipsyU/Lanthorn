@@ -173,8 +173,9 @@ int schd_schdule(void)
             thread->state = RUNNING;
 
             thread->cpuid = cpu_id();
-
-            // info("schedule thread %p.\n", thread);
+            
+            // print("\n\n\n");
+            // info("schedule thread:%p process: %p.\n", thread, thread->proc);
 
             proc_switch(thread->proc);
 
@@ -186,7 +187,7 @@ int schd_schdule(void)
         }
         else
         {
-            spin_unlock(&scheduler.lock);
+            panic("bug\n");
         }
     }
 }

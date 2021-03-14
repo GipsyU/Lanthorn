@@ -16,13 +16,13 @@ extern struct proc_t proc_0;
 
 static void pre(void)
 {
-    info("thread begin\n");
+    info("usr thread begin\n");
     intr_end();
 }
 
 static void thread_enclosure(addr_t func, uint nargs, ...)
 {
-    info("thread begin.\n");
+    info("kern thread begin.\n");
 
     intr_end();
 

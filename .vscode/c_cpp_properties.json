@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include/",
+                "${workspaceFolder}/arch/x86/include/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "linux-gcc-x86",
+            "compilerArgs": [
+                "-nostdinc",
+                "-m32",
+                "-nostdinc++"
+            ]
+        }
+    ],
+    "version": 4
+}

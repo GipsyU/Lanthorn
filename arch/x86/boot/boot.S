@@ -1,3 +1,4 @@
+#include "boot.h"
 MBOOT_HEADER_MAGIC = 0x1BADB002
 MBOOT_PAGE_ALIGN = 1 << 0
 MBOOT_MEM_INFO = 1 << 1
@@ -22,6 +23,15 @@ CR0_PG		=	0x80000000	// Paging
 	.extern BOOTSTACK
 
 _start:
+	lgdt    gdtdesc
+  	movl    %cr0, %eax
+  	orl     $CR0_PE, %eax
+  	movl    %eax, %cr0
+	ljmpl    $(1<<3), $(__start)
+
+__start:
+	movl 	$0x10,	%eax
+	movl	%eax,	%ds
 
 	movl    %cr4,	%eax
 	orl		$(CR4_PSE),	%eax
@@ -41,3 +51,13 @@ _start:
 	movl	%ebx,	mboot_ptr
 	
 	calll	setup
+
+gdt:
+  SEG_NULLASM
+  SEG_ASM(STA_X|STA_R, 0, 0xffffffff)
+  SEG_ASM(STA_W, 0, 0xffffffff)
+
+
+gdtdesc:
+  .word   (gdtdesc - gdt - 1)
+  .long   gdt
