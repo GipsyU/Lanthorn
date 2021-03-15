@@ -28,7 +28,12 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
 
                 err = kmalloc(&MSG.msg[i].addr, size);
 
-                assert(err == E_OK);
+                if (err != E_OK)
+                {
+                    mutex_unlock(&MSG.msg[i].lock);
+
+                    return err;    
+                }
 
                 memcpy(MSG.msg[i].addr, addr, size);
 

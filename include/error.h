@@ -17,6 +17,7 @@ enum ERRORS {
     E_NOMSG,
     E_BLOCK,
     E_TOOLONG,
+    E_TOOBIG,
     E_MAX
 };
 const char *strerror(int err);

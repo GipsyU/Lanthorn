@@ -1,1 +1,1 @@
-obj-y := log.o error.o string.o list.o slot.o rbt.o elf.o buf.o
+obj-y := log.o error.o string.o list.o slot.o rbt.o elf.o buf.o idx_alct.o

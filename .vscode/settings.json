@@ -3,8 +3,10 @@
     "files.associations": {
         "log.h": "c",
         "error.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "idx_aclt.h": "c",
+        "mutex.h": "c"
     },
     "C_Cpp.formatting": "Default",
-    "C_Cpp.clang_format_style": " { BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, AllowShortIfStatementsOnASingleLine: true, IndentCaseLabels: true, ColumnLimit: 0, AccessModifierOffset: -4, AllowShortFunctionsOnASingleLine: All, AllowShortLoopsOnASingleLine: true, AllowShortBlocksOnASingleLine: true}"
+    "C_Cpp.clang_format_style": " { BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, AllowShortIfStatementsOnASingleLine: true, IndentCaseLabels: true, ColumnLimit: 0, AccessModifierOffset: -4, AllowShortFunctionsOnASingleLine: true, AllowShortLoopsOnASingleLine: true, AllowShortBlocksOnASingleLine: true}"
 }
