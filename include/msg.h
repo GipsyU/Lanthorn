@@ -9,12 +9,10 @@ struct msg_t
     int id;
     enum MSG_STATE
     {
-        MSG_UNUSED,
         MSG_UNSEND,
         MSG_SENDED,
         MSG_RECIEVED
     } state;
-    uint from;
     uint to;
     addr_t addr;
     size_t size;
@@ -28,7 +26,6 @@ struct msgbox_t
     uint id;
     enum BOX_STATE
     {
-        BOX_UNUSED,
         BOX_RCVABLE,
         BOX_RCV_BLK
     } state;
@@ -50,6 +47,10 @@ int msg_recieve(uint box_id, uint *msg_id, uint is_block);
 int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size);
 
 int msg_size(uint msg_id, size_t *size);
+
+int msg_delmsg(uint msg_id);
+
+int msg_delbox(uint box_id);
 
 int msg_init(void);
 

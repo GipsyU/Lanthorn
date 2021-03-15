@@ -24,6 +24,8 @@ enum SYS_CALL
     SYS_msg_read,
     SYS_msg_newbox,
     SYS_msg_newmsg,
+    SYS_msg_delmsg,
+    SYS_msg_delbox,
     SYS_thread_block,
     SYS_thread_create,
     SYS_thread_exit,

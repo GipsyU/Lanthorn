@@ -46,6 +46,8 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
 
     if (id != NULL) *id = msg->id;
 
+    info("sign up a new message, id: %d.\n", msg->id);
+
     mutex_unlock(&msg->lock);
 
     return err;
@@ -88,6 +90,8 @@ int msg_newbox(uint *id)
 
     if (id != NULL) *id = box->id;
 
+    info("sign up a new box, id: %d.\n", box->id);
+
     mutex_unlock(&box->lock);
 
     return err;
@@ -121,8 +125,6 @@ int msg_send(uint box_id, uint msg_id)
 
     if (err = (msg->state != MSG_UNSEND ? E_INVAL : E_OK)) goto ret3;
 
-    if (err = (box->state == BOX_UNUSED ? E_INVAL : E_OK)) goto ret3;
-
     list_push_back(&box->msg_ls, &msg->box_ln);
 
     box->nmsg++;
@@ -135,6 +137,8 @@ int msg_send(uint box_id, uint msg_id)
     }
 
     msg->state = MSG_SENDED;
+
+    info("send message %d to box %d.\n", msg->id, box->id);
 
 ret3:
     mutex_unlock(&box->lock);
@@ -155,6 +159,8 @@ int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size)
     if (err != E_OK) goto ret1;
 
     mutex_lock(&msg->lock);
+
+    if (err = (msg->owner != proc_now() ? E_INVAL : E_OK)) goto ret2;
 
     if (err = (msg->state != MSG_RECIEVED ? E_INVAL : E_OK)) goto ret2;
 
@@ -179,6 +185,8 @@ int msg_size(uint msg_id, size_t *size)
 
     mutex_lock(&msg->lock);
 
+    if (err = (msg->owner != proc_now() ? E_INVAL : E_OK)) goto ret2;
+
     if (err = (msg->state != MSG_RECIEVED ? E_INVAL : E_OK)) goto ret2;
 
     *size = msg->size;
@@ -199,8 +207,6 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
     if (err != E_OK) goto ret1;
 
     mutex_lock(&box->lock);
-
-    if ((err = (box->state == BOX_UNUSED ? E_INVAL : err)) != E_OK) goto ret1;
 
     if ((err = (box->owner != proc_now() ? E_INVAL : err)) != E_OK) goto ret1;
 
@@ -244,13 +250,81 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
 
     msg->state = MSG_RECIEVED;
 
+    info("recieve message %d from box %d.\n", msg->id, box->id);
+
     box->nmsg--;
 
-    *msgid = msg->id;
+    msg->owner = proc_now();
+
+    if (msg != NULL) *msgid = msg->id;
 
 ret1:
     mutex_unlock(&box->lock);
 
+    return err;
+}
+
+int msg_delmsg(uint msg_id)
+{
+    struct msg_t *msg = NULL;
+
+    int err = idx_alct_find(&MSG.msg_alct, msg_id, (void *)&msg);
+
+    if (err != E_OK) goto err1;
+
+    mutex_lock(&msg->lock);
+
+    if (err = (msg->owner != proc_now() ? E_INVAL : E_OK)) goto err2;
+
+    if (err = (msg->state == MSG_SENDED ? E_INVAL : E_OK)) goto err2;
+
+    err = idx_alct_delete(&MSG.msg_alct, msg->id);
+
+    assert(err == E_OK);
+
+    kmfree(msg);
+
+    info("delete message %d.\n", msg->id);
+
+    return err;
+
+err2:
+    mutex_unlock(&msg->lock);
+
+err1:
+    return err;
+}
+
+int msg_delbox(uint box_id)
+{
+    struct msgbox_t *box = NULL;
+
+    int err = idx_alct_find(&MSG.box_alct, box_id, (void *)&box);
+
+    if (err != E_OK) goto err1;
+
+    mutex_lock(&box->lock);
+
+    if (err = (box->owner != proc_now() ? E_INVAL : E_OK)) goto err2;
+
+    if (err = (box->state == BOX_RCV_BLK ? E_INVAL : E_OK)) goto err2;
+
+    if (err = (box->nmsg > 0 ? E_INVAL : E_OK)) goto err2;
+
+    err = idx_alct_delete(&MSG.box_alct, box->id);
+
+    assert(err == E_OK);
+
+    kmfree(box);
+
+    info("delete box %d.\n", box->id);
+
+    return err;
+
+err2:
+    mutex_unlock(&box->lock);
+
+err1:
     return err;
 }
 
@@ -269,6 +343,10 @@ int msg_init(void)
     syscall_register(SYS_msg_recieve, msg_recieve, 3);
 
     syscall_register(SYS_msg_read, msg_read, 4);
+
+    syscall_register(SYS_msg_delmsg, msg_delmsg, 1);
+
+    syscall_register(SYS_msg_delbox, msg_delbox, 1);
 
     return E_OK;
 }

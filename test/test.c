@@ -10,7 +10,6 @@ extern int mmu_test(void);
 extern int proc_test(void);
 extern int rbt_test(void);
 extern int mm_test(void);
-extern int msg_test(void);
 
 int test(void)
 {
@@ -21,8 +20,6 @@ int test(void)
     // mm_test();
 
     // mmu_test();
-
-    msg_test();
 
     proc_test();
 
