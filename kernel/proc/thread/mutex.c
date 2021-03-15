@@ -33,6 +33,18 @@ void mutex_lock(struct mutex_t *mutex)
     assert(mutex->owner == thread_now()); 
 }
 
+int mutex_trylock(struct mutex_t *mutex)
+{
+    if (atomic_sub_and_test(&mutex->count, 1))
+    {
+        mutex->owner = thread_now();
+
+        return 1;
+    }
+
+    return 0;
+}
+
 void mutex_unlock(struct mutex_t *mutex)
 {
     assert(mutex->owner == thread_now());

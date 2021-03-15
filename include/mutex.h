@@ -17,6 +17,8 @@ void mutex_init(struct mutex_t *mutex);
 
 void mutex_lock(struct mutex_t *mutex);
 
+int mutex_trylock(struct mutex_t *mutex);
+
 void mutex_unlock(struct mutex_t *mutex);
 
 #endif

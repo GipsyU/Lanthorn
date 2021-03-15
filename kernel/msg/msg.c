@@ -20,7 +20,7 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
 
     for (uint i = 0; i < MSG_MAX; ++i)
     {
-        if (spin_trylock(&MSG.msg[i].lock))
+        if (mutex_trylock(&MSG.msg[i].lock))
         {
             if (MSG.msg[i].state == MSG_UNUSED)
             {
@@ -38,12 +38,12 @@ int msg_newmsg(uint *id, addr_t addr, size_t size)
 
                 *id = i;
 
-                spin_unlock(&MSG.msg[i].lock);
+                mutex_unlock(&MSG.msg[i].lock);
 
                 return E_OK;
             }
 
-            spin_unlock(&MSG.msg[i].lock);
+            mutex_unlock(&MSG.msg[i].lock);
         }
     }
 
@@ -55,7 +55,7 @@ int msg_newbox(uint *id)
 
     for (uint i = 0; i < MSG_MAX; ++i)
     {
-        if (spin_trylock(&MSG.box[i].lock))
+        if (mutex_trylock(&MSG.box[i].lock))
         {
             if (MSG.box[i].state == BOX_UNUSED)
             {
@@ -71,12 +71,12 @@ int msg_newbox(uint *id)
 
                 *id = i;
 
-                spin_unlock(&MSG.box[i].lock);
+                mutex_unlock(&MSG.box[i].lock);
 
                 return E_OK;
             }
 
-            spin_unlock(&MSG.box[i].lock);
+            mutex_unlock(&MSG.box[i].lock);
         }
     }
 
@@ -87,24 +87,24 @@ int msg_send(uint box_id, uint msg_id)
 {
     struct msgbox_t *msgbox = NULL;
 
-    spin_lock(&MSG.msg[msg_id].lock);
+    mutex_lock(&MSG.msg[msg_id].lock);
 
     if (MSG.msg[msg_id].state != MSG_UNSEND)
     {
-        spin_unlock(&MSG.msg[msg_id].lock);
+        mutex_unlock(&MSG.msg[msg_id].lock);
 
         return E_INVAL;
     }
 
     assert(MSG.msg[msg_id].addr >= KERN_BASE);
 
-    spin_lock(&MSG.box[box_id].lock);
+    mutex_lock(&MSG.box[box_id].lock);
 
     if (MSG.box[box_id].state == BOX_UNUSED)
     {
-        spin_unlock(&MSG.box[box_id].lock);
+        mutex_unlock(&MSG.box[box_id].lock);
 
-        spin_unlock(&MSG.msg[msg_id].lock);
+        mutex_unlock(&MSG.msg[msg_id].lock);
 
         return E_INVAL;
     }
@@ -122,27 +122,27 @@ int msg_send(uint box_id, uint msg_id)
 
     MSG.msg[msg_id].state = MSG_SENDED;
 
-    spin_unlock(&MSG.box[box_id].lock);
+    mutex_unlock(&MSG.box[box_id].lock);
 
-    spin_unlock(&MSG.msg[msg_id].lock);
+    mutex_unlock(&MSG.msg[msg_id].lock);
 
     return E_OK;
 }
 
 int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size)
 {
-    spin_lock(&MSG.msg[msg_id].lock);
+    mutex_lock(&MSG.msg[msg_id].lock);
 
     if (MSG.msg[msg_id].state != MSG_RECIEVED)
     {
-        spin_unlock(&MSG.msg[msg_id].lock);
+        mutex_unlock(&MSG.msg[msg_id].lock);
 
         return E_INVAL;
     }
 
     if (offset + size > MSG.msg[msg_id].size)
     {
-        spin_unlock(&MSG.msg[msg_id].lock);
+        mutex_unlock(&MSG.msg[msg_id].lock);
 
         return E_INVAL;
     }
@@ -151,25 +151,25 @@ int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size)
 
     memcpy(cache, MSG.msg[msg_id].addr + offset, size);
 
-    spin_unlock(&MSG.msg[msg_id].lock);
+    mutex_unlock(&MSG.msg[msg_id].lock);
 
     return E_OK;
 }
 
 int msg_size(uint msg_id, size_t *size)
 {
-    spin_lock(&MSG.msg[msg_id].lock);
+    mutex_lock(&MSG.msg[msg_id].lock);
 
     if (MSG.msg[msg_id].state != MSG_RECIEVED)
     {
-        spin_unlock(&MSG.msg[msg_id].lock);
+        mutex_unlock(&MSG.msg[msg_id].lock);
 
         return E_INVAL;
     }
 
     *size = MSG.msg[msg_id].size;
 
-    spin_unlock(&MSG.msg[msg_id].lock);
+    mutex_unlock(&MSG.msg[msg_id].lock);
 
     return E_OK;
 }
@@ -178,7 +178,7 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
 {
     int err = E_OK;
 
-    spin_lock(&MSG.box[boxid].lock);
+    mutex_lock(&MSG.box[boxid].lock);
 
     struct msgbox_t *box = &MSG.box[boxid];
 
@@ -200,11 +200,11 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
 
             intr_irq_save();
 
-            spin_unlock(&box->lock);
+            mutex_unlock(&box->lock);
 
             schd_block(thread_now());
 
-            spin_lock(&box->lock);
+            mutex_lock(&box->lock);
 
             intr_irq_restore();
 
@@ -232,7 +232,7 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
 
 ret1:
 
-    spin_unlock(&box->lock);
+    mutex_unlock(&box->lock);
 
     return err;
 }
@@ -241,7 +241,7 @@ int msg_init(void)
 {
     for (uint i = 0; i < MSG_MAX; ++i)
     {
-        spin_init(&MSG.msg[i].lock);
+        mutex_init(&MSG.msg[i].lock);
 
         MSG.msg[i].id = i;
 
@@ -250,7 +250,7 @@ int msg_init(void)
 
     for (uint i = 0; i < MSG_MAX; ++i)
     {
-        spin_init(&MSG.box[i].lock);
+        mutex_init(&MSG.box[i].lock);
 
         MSG.box[i].id = i;
 

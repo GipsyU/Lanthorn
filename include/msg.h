@@ -1,9 +1,9 @@
 #ifndef _MSG_H_
 #define _MSG_H_
 #include <list.h>
+#include <mutex.h>
 #include <proc.h>
 #include <spinlock.h>
-
 struct msg_t
 {
     uint id;
@@ -18,7 +18,7 @@ struct msg_t
     uint to;
     addr_t addr;
     size_t size;
-    struct spinlock_t lock;
+    struct mutex_t lock;
     struct list_node_t box_ln;
 };
 
@@ -34,7 +34,7 @@ struct msgbox_t
     uint nmsg;
     struct proc_t *owner;
     struct thread_t *blk_thread;
-    struct spinlock_t lock;
+    struct mutex_t lock;
     struct list_node_t msg_ls;
 };
 

@@ -57,13 +57,10 @@ static int page_fault_hdl(uint errno)
         info("page fault: present, addr = %p.\n", errv);
 
         if (errv >= KERN_BASE)
-        {
             mmu_sync_kern_space(proc_0.ptb.pde, mmu_get_pde(), errv, PAGE_SIZE);
-        }
+
         else
-        {
             um_page_fault_hdl(&(proc_now()->um), &(proc_now()->ptb), errv);
-        }
     }
     else if (errno & PF_W)
     {
@@ -201,24 +198,24 @@ int kmfree(addr_t addr)
 {
     int err = E_OK;
 
-    if (ROUND_DOWN(addr, PAGE_SIZE) == addr)
-    {
-        struct vpage_t *vp;
+    // if (ROUND_DOWN(addr, PAGE_SIZE) == addr)
+    // {
+    //     struct vpage_t *vp;
 
-        err = vm_search_addr(&kvm_alct, addr, &vp);
+    //     err = vm_search_addr(&kvm_alct, addr, &vp);
 
-        if (err != E_OK) return err;
+    //     if (err != E_OK) return err;
 
-        err = pm_free(&pm_alct, vp->map_page);
+    //     err = pm_free(&pm_alct, vp->map_page);
 
-        if (err != E_OK) return err;
+    //     if (err != E_OK) return err;
 
-        err = vm_free(&kvm_alct, vp);
-    }
-    else
-    {
-        err = slab_free(&slab_alct, addr);
-    }
+    //     err = vm_free(&kvm_alct, vp);
+    // }
+    // else
+    // {
+    //     err = slab_free(&slab_alct, addr);
+    // }
 
     return err;
 }
