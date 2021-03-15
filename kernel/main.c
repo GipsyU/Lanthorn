@@ -93,7 +93,7 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     }
 
     err = tmp_init();
-  
+
     test();
 
     info("Lanthorn kernel init finished.\n");

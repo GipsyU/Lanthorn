@@ -196,11 +196,9 @@ ret1:
     return err;
 }
 
-int idx_aclt_init(struct idx_alct_t *alct)
+void idx_aclt_init(struct idx_alct_t *alct)
 {
     rbt_init(&alct->rbt);
 
     mutex_init(&alct->mutex);
-
-    return E_OK;
 }

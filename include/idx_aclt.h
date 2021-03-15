@@ -16,6 +16,6 @@ int idx_alct_find(struct idx_alct_t *alct, int id, addr_t *addr);
 
 int idx_alct_delete(struct idx_alct_t *alct, int id);
 
-int idx_aclt_init(struct idx_alct_t *alct);
+void idx_aclt_init(struct idx_alct_t *alct);
 
 #endif

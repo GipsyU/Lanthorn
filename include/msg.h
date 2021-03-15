@@ -6,7 +6,7 @@
 #include <spinlock.h>
 struct msg_t
 {
-    uint id;
+    int id;
     enum MSG_STATE
     {
         MSG_UNUSED,
@@ -18,6 +18,7 @@ struct msg_t
     uint to;
     addr_t addr;
     size_t size;
+    struct proc_t *owner;
     struct mutex_t lock;
     struct list_node_t box_ln;
 };

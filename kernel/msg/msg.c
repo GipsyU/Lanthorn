@@ -1,4 +1,5 @@
 #include <error.h>
+#include <idx_aclt.h>
 #include <log.h>
 #include <memory.h>
 #include <msg.h>
@@ -7,185 +8,197 @@
 #include <thread.h>
 #include <util.h>
 
-#define MSG_MAX 256
 static struct
 {
-    struct msg_t msg[MSG_MAX];
-    struct msgbox_t box[MSG_MAX];
+    struct idx_alct_t msg_alct;
+    struct idx_alct_t box_alct;
 } MSG;
 
 int msg_newmsg(uint *id, addr_t addr, size_t size)
 {
-    int err = E_OK;
+    struct msg_t *msg;
 
-    for (uint i = 0; i < MSG_MAX; ++i)
-    {
-        if (mutex_trylock(&MSG.msg[i].lock))
-        {
-            if (MSG.msg[i].state == MSG_UNUSED)
-            {
-                list_init(&MSG.msg[i].box_ln);
+    int err = kmalloc((void *)&msg, sizeof(struct msg_t));
 
-                err = kmalloc(&MSG.msg[i].addr, size);
+    if (err != E_OK) goto err1;
 
-                if (err != E_OK)
-                {
-                    mutex_unlock(&MSG.msg[i].lock);
+    mutex_init(&msg->lock);
 
-                    return err;    
-                }
+    mutex_lock(&msg->lock);
 
-                memcpy(MSG.msg[i].addr, addr, size);
+    err = idx_alct_new(&MSG.msg_alct, msg, &msg->id);
 
-                MSG.msg[i].size = size;
+    if (err != E_OK) goto err2;
 
-                MSG.msg[i].state = MSG_UNSEND;
+    list_init(&msg->box_ln);
 
-                *id = i;
+    err = kmalloc(&msg->addr, size);
 
-                mutex_unlock(&MSG.msg[i].lock);
+    if (err != E_OK) goto err3;
 
-                return E_OK;
-            }
+    memcpy(msg->addr, addr, size);
 
-            mutex_unlock(&MSG.msg[i].lock);
-        }
-    }
+    msg->size = size;
 
-    return E_NOSLOT;
+    msg->owner = proc_now();
+
+    msg->state = MSG_UNSEND;
+
+    if (id != NULL) *id = msg->id;
+
+    mutex_unlock(&msg->lock);
+
+    return err;
+
+err3:
+    idx_alct_delete(&MSG.msg_alct, msg->id);
+
+err2:
+    kmfree(msg);
+
+err1:
+    return err;
 }
+
 int msg_newbox(uint *id)
 {
-    int err = E_OK;
+    struct msgbox_t *box;
 
-    for (uint i = 0; i < MSG_MAX; ++i)
-    {
-        if (mutex_trylock(&MSG.box[i].lock))
-        {
-            if (MSG.box[i].state == BOX_UNUSED)
-            {
-                list_init(&MSG.box[i].msg_ls);
+    int err = kmalloc((void *)&box, sizeof(struct msgbox_t));
 
-                MSG.box[i].nmsg = 0;
+    if (err != E_OK) goto err1;
 
-                MSG.box[i].state = BOX_RCVABLE;
+    mutex_init(&box->lock);
 
-                MSG.box[i].owner = proc_now();
+    mutex_lock(&box->lock);
 
-                MSG.box[i].blk_thread = NULL;
+    err = idx_alct_new(&MSG.box_alct, box, &box->id);
 
-                *id = i;
+    if (err != E_OK) goto err2;
 
-                mutex_unlock(&MSG.box[i].lock);
+    box->nmsg = 0;
 
-                return E_OK;
-            }
+    box->blk_thread = NULL;
 
-            mutex_unlock(&MSG.box[i].lock);
-        }
-    }
+    box->state = BOX_RCVABLE;
 
-    return E_NOSLOT;
+    box->owner = proc_now();
+
+    list_init(&box->msg_ls);
+
+    if (id != NULL) *id = box->id;
+
+    mutex_unlock(&box->lock);
+
+    return err;
+
+err2:
+    kmfree(box);
+
+err1:
+    return err;
 }
 
 int msg_send(uint box_id, uint msg_id)
 {
-    struct msgbox_t *msgbox = NULL;
+    struct msg_t *msg = NULL;
 
-    mutex_lock(&MSG.msg[msg_id].lock);
+    int err = idx_alct_find(&MSG.msg_alct, msg_id, (void *)&msg);
 
-    if (MSG.msg[msg_id].state != MSG_UNSEND)
+    if (err != E_OK) goto ret1;
+
+    mutex_lock(&msg->lock);
+
+    struct msgbox_t *box = NULL;
+
+    err = idx_alct_find(&MSG.box_alct, box_id, (void *)&box);
+
+    if (err != E_OK) goto ret2;
+
+    mutex_lock(&box->lock);
+
+    if (err = (msg->owner != proc_now() ? E_INVAL : E_OK)) goto ret3;
+
+    if (err = (msg->state != MSG_UNSEND ? E_INVAL : E_OK)) goto ret3;
+
+    if (err = (box->state == BOX_UNUSED ? E_INVAL : E_OK)) goto ret3;
+
+    list_push_back(&box->msg_ls, &msg->box_ln);
+
+    box->nmsg++;
+
+    if (box->state == BOX_RCV_BLK)
     {
-        mutex_unlock(&MSG.msg[msg_id].lock);
+        schd_run(box->blk_thread);
 
-        return E_INVAL;
+        box->blk_thread = NULL;
     }
 
-    assert(MSG.msg[msg_id].addr >= KERN_BASE);
+    msg->state = MSG_SENDED;
 
-    mutex_lock(&MSG.box[box_id].lock);
+ret3:
+    mutex_unlock(&box->lock);
 
-    if (MSG.box[box_id].state == BOX_UNUSED)
-    {
-        mutex_unlock(&MSG.box[box_id].lock);
+ret2:
+    mutex_unlock(&msg->lock);
 
-        mutex_unlock(&MSG.msg[msg_id].lock);
-
-        return E_INVAL;
-    }
-
-    list_push_back(&MSG.box[box_id].msg_ls, &MSG.msg[msg_id].box_ln);
-
-    MSG.box[box_id].nmsg++;
-
-    if (MSG.box[box_id].state == BOX_RCV_BLK)
-    {
-        schd_run(MSG.box[box_id].blk_thread);
-
-        MSG.box[box_id].blk_thread = NULL;
-    }
-
-    MSG.msg[msg_id].state = MSG_SENDED;
-
-    mutex_unlock(&MSG.box[box_id].lock);
-
-    mutex_unlock(&MSG.msg[msg_id].lock);
-
-    return E_OK;
+ret1:
+    return err;
 }
 
 int msg_read(uint msg_id, addr_t cache, addr_t offset, size_t size)
 {
-    mutex_lock(&MSG.msg[msg_id].lock);
+    struct msg_t *msg = NULL;
 
-    if (MSG.msg[msg_id].state != MSG_RECIEVED)
-    {
-        mutex_unlock(&MSG.msg[msg_id].lock);
+    int err = idx_alct_find(&MSG.msg_alct, msg_id, (void *)&msg);
 
-        return E_INVAL;
-    }
+    if (err != E_OK) goto ret1;
 
-    if (offset + size > MSG.msg[msg_id].size)
-    {
-        mutex_unlock(&MSG.msg[msg_id].lock);
+    mutex_lock(&msg->lock);
 
-        return E_INVAL;
-    }
+    if (err = (msg->state != MSG_RECIEVED ? E_INVAL : E_OK)) goto ret2;
 
-    uint *x = MSG.msg[msg_id].addr;
+    if (err = (offset + size > msg->size ? E_INVAL : E_OK)) goto ret2;
 
-    memcpy(cache, MSG.msg[msg_id].addr + offset, size);
+    memcpy(cache, msg->addr + offset, size);
 
-    mutex_unlock(&MSG.msg[msg_id].lock);
+ret2:
+    mutex_unlock(&msg->lock);
 
-    return E_OK;
+ret1:
+    return err;
 }
 
 int msg_size(uint msg_id, size_t *size)
 {
-    mutex_lock(&MSG.msg[msg_id].lock);
+    struct msg_t *msg = NULL;
 
-    if (MSG.msg[msg_id].state != MSG_RECIEVED)
-    {
-        mutex_unlock(&MSG.msg[msg_id].lock);
+    int err = idx_alct_find(&MSG.msg_alct, msg_id, (void *)&msg);
 
-        return E_INVAL;
-    }
+    if (err != E_OK) goto ret1;
 
-    *size = MSG.msg[msg_id].size;
+    mutex_lock(&msg->lock);
 
-    mutex_unlock(&MSG.msg[msg_id].lock);
+    if (err = (msg->state != MSG_RECIEVED ? E_INVAL : E_OK)) goto ret2;
 
-    return E_OK;
+    *size = msg->size;
+
+ret2:
+    mutex_unlock(&msg->lock);
+
+ret1:
+    return err;
 }
 
 int msg_recieve(uint boxid, uint *msgid, uint is_block)
 {
-    int err = E_OK;
+    struct msgbox_t *box = NULL;
 
-    mutex_lock(&MSG.box[boxid].lock);
+    int err = idx_alct_find(&MSG.box_alct, boxid, (void *)&box);
 
-    struct msgbox_t *box = &MSG.box[boxid];
+    if (err != E_OK) goto ret1;
+
+    mutex_lock(&box->lock);
 
     if ((err = (box->state == BOX_UNUSED ? E_INVAL : err)) != E_OK) goto ret1;
 
@@ -236,7 +249,6 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
     *msgid = msg->id;
 
 ret1:
-
     mutex_unlock(&box->lock);
 
     return err;
@@ -244,23 +256,9 @@ ret1:
 
 int msg_init(void)
 {
-    for (uint i = 0; i < MSG_MAX; ++i)
-    {
-        mutex_init(&MSG.msg[i].lock);
+    idx_aclt_init(&MSG.msg_alct);
 
-        MSG.msg[i].id = i;
-
-        MSG.msg[i].state = MSG_UNUSED;
-    }
-
-    for (uint i = 0; i < MSG_MAX; ++i)
-    {
-        mutex_init(&MSG.box[i].lock);
-
-        MSG.box[i].id = i;
-
-        MSG.box[i].state = BOX_UNUSED;
-    }
+    idx_aclt_init(&MSG.box_alct);
 
     syscall_register(SYS_msg_newmsg, msg_newmsg, 3);
 
