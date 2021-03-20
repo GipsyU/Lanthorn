@@ -1,10 +1,13 @@
-#include <log.h>
-#include <error.h>
-#include <boot_arg.h>
-#include <io.h>
-#include <cpu.h>
 #include "mboot.h"
 #include <arch/cpu.h>
+#include <boot_arg.h>
+#include <cpu.h>
+#include <elf.h>
+#include <error.h>
+#include <io.h>
+#include <log.h>
+#include <mp.h>
+#include <string.h>
 
 extern void __attribute__((noreturn)) main(struct boot_arg_t);
 extern int uart_init(void);
@@ -27,7 +30,7 @@ static int add_memory(addr_t addr, size_t size)
     boot_arg.free_pmm_start = addr;
 
     boot_arg.free_pmm_size = size;
-    
+
     return E_OK;
 }
 
@@ -40,7 +43,7 @@ static int collect_mm_info(void)
     boot_arg.kern_end = (addr_t)kern_end;
 
     addr_t kstart = (addr_t)kern_start - KERN_BASE;
-    
+
     addr_t kend = (addr_t)kern_end - KERN_BASE;
 
     info("kern start physical addr: %p, kern end physical addr: %p.\n", kstart, kend);
@@ -49,7 +52,7 @@ static int collect_mm_info(void)
      * FIXME:1024
      */
 
-    #define DEV_BASE 0xFE000000
+#define DEV_BASE 0xFE000000
 
     boot_arg.free_kvm_start = KERN_BASE + CONFIG_NR_BOOT_PTE * (1024) * PAGE_SIZE;
 
@@ -110,7 +113,7 @@ static int setup_lp(void)
     }
 
     cpu_set_task(cpuid, cpu_schd(cpuid));
-    
+
     err = gdt_init(cpu->gdt, &cpu->tss);
 
     if (err != E_OK)
@@ -136,8 +139,12 @@ static int setup_lp(void)
     return err;
 }
 
+extern char _binary_arch_x86_boot__apboot_o_start[];
+extern char _binary_arch_x86_boot__apboot_o_size[];
+
 void __attribute__((noreturn)) setup(void)
 {
+
     int err = E_OK;
 
     uart_init();
@@ -167,7 +174,7 @@ void __attribute__((noreturn)) setup(void)
     }
 
     err = intr_init();
-    
+
     if (err != E_OK)
     {
         error("init intr failed, err = %s.\n", strerror(err));
@@ -209,8 +216,31 @@ void __attribute__((noreturn)) setup(void)
     {
         info("collect mm info success.\n");
     }
-    
+
+    memcpy(0x7000 + KERN_BASE, _binary_arch_x86_boot__apboot_o_start, _binary_arch_x86_boot__apboot_o_size);
+
     info("finish setup x86 arch.\n");
 
     main(boot_arg);
+}
+
+extern addr_t PDE[];
+
+int cpu_startap(int cpuid, addr_t routine, addr_t stka, size_t stksz)
+{
+    if (cpuid >= boot_arg.ncpu) return E_INVAL;
+
+    addr_t *param = 0x7000 + KERN_BASE - 4 * sizeof(addr_t);
+
+    param[0] = setup_lp;
+
+    param[1] = stka + stksz;
+
+    param[2] = routine;
+
+    param[3] = (addr_t)PDE - KERN_BASE;
+
+    lapic_startap(cpuid, 0x7000);
+
+    return E_OK;
 }

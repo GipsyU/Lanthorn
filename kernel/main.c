@@ -19,6 +19,13 @@ extern int sysctrl_init(void);
 
 extern int tmp_init(void);
 
+void main_ap(void)
+{
+    debug("OK\n");
+
+    while(1);
+}
+
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
     int err = E_OK;
@@ -93,6 +100,14 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
     }
 
     err = tmp_init();
+
+    addr_t stk;
+
+    err = kmalloc(&stk, PAGE_SIZE);
+
+    cpu_startap(1, main_ap, stk, PAGE_SIZE);
+
+    while(1);
 
     test();
 

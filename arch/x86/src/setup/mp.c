@@ -197,7 +197,7 @@ int mp_init(int *num_cpu)
             struct cpu_t *cpu;
 
             err = cpu_new(&cpu);
-            
+
             if (err != E_OK)
             {
                 error("new cpu error, err = %s.\n", strerror(err));

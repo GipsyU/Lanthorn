@@ -185,7 +185,7 @@ static int map_dev(void)
         PDE[addr >> 22] = addr | PT_P | PT_W | PDE_PS;
     }
 
-    mmu_pde_switch((addr_t)PDE - KERN_BASE);
+    mmu_reflush(DEV_BASE);
 
     return E_OK;
 }
@@ -200,7 +200,7 @@ int mmu_init(addr_t *pde)
 
     if (err != E_OK) return err;
 
-    err = disable_low_map();
+    // err = disable_low_map();
 
     if (err != E_OK) return err;
 

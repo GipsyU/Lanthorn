@@ -1,15 +1,4 @@
 #include "boot.h"
-MBOOT_HEADER_MAGIC = 0x1BADB002
-MBOOT_PAGE_ALIGN = 1 << 0
-MBOOT_MEM_INFO = 1 << 1
-MBOOT_HEADER_FLAGS = MBOOT_PAGE_ALIGN | MBOOT_MEM_INFO
-MBOOT_CHECKSUM = -(MBOOT_HEADER_MAGIC+MBOOT_HEADER_FLAGS)
-CR4_PSE		=	0x00000010
-KERN_BASE	=	0xC0000000
-CR0_PE		=	0x00000001	// Protection Enable
-CR0_WP		=	0x00010000	// Write Protect
-CR0_PG		=	0x80000000	// Paging
-
 	.code32
 	.section ".mboot_header", "a"
 .long MBOOT_HEADER_MAGIC
@@ -17,7 +6,7 @@ CR0_PG		=	0x80000000	// Paging
 .long MBOOT_CHECKSUM
 	
 	.section ".boot_text", "ax"
-	.global _start
+	.globl _start
 	.extern mboot_ptr
 	.extern PDE
 	.extern BOOTSTACK
@@ -32,6 +21,11 @@ _start:
 __start:
 	movl 	$0x10,	%eax
 	movl	%eax,	%ds
+	movl	%eax,	%es
+	movl	%eax,	%ss
+	movl 	$0x0,	%eax
+	movl	%eax,	%fs
+	movl	%eax,	%gs
 
 	movl    %cr4,	%eax
 	orl		$(CR4_PSE),	%eax
@@ -52,6 +46,7 @@ __start:
 	
 	calll	setup
 
+	.p2align 2
 gdt:
   SEG_NULLASM
   SEG_ASM(STA_X|STA_R, 0, 0xffffffff)

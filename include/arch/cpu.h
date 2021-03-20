@@ -11,6 +11,8 @@ void cpu_set_task(uint cpuid, struct task_t *task);
 
 struct task_t *cpu_schd(uint cpuid);
 
+int cpu_startap(int cpuid, addr_t routine, addr_t stka, size_t stksz);
+
 #define cpu_relax() asm volatile("rep;nop;");
 
 #endif
