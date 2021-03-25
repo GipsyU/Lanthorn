@@ -11,9 +11,9 @@
 
 void mmu_pp_clean(addr_t pa);
 
-void mmu_pm_set(addr_t pa, u32 val);
+void mmu_pm_set(addr_t pa, u32_t val);
 
-u32 mmu_pm_get(addr_t pa);
+u32_t mmu_pm_get(addr_t pa);
 
 int mmu_map(addr_t pde, addr_t va, addr_t pa, uint usr, uint wtb);
 

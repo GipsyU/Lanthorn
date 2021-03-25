@@ -2,6 +2,7 @@
 #include <error.h>
 #include <log.h>
 #include <syscall.h>
+#include <spinlock.h>
 
 static addr_t syscalls[NR_SYSCALL];
 

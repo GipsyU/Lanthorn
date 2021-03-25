@@ -33,18 +33,22 @@ start32:
     orl     $(CR4_PSE), %eax
     movl    %eax, %cr4
 # Use entrypgdir as our initial page table
-    movl    (_start-4), %eax
+    movl    (_start-8), %eax
     movl    %eax, %cr3
 # Turn on paging.
     movl    %cr0, %eax
     orl     $(CR0_PG|CR0_WP), %eax
     movl    %eax, %cr0
 
-    movl    (_start - 12), %esp
+    movl    (_start - 16), %esp
 
-    call	*(_start - 16)
+    call	*(_start - 20)
 
-    call    *(_start - 8)
+    movl    (_start - 4),   %eax
+
+    movl    $1, (%eax)
+
+    call    *(_start - 12)
 
 spin:
     jmp     spin

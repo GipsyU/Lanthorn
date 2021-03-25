@@ -18,72 +18,71 @@
 
 #define SEL_TSS (5 << 3)
 
+#define FL_IF 0x00000200
+
 struct seg_t
 {
-    u32 lim_15_0 : 16;  // Low bits of segment limit
-    u32 base_15_0 : 16; // Low bits of segment base address
-    u32 base_23_16 : 8; // Middle bits of segment base address
-    u32 type : 4;       // Segment type (see STS_ constants)
-    u32 s : 1;          // 0 = system, 1 = application
-    u32 dpl : 2;        // Descriptor Privilege Level
-    u32 p : 1;          // Present
-    u32 lim_19_16 : 4;  // High bits of segment limit
-    u32 avl : 1;        // Unused (available for software use)
-    u32 rsv1 : 1;       // Reserved
-    u32 db : 1;         // 0 = 16-bit segment, 1 = 32-bit segment
-    u32 g : 1;          // Granularity: limit scaled by 4K when set
-    u32 base_31_24 : 8; // High bits of segment base address
+    u32_t lim_15_0 : 16;  // Low bits of segment limit
+    u32_t base_15_0 : 16; // Low bits of segment base address
+    u32_t base_23_16 : 8; // Middle bits of segment base address
+    u32_t type : 4;       // Segment type (see STS_ constants)
+    u32_t s : 1;          // 0 = system, 1 = application
+    u32_t dpl : 2;        // Descriptor Privilege Level
+    u32_t p : 1;          // Present
+    u32_t lim_19_16 : 4;  // High bits of segment limit
+    u32_t avl : 1;        // Unused (available for software use)
+    u32_t rsv1 : 1;       // Reserved
+    u32_t db : 1;         // 0 = 16-bit segment, 1 = 32-bit segment
+    u32_t g : 1;          // Granularity: limit scaled by 4K when set
+    u32_t base_31_24 : 8; // High bits of segment base address
 };
 
 struct tss_t
 {
-    u32 link; // Old ts selector
-    u32 esp0; // Stack pointers and segment selectors
-    u16 ss0;  //   after an increase in privilege level
-    u16 padding1;
-    u32 *esp1;
-    u16 ss1;
-    u16 padding2;
-    u32 *esp2;
-    u16 ss2;
-    u16 padding3;
+    u32_t link; // Old ts selector
+    u32_t esp0; // Stack pointers and segment selectors
+    u16_t ss0;  //   after an increase in privilege level
+    u16_t padding1;
+    u32_t *esp1;
+    u16_t ss1;
+    u16_t padding2;
+    u32_t *esp2;
+    u16_t ss2;
+    u16_t padding3;
     void *cr3; // Page directory base
-    u32 *eip;  // Saved state from last task switch
-    u32 eflags;
-    u32 eax; // More saved state (registers)
-    u32 ecx;
-    u32 edx;
-    u32 ebx;
-    u32 *esp;
-    u32 *ebp;
-    u32 esi;
-    u32 edi;
-    u16 es; // Even more saved state (segment selectors)
-    u16 padding4;
-    u16 cs;
-    u16 padding5;
-    u16 ss;
-    u16 padding6;
-    u16 ds;
-    u16 padding7;
-    u16 fs;
-    u16 padding8;
-    u16 gs;
-    u16 padding9;
-    u16 ldt;
-    u16 padding10;
-    u16 t;    // Trap on task switch
-    u16 iomb; // I/O map base address
+    u32_t *eip;  // Saved state from last task switch
+    u32_t eflags;
+    u32_t eax; // More saved state (registers)
+    u32_t ecx;
+    u32_t edx;
+    u32_t ebx;
+    u32_t *esp;
+    u32_t *ebp;
+    u32_t esi;
+    u32_t edi;
+    u16_t es; // Even more saved state (segment selectors)
+    u16_t padding4;
+    u16_t cs;
+    u16_t padding5;
+    u16_t ss;
+    u16_t padding6;
+    u16_t ds;
+    u16_t padding7;
+    u16_t fs;
+    u16_t padding8;
+    u16_t gs;
+    u16_t padding9;
+    u16_t ldt;
+    u16_t padding10;
+    u16_t t;    // Trap on task switch
+    u16_t iomb; // I/O map base address
 };
 
-static inline void sti(void)
+static inline uint read_eflags(void)
 {
-    asm volatile("sti");
-}
-
-static inline void cli(void)
-{
-    asm volatile("cli");
+    uint eflags;
+    asm volatile("pushfl; popl %0" : "=r" (eflags));
+    return eflags;
 }
 
 #endif

@@ -1,16 +1,10 @@
 #include <arch/task.h>
 #include <error.h>
+#include <log.h>
+#include <spinlock.h>
 
-struct context_t
-{
-    u32 edi;
-    u32 esi;
-    u32 ebx;
-    u32 ebp;
-    u32 eip;
-};
-
-extern void context_switch(struct context_t **o, struct context_t *n);
+extern void context_switch(struct context_t *o, struct context_t *n, void (*func)(addr_t args), addr_t args);
+extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga, size_t argsz);
 
 int task_kern_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t exe, uint nargs, ...)
 {
@@ -18,28 +12,30 @@ int task_kern_init(struct task_t *task, addr_t saddr, size_t ssize, addr_t exe, 
 
     task->ssize = ssize;
 
-    task->sp = saddr + ssize;
+    addr_t sp = saddr + ssize;
 
-    long *_sp = (void *)(task->sp -= sizeof(long) * nargs);
+    long *_sp = (void *)(sp -= sizeof(long) * nargs);
 
     long *args = (void *)(((addr_t)&nargs) + sizeof(nargs));
 
     for (uint i = 0; i < nargs; ++i) _sp[i] = args[i];
 
-    _sp = (void *)(task->sp -= sizeof(exe));
+    _sp = (void *)(sp -= sizeof(exe));
 
     *_sp = NULL;
 
-    struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
+    _sp = (void *)(sp -= sizeof(exe));
 
-    context->eip = exe;
+    *_sp = exe;
 
-    context->ebp = saddr + ssize;
+    task->context.esp = sp;
+
+    task->context.ebp = saddr + ssize;
+
+    task->ncli = 1;
 
     return E_OK;
 }
-
-extern addr_t intr_user_init(addr_t ksp, addr_t run, addr_t usp, addr_t ubp, addr_t arga, size_t argsz);
 
 int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size_t uss, addr_t pre, addr_t run,
                    addr_t arga, size_t argsz)
@@ -48,22 +44,24 @@ int task_user_init(struct task_t *task, addr_t ksa, size_t kss, addr_t usa, size
 
     task->ssize = kss;
 
-    task->sp = ksa + kss;
+    task->context.esp = ksa + kss;
 
-    task->sp = intr_user_init(task->sp, run, usa + uss, usa + uss, arga, argsz);
+    task->context.esp = intr_user_init(task->context.esp, run, usa + uss, usa + uss, arga, argsz);
 
-    struct context_t *context = (void *)(task->sp -= sizeof(struct context_t));
+    long *sp = (void *)(task->context.esp -= sizeof(pre));
 
-    context->eip = pre;
+    *sp = pre;
 
-    context->ebp = ksa + kss;
+    task->context.ebp = ksa + kss;
+
+    task->ncli = 1;
 
     return E_OK;
 }
 
-void task_switch(struct task_t *o, struct task_t *n)
+void task_switch(struct task_t *o, struct task_t *n, void (*func)(addr_t args), addr_t args)
 {
-    context_switch((struct context_t **)&o->sp, (struct context_t *)n->sp);
+    context_switch(&o->context, &n->context, func, args);
 }
 
 int task_init(struct task_t *task)

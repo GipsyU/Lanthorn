@@ -9,17 +9,17 @@
         switch (size)                                                                                                  \
         {                                                                                                              \
         case 1: {                                                                                                      \
-            volatile u8 *__ptr = (volatile u8 *)(ptr);                                                                 \
+            volatile u8_t *__ptr = (volatile u8_t *)(ptr);                                                                 \
             asm volatile("lock;\nxchgb %0,%1" : "=q"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
         case 2: {                                                                                                      \
-            volatile u16 *__ptr = (volatile u16 *)(ptr);                                                               \
+            volatile u16_t *__ptr = (volatile u16_t *)(ptr);                                                               \
             asm volatile("lock;\nxchgw %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
         case 4: {                                                                                                      \
-            volatile u32 *__ptr = (volatile u32 *)(ptr);                                                               \
+            volatile u32_t *__ptr = (volatile u32_t *)(ptr);                                                               \
             asm volatile("lock;\nxchgl %0,%1" : "=r"(__x), "+m"(*__ptr) : "0"(__x) : "memory");                        \
             break;                                                                                                     \
         }                                                                                                              \
@@ -37,17 +37,17 @@
         switch (size)                                                                                                  \
         {                                                                                                              \
         case 1: {                                                                                                      \
-            volatile u8 *__ptr = (volatile u8 *)(ptr);                                                                 \
+            volatile u8_t *__ptr = (volatile u8_t *)(ptr);                                                                 \
             asm volatile("lock;\ncmpxchgb %2,%1" : "=a"(__ret), "+m"(*__ptr) : "q"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \
         case 2: {                                                                                                      \
-            volatile u16 *__ptr = (volatile u16 *)(ptr);                                                               \
+            volatile u16_t *__ptr = (volatile u16_t *)(ptr);                                                               \
             asm volatile("lock;\ncmpxchgw %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \
         case 4: {                                                                                                      \
-            volatile u32 *__ptr = (volatile u32 *)(ptr);                                                               \
+            volatile u32_t *__ptr = (volatile u32_t *)(ptr);                                                               \
             asm volatile("lock;\ncmpxchgl %2,%1" : "=a"(__ret), "+m"(*__ptr) : "r"(__new), "0"(__old) : "memory");     \
             break;                                                                                                     \
         }                                                                                                              \

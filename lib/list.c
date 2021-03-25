@@ -18,12 +18,7 @@ int list_isempty(struct list_node_t *head)
     /**
      * test
      */
-    if (head->n == head)
-    {
-        assert(head->p == head);
-
-        return 1;
-    }
+    if (head->n == head) return 1;
 
     return 0;
 }

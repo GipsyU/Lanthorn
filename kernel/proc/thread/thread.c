@@ -24,6 +24,8 @@ static void thread_enclosure(addr_t func, uint nargs, ...)
 {
     info("kern thread begin.\n");
 
+    spin_unlock(&scheduler.lock);
+
     intr_end();
 
     int err = E_OK;
@@ -87,7 +89,11 @@ static void thread_enclosure(addr_t func, uint nargs, ...)
 
 struct thread_t *thread_now(void)
 {
+    intr_irq_save();
+
     struct task_t *task = cpu_get_task(cpu_id());
+
+    intr_irq_restore();
 
     return container_of(task, struct thread_t, task);
 }
@@ -265,7 +271,7 @@ int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **
 
     threadn->task.ssize = threadn->ks_size;
 
-    threadn->task.sp = thread->task.sp - thread->task.saddr + stack;
+    // threadn->task.sp = thread->task.sp - thread->task.saddr + stack;
 
     addr_t *src = thread->ks_addr;
 
@@ -305,7 +311,7 @@ static int thread_sys_block(uint tid)
 
     if (thread->proc != proc_now()) return E_INVAL;
 
-    return schd_block(tid);
+    return schd_block(tid, NULL);
 }
 
 static int thread_sys_tid(uint *tid)

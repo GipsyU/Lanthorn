@@ -4,7 +4,7 @@
 #include <string.h>
 #define ELF_MAGIC 0x464C457F
 
-int elf_read(struct elf_t *elf, addr_t *entry)
+int elf_read(struct elf_header_t *elf, addr_t *entry)
 {
     if (elf->magic != ELF_MAGIC) return E_FAILE;
 
@@ -13,7 +13,7 @@ int elf_read(struct elf_t *elf, addr_t *entry)
     return E_OK;
 }
 
-int elf_load(struct elf_t *elf, addr_t addr)
+int elf_load(struct elf_header_t *elf, addr_t addr)
 {
     assert(elf->magic == ELF_MAGIC);
 

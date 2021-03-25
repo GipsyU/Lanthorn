@@ -8,9 +8,9 @@
 #include <util.h>
 
 #define PDE_PS 128 // Page size
-#define PDE_MASK ((((u32)-1) >> 22) << 22)
-#define PTE_MASK ((((u32)-1) >> 22) << 12)
-#define PXE_ATTR_MASK (((u32)-1) >> 20)
+#define PDE_MASK ((((u32_t)-1) >> 22) << 22)
+#define PTE_MASK ((((u32_t)-1) >> 22) << 12)
+#define PXE_ATTR_MASK (((u32_t)-1) >> 20)
 #define NR_PXE PAGE_SIZE / sizeof(addr_t)
 #define PDE_IDX(addr) (((addr)&PDE_MASK) >> 22)
 #define PTE_IDX(addr) (((addr)&PTE_MASK) >> 12)
@@ -25,9 +25,9 @@ __attribute__((__aligned__(PAGE_SIZE))) addr_t volatile PDE[NR_PXE] = {[0] = (0)
 
 __attribute__((__aligned__(PAGE_SIZE))) pte_t volatile PTE[CONFIG_NR_BOOT_PTE][NR_PXE];
 
-__attribute__((__aligned__(PAGE_SIZE))) u8 volatile TMP1[PAGE_SIZE / sizeof(u8)];
+__attribute__((__aligned__(PAGE_SIZE))) u8_t volatile TMP1[PAGE_SIZE / sizeof(u8_t)];
 
-__attribute__((__aligned__(PAGE_SIZE))) u8 volatile TMP2[PAGE_SIZE / sizeof(u8)];
+__attribute__((__aligned__(PAGE_SIZE))) u8_t volatile TMP2[PAGE_SIZE / sizeof(u8_t)];
 
 struct spinlock_t tmp1_lock;
 
@@ -43,9 +43,9 @@ static void mmu_reflush(addr_t addr)
     asm volatile("invlpg (%0)" ::"a"(addr));
 }
 
-void mmu_pm_set(addr_t pa, u32 val)
+void mmu_pm_set(addr_t pa, u32_t val)
 {
-    assert(pa % sizeof(u32) == 0);
+    assert(pa % sizeof(u32_t) == 0);
 
     spin_lock(&tmp1_lock);
 
@@ -53,7 +53,7 @@ void mmu_pm_set(addr_t pa, u32 val)
 
     mmu_reflush(TMP1);
 
-    u32 *res = (u32 *)((addr_t)TMP1 + pa % PAGE_SIZE);
+    u32_t *res = (u32_t *)((addr_t)TMP1 + pa % PAGE_SIZE);
 
     *res = val;
 
@@ -123,9 +123,9 @@ void mmu_put_tmp2(addr_t tmp)
     spin_unlock(&tmp2_lock);
 }
 
-u32 mmu_pm_get(addr_t pa)
+u32_t mmu_pm_get(addr_t pa)
 {
-    assert(pa % sizeof(u32) == 0);
+    assert(pa % sizeof(u32_t) == 0);
 
     spin_lock(&tmp1_lock);
 
@@ -133,7 +133,7 @@ u32 mmu_pm_get(addr_t pa)
 
     mmu_reflush(TMP1);
 
-    u32 *res = (u32 *)((addr_t)TMP1 + pa % PAGE_SIZE);
+    u32_t *res = (u32_t *)((addr_t)TMP1 + pa % PAGE_SIZE);
 
     spin_unlock(&tmp1_lock);
 

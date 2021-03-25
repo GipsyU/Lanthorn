@@ -10,7 +10,7 @@ struct buf_t buf;
 
 int tmp_write(char *s)
 {
-    print("%s", s);
+    printk("%s", s);
 
     return E_OK;
 }

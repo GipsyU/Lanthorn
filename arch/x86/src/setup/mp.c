@@ -7,50 +7,50 @@
 
 struct mp
 {                    // floating pointer
-    u8 signature[4]; // "_MP_"
+    u8_t signature[4]; // "_MP_"
     addr_t physaddr; // phys addr of MP config table
-    u8 length;       // 1
-    u8 specrev;      // [14]
-    u8 checksum;     // all bytes must add up to 0
-    u8 type;         // MP system config type
-    u8 imcrp;
-    u8 reserved[3];
+    u8_t length;       // 1
+    u8_t specrev;      // [14]
+    u8_t checksum;     // all bytes must add up to 0
+    u8_t type;         // MP system config type
+    u8_t imcrp;
+    u8_t reserved[3];
 };
 
 struct mpconf
 {                    // configuration table header
-    u8 signature[4]; // "PCMP"
-    u16 length;      // total table length
-    u8 version;      // [14]
-    u8 checksum;     // all bytes must add up to 0
-    u8 product[20];  // product id
+    u8_t signature[4]; // "PCMP"
+    u16_t length;      // total table length
+    u8_t version;      // [14]
+    u8_t checksum;     // all bytes must add up to 0
+    u8_t product[20];  // product id
     uint *oemtable;  // OEM table pointer
-    u16 oemlength;   // OEM table length
-    u16 entry;       // entry count
+    u16_t oemlength;   // OEM table length
+    u16_t entry;       // entry count
     uint *lapicaddr; // address of local APIC
-    u16 xlength;     // extended table length
-    u8 xchecksum;    // extended table checksum
-    u8 reserved;
+    u16_t xlength;     // extended table length
+    u8_t xchecksum;    // extended table checksum
+    u8_t reserved;
 };
 
 struct mpproc
 {                    // processor table entry
-    u8 type;         // entry type (0)
-    u8 apicid;       // local APIC id
-    u8 version;      // local APIC verison
-    u8 flags;        // CPU flags
+    u8_t type;         // entry type (0)
+    u8_t apicid;       // local APIC id
+    u8_t version;      // local APIC verison
+    u8_t flags;        // CPU flags
 #define MPBOOT 0x02  // This proc is the bootstrap processor.
-    u8 signature[4]; // CPU signature
+    u8_t signature[4]; // CPU signature
     uint feature;    // feature flags from CPUID instruction
-    u8 reserved[8];
+    u8_t reserved[8];
 };
 
 struct mpioapic
 {               // I/O APIC table entry
-    u8 type;    // entry type (2)
-    u8 apicno;  // I/O APIC id
-    u8 version; // I/O APIC version
-    u8 flags;   // I/O APIC flags
+    u8_t type;    // entry type (2)
+    u8_t apicno;  // I/O APIC id
+    u8_t version; // I/O APIC version
+    u8_t flags;   // I/O APIC flags
     uint *addr; // I/O APIC address
 };
 
@@ -65,9 +65,9 @@ extern struct cpu_t cpus[];
 
 int ncpu = 0;
 
-static u8 sum(u8 *addr, size_t len)
+static u8_t sum(u8_t *addr, size_t len)
 {
-    u8 sum = 0;
+    u8_t sum = 0;
 
     for (uint i = 0; i < len; i++)
     {
@@ -89,7 +89,7 @@ static int _mpsearch(addr_t addr, size_t size, struct mp **mp)
 
     for (*mp = (struct mp *)addr; *mp < (struct mp *)(addr + size); (*mp)++)
     {
-        if (memcmp((u8 *)(*mp), "_MP_", 4) == 0 && sum((u8 *)(*mp), sizeof(struct mp)) == 0 && (*mp)->physaddr != NULL)
+        if (memcmp((u8_t *)(*mp), "_MP_", 4) == 0 && sum((u8_t *)(*mp), sizeof(struct mp)) == 0 && (*mp)->physaddr != NULL)
         {
             return E_OK;
         }
@@ -107,7 +107,7 @@ static int mpsearch(struct mp **mp)
 {
     int err = E_OK;
 
-    u8 *bda = (u8 *)0x400 + KERN_BASE;
+    u8_t *bda = (u8_t *)0x400 + KERN_BASE;
 
     addr_t addr = NULL;
 
@@ -150,7 +150,7 @@ static int mpconfig(struct mp *mp, struct mpconf **conf)
         return E_FAULT;
     }
 
-    if (sum((u8 *)(*conf), (*conf)->length) != 0)
+    if (sum((u8_t *)(*conf), (*conf)->length) != 0)
     {
         return E_FAULT;
     }
@@ -158,7 +158,7 @@ static int mpconfig(struct mp *mp, struct mpconf **conf)
     return err;
 }
 
-extern u32 *lapic;
+extern u32_t *lapic;
 
 int mp_init(int *num_cpu)
 {
@@ -188,7 +188,7 @@ int mp_init(int *num_cpu)
 
     for (addr_t addr = (addr_t)(mpconf + 1); addr < (addr_t)mpconf + mpconf->length;)
     {
-        u8 type = *((u8 *)addr);
+        u8_t type = *((u8_t *)addr);
 
         if (type == MPPROC)
         {

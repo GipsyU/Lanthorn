@@ -10,7 +10,7 @@ int buf_read(struct buf_t *buf, char *c)
     {
         buf->rblkt = thread_now();
 
-        schd_block(thread_now());
+        schd_block(thread_now(), NULL);
     }
 
     assert(buf->freesz < buf->size);
@@ -43,7 +43,7 @@ int buf_write(struct buf_t *buf, char c)
     {
         buf->wblkt = thread_now();
 
-        schd_block(thread_now());
+        schd_block(thread_now(), NULL);
     }
 
     assert(buf->freesz > 0);

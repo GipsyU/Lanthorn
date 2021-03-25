@@ -8,7 +8,7 @@
 struct mutex_t
 {
     struct atomic_t count;
-    struct spinlock_t wait_lock;
+    struct spinlock_t lock;
     struct list_node_t wait_ls;
     struct thread_t *owner;
 };
@@ -16,8 +16,6 @@ struct mutex_t
 void mutex_init(struct mutex_t *mutex);
 
 void mutex_lock(struct mutex_t *mutex);
-
-int mutex_trylock(struct mutex_t *mutex);
 
 void mutex_unlock(struct mutex_t *mutex);
 

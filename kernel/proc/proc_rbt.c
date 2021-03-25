@@ -186,4 +186,6 @@ int proc_rbt_init(void)
     PROC.proc_rbt.root = NULL;
 
     spin_rwlock_init(&PROC.rbt_rwlock);
+
+    return E_OK;
 }

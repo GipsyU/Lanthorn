@@ -21,6 +21,8 @@ void intr_irq_restore(void);
 
 void intr_irq_save(void);
 
+int intr_irq_state(void);
+
 void intr_end(void);
 
 #endif

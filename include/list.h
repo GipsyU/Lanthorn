@@ -11,8 +11,6 @@ struct list_node_t
 
 void list_init(struct list_node_t *head);
 
-addr_t list_data(struct list_node_t *node);
-
 int list_isempty(struct list_node_t *head);
 
 struct list_node_t *list_front(struct list_node_t *head);

@@ -23,7 +23,7 @@ void memcpy(addr_t dst, const addr_t src, size_t size)
     }
 }
 
-int memcmp(const u8 *s1, const u8 *s2, size_t len)
+int memcmp(const u8_t *s1, const u8_t *s2, size_t len)
 {
     for (uint i = 0; i < len; ++i)
     {

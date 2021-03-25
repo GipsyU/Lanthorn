@@ -10,9 +10,9 @@ void phyops_memcpy_v2p(addr_t pa, addr_t va, size_t size)
 
     addr_t pp = ROUND_DOWN(pa, PAGE_SIZE);
 
-    u8 *tmp = mmu_get_tmp1(pp);
+    u8_t *tmp = mmu_get_tmp1(pp);
 
-    u8 *src = va;
+    u8_t *src = va;
 
     for (uint i = 0; i < size; ++i)
     {
@@ -37,9 +37,9 @@ void phyops_memcpy_p2p(addr_t pad, addr_t pas, size_t size)
 
     addr_t pps = ROUND_DOWN(pas, PAGE_SIZE);
 
-    u8 *tmp1 = mmu_get_tmp1(ppd);
+    u8_t *tmp1 = mmu_get_tmp1(ppd);
 
-    u8 *tmp2 = mmu_get_tmp2(pps);
+    u8_t *tmp2 = mmu_get_tmp2(pps);
 
     for (uint i = 0; i < size; ++i)
     {
@@ -74,9 +74,9 @@ void phyops_memcpy_p2v(addr_t va, addr_t pa, size_t size)
 
     addr_t pp = ROUND_DOWN(pa, PAGE_SIZE);
 
-    u8 *tmp = mmu_get_tmp1(pp);
+    u8_t *tmp = mmu_get_tmp1(pp);
 
-    u8 *src = va;
+    u8_t *src = va;
 
     for (uint i = 0; i < size; ++i)
     {

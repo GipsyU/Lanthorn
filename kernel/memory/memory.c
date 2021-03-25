@@ -11,11 +11,11 @@
 
 static struct page_alct_t pm_alct;
 
-static u8 pm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
+static u8_t pm_slot[CONFIG_NR_PMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static struct vpage_alct_t kvm_alct;
 
-static u8 kvm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
+static u8_t kvm_slot[CONFIG_NR_KVMM_BUDDY_SLOT_PG * PAGE_SIZE];
 
 static struct slot_alct_t kvm_slot_alct;
 
@@ -72,10 +72,7 @@ static int page_fault_hdl(uint errno)
     }
     else
     {
-        error("page fault.\n");
-
-        while (1)
-            ;
+        panic("page fault.\n");
     }
 
     return E_OK;

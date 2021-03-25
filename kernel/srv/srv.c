@@ -93,6 +93,8 @@ static int srv_sys_register(char *name, uint nparam)
 
     if (nparam > MAX_CALL_PARAM) return E_INVAL;
 
+    spin_write_lock(&SRV.rbt_rwlock);
+
     struct srv_t *srv = NULL;
 
     if (rbt_find(&SRV.srv_rbt, name, &srv) != E_NOTFOUND) return E_EXIST;
@@ -114,6 +116,8 @@ static int srv_sys_register(char *name, uint nparam)
     srv->nparam = nparam;
 
     err = rbt_insert(&SRV.srv_rbt, srv);
+
+    spin_write_unlock(&SRV.rbt_rwlock);
 
     assert(err == E_OK);
 

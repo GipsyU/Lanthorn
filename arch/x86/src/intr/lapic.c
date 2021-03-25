@@ -35,9 +35,9 @@
 #define TCCR (0x0390 / 4)   // Timer Current Count
 #define TDCR (0x03E0 / 4)   // Timer Divide Configuration
 
-volatile u32 *lapic;
+volatile u32_t *lapic;
 
-static void lapicw(uint index, u32 value)
+static void lapicw(uint index, u32_t value)
 {
     lapic[index] = value;
 
@@ -66,14 +66,14 @@ void microdelay(int us)
 void lapic_startap(int apicid, addr_t addr)
 {
     int i;
-    u16 *wrv;
+    u16_t *wrv;
 
     // "The BSP must initialize CMOS shutdown code to 0AH
     // and the warm reset vector (DWORD based at 40:67) to point at
     // the AP startup code prior to the [universal startup algorithm]."
     outb(0xF, CMOS_PORT); // offset 0xF is shutdown code
     outb(0x0A, CMOS_PORT + 1);
-    wrv = (u16 *)((0x40 << 4 | 0x67) + KERN_BASE); // Warm reset vector
+    wrv = (u16_t *)((0x40 << 4 | 0x67) + KERN_BASE); // Warm reset vector
     wrv[0] = 0;
     wrv[1] = addr >> 4;
 

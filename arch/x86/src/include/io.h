@@ -1,48 +1,48 @@
 #ifndef _X86_SRC_IO_H_
 #define _X86_SRC_IO_H_
 #include <arch/basic.h>
-static inline void outb(u8 v, u16 port)
+static inline void outb(u8_t v, u16_t port)
 {
     asm volatile("outb %0,%1"
                  :
                  : "a"(v), "dN"(port));
 }
 
-static inline u8 inb(u16 port)
+static inline u8_t inb(u16_t port)
 {
-    u8 v;
+    u8_t v;
     asm volatile("inb %1,%0"
                  : "=a"(v)
                  : "dN"(port));
     return v;
 }
 
-static inline void outw(u16 v, u16 port)
+static inline void outw(u16_t v, u16_t port)
 {
     asm volatile("outw %0,%1"
                  :
                  : "a"(v), "dN"(port));
 }
 
-static inline u16 inw(u16 port)
+static inline u16_t inw(u16_t port)
 {
-    u16 v;
+    u16_t v;
     asm volatile("inw %1,%0"
                  : "=a"(v)
                  : "dN"(port));
     return v;
 }
 
-static inline void outl(u32 v, u16 port)
+static inline void outl(u32_t v, u16_t port)
 {
     asm volatile("outl %0,%1"
                  :
                  : "a"(v), "dN"(port));
 }
 
-static inline u32 inl(u32 port)
+static inline u32_t inl(u32_t port)
 {
-    u32 v;
+    u32_t v;
     asm volatile("inl %1,%0"
                  : "=a"(v)
                  : "dN"(port));

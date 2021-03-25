@@ -13,8 +13,9 @@ extern void __attribute__((noreturn)) main(struct boot_arg_t);
 extern int uart_init(void);
 extern int mmu_init(addr_t *pde);
 extern int intr_init(void);
-extern u8 kern_start[];
-extern u8 kern_end[];
+extern int intr_lpinit(void);
+extern u8_t kern_start[];
+extern u8_t kern_end[];
 extern int mp_init(int *num_cpu);
 extern int lapic_init(void);
 extern int task_init(struct task_t *task);
@@ -34,7 +35,7 @@ static int add_memory(addr_t addr, size_t size)
     return E_OK;
 }
 
-static int collect_mm_info(void)
+static int collect_mm_info_early(void)
 {
     int err = E_OK;
 
@@ -46,7 +47,7 @@ static int collect_mm_info(void)
 
     addr_t kend = (addr_t)kern_end - KERN_BASE;
 
-    info("kern start physical addr: %p, kern end physical addr: %p.\n", kstart, kend);
+    info_early("kern start physical addr: %p, kern end physical addr: %p.\n", kstart, kend);
 
     /**
      * FIXME:1024
@@ -86,6 +87,7 @@ static int collect_mm_info(void)
                 }
             }
         }
+
     }
 
     return err;
@@ -109,7 +111,7 @@ static int setup_lp(void)
     }
     else
     {
-        info("cpu%d init task success.\n", cpuid);
+        info_early("cpu%d init task success.\n", cpuid);
     }
 
     cpu_set_task(cpuid, cpu_schd(cpuid));
@@ -122,7 +124,18 @@ static int setup_lp(void)
     }
     else
     {
-        info("cpu%d init gdt success.\n", cpuid);
+        info_early("cpu%d init gdt success.\n", cpuid);
+    }
+
+    err = intr_lpinit();
+
+    if (err != E_OK)
+    {
+        error("cpu%d init intr lp failed, err = %s.\n", cpuid, strerror(err));
+    }
+    else
+    {
+        info_early("cpu%d init intr lp success.\n", cpuid);
     }
 
     err = lapic_init();
@@ -133,7 +146,7 @@ static int setup_lp(void)
     }
     else
     {
-        info("cpu%d init lapic success.\n", cpuid);
+        info_early("cpu%d init lapic success.\n", cpuid);
     }
 
     return err;
@@ -149,7 +162,7 @@ void __attribute__((noreturn)) setup(void)
 
     uart_init();
 
-    info("start setup x86 arch.\n");
+    info_early("start setup x86 arch.\n");
 
     err = mmu_init(&boot_arg.pde);
 
@@ -159,7 +172,7 @@ void __attribute__((noreturn)) setup(void)
     }
     else
     {
-        info("init mmu success.\n");
+        info_early("init mmu success.\n");
     }
 
     err = mp_init(&boot_arg.ncpu);
@@ -170,7 +183,7 @@ void __attribute__((noreturn)) setup(void)
     }
     else
     {
-        info("init mp success.\n");
+        info_early("init mp success.\n");
     }
 
     err = intr_init();
@@ -181,7 +194,7 @@ void __attribute__((noreturn)) setup(void)
     }
     else
     {
-        info("init intr success.\n");
+        info_early("init intr success.\n");
     }
 
     err = ioapic_init();
@@ -192,7 +205,7 @@ void __attribute__((noreturn)) setup(void)
     }
     else
     {
-        info("init ioapic success.\n");
+        info_early("init ioapic success.\n");
     }
 
     err = setup_lp();
@@ -203,23 +216,23 @@ void __attribute__((noreturn)) setup(void)
     }
     else
     {
-        info("setup cpu%d success.\n", cpu_id());
+        info_early("setup cpu%d success.\n", cpu_id());
     }
 
-    err = collect_mm_info();
+    err = collect_mm_info_early();
 
     if (err != E_OK)
     {
-        error("collect mm info failed, err = %s.\n", strerror(err));
+        error("collect mm info_early failed, err = %s.\n", strerror(err));
     }
     else
     {
-        info("collect mm info success.\n");
+        info_early("collect mm info_early success.\n");
     }
 
     memcpy(0x7000 + KERN_BASE, _binary_arch_x86_boot__apboot_o_start, _binary_arch_x86_boot__apboot_o_size);
 
-    info("finish setup x86 arch.\n");
+    info_early("finish setup x86 arch.\n");
 
     main(boot_arg);
 }
@@ -230,7 +243,9 @@ int cpu_startap(int cpuid, addr_t routine, addr_t stka, size_t stksz)
 {
     if (cpuid >= boot_arg.ncpu) return E_INVAL;
 
-    addr_t *param = 0x7000 + KERN_BASE - 4 * sizeof(addr_t);
+    volatile int finished = 0;
+
+    addr_t *param = 0x7000 + KERN_BASE - 5 * sizeof(addr_t);
 
     param[0] = setup_lp;
 
@@ -240,7 +255,11 @@ int cpu_startap(int cpuid, addr_t routine, addr_t stka, size_t stksz)
 
     param[3] = (addr_t)PDE - KERN_BASE;
 
+    param[4] = &finished;
+
     lapic_startap(cpuid, 0x7000);
+
+    while(finished == 0);
 
     return E_OK;
 }

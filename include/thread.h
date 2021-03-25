@@ -43,6 +43,8 @@ struct schd_t
     struct list_node_t sleeping;
 };
 
+extern struct schd_t scheduler;
+
 struct thread_t *thread_now(void);
 
 int thread_kern_new(struct proc_t *proc, struct thread_t **thread, addr_t exe, uint nargs, ...);
@@ -65,7 +67,7 @@ int schd_sleep(struct thread_t *thread, long wake_sig);
 
 int schd_wake(long wake_sig);
 
-int schd_block(struct thread_t *thread);
+int schd_block(struct thread_t *thread, struct spinlock_t *lock);
 
 int schd_init(void);
 

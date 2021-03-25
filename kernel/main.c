@@ -1,5 +1,6 @@
 #include <arch/basic.h>
 #include <arch/sysctrl.h>
+#include <arch/uart.h>
 #include <boot_arg.h>
 #include <error.h>
 #include <log.h>
@@ -9,7 +10,7 @@
 #include <srv.h>
 #include <string.h>
 #include <syscall.h>
-#include <arch/uart.h>
+#include <thread.h>
 
 extern void test(void);
 
@@ -19,18 +20,22 @@ extern int sysctrl_init(void);
 
 extern int tmp_init(void);
 
-void main_ap(void)
+void __attribute__((noreturn)) main_ap(void)
 {
-    debug("OK\n");
+    schd_schdule();
 
-    while(1);
+    panic("BUG.\n");
 }
+
+extern struct spinlock_t log_lock;
 
 void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 {
     int err = E_OK;
 
     info("Hello Lanthorn.\n");
+
+    spin_init(&log_lock);
 
     err = syscall_init();
 
@@ -101,17 +106,21 @@ void __attribute__((noreturn)) main(struct boot_arg_t boot_arg)
 
     err = tmp_init();
 
-    addr_t stk;
-
-    err = kmalloc(&stk, PAGE_SIZE);
-
-    cpu_startap(1, main_ap, stk, PAGE_SIZE);
-
-    while(1);
-
     test();
 
+    for (int i = 1; i < boot_arg.ncpu; ++i)
+    {
+        addr_t stk;
+
+        err = kmalloc(&stk, PAGE_SIZE);
+        
+        cpu_startap(i, main_ap, stk, PAGE_SIZE);
+
+    }
+
     info("Lanthorn kernel init finished.\n");
+
+    main_ap();
 
     sysctrl_shutdown();
 

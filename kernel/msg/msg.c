@@ -226,7 +226,7 @@ int msg_recieve(uint boxid, uint *msgid, uint is_block)
 
             mutex_unlock(&box->lock);
 
-            schd_block(thread_now());
+            schd_block(thread_now(), NULL);
 
             mutex_lock(&box->lock);
 

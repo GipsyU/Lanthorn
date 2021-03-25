@@ -202,7 +202,7 @@ static int proc_create_from_mm(char *name, addr_t exea, size_t exes, char **argv
 
     if (wait_t != NULL)
     {
-        schd_block(thread_now());
+        schd_block(thread_now(), NULL);
 
         intr_irq_restore();
     }
@@ -391,8 +391,8 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
-                              NULL);
+    // err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
+    //                           NULL);
 
     if (err == E_OK)
         info("init file service process success.\n");
@@ -402,8 +402,8 @@ int proc_init(void)
 
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
-    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
-                              NULL);
+    // err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
+    //                           NULL);
 
     if (err == E_OK)
         info("init usr init process success.\n");

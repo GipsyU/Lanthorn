@@ -9,7 +9,7 @@
 
 void lgdt(struct seg_t *seg, size_t size)
 {
-    volatile u16 pd[3];
+    volatile u16_t pd[3];
 
     pd[0] = size - 1;
     pd[1] = (uint)seg;
@@ -20,14 +20,14 @@ void lgdt(struct seg_t *seg, size_t size)
                  : "r"(pd));
 }
 
-void ltr(u16 sel)
+void ltr(u16_t sel)
 {
     asm volatile("ltr %0"
                  :
                  : "r"(sel));
 }
 
-static void set_seg(struct seg_t *seg, u32 type, u32 base, u32 lim, u32 dpl)
+static void set_seg(struct seg_t *seg, u32_t type, u32_t base, u32_t lim, u32_t dpl)
 {
     seg->lim_15_0 = (lim >> 12) & 0xffff;
     seg->base_15_0 = base & 0xffff;
@@ -44,7 +44,7 @@ static void set_seg(struct seg_t *seg, u32 type, u32 base, u32 lim, u32 dpl)
     seg->base_31_24 = base >> 24;
 }
 
-static void set_tss(struct seg_t *seg, u32 type, u32 base, u32 lim, u32 dpl)
+static void set_tss(struct seg_t *seg, u32_t type, u32_t base, u32_t lim, u32_t dpl)
 {
     seg->lim_15_0 = lim & 0xffff;
     seg->base_15_0 = base & 0xffff;
@@ -75,7 +75,7 @@ int gdt_init(struct seg_t *gdt, struct tss_t *tss)
 
     set_seg(&gdt[SEL_UDATA >> 3], STA_W, 0, 0xffffffff, DPL_USER);
 
-    set_tss(&gdt[SEL_TSS >> 3], 0x9, (u32)tss, sizeof(struct tss_t) - 1, DPL_KERN);
+    set_tss(&gdt[SEL_TSS >> 3], 0x9, (u32_t)tss, sizeof(struct tss_t) - 1, DPL_KERN);
 
     lgdt(gdt, CONFIG_NR_SEG * sizeof(struct seg_t));
 

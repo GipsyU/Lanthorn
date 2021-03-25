@@ -39,6 +39,7 @@ __start:
 	movl    %eax,	%cr0
 
 	movl 	$(BOOTSTACK),	%esp
+	movl 	$(BOOTSTACK),	%ebp
 
 	addl	$KERN_BASE,	%ebx
 

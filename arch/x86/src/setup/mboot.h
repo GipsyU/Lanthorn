@@ -3,7 +3,7 @@
 #include <arch/basic.h>
 
 struct multiboot_t {
-	u32 flags;
+	u32_t flags;
 	/** 
 	 * 从 BIOS 获知的可用内存
 	 *
@@ -12,42 +12,42 @@ struct multiboot_t {
 	 * 低端内存的最大可能值是640K。
 	 * 高端内存的最大可能值是最大值减去1M。但并不保证是这个值。
 	 */
-	u32 mem_lower;
-	u32 mem_upper;
+	u32_t mem_lower;
+	u32_t mem_upper;
 
-	u32 boot_device;		// 指出引导程序从哪个BIOS磁盘设备载入的OS映像
-	u32 cmdline;		// 内核命令行
-	u32 mods_count;		// boot 模块列表
-	u32 mods_addr;
+	u32_t boot_device;		// 指出引导程序从哪个BIOS磁盘设备载入的OS映像
+	u32_t cmdline;		// 内核命令行
+	u32_t mods_count;		// boot 模块列表
+	u32_t mods_addr;
 	
 	/**
 	 * ELF 格式内核映像的section头表。
 	 * 包括每项的大小、一共有几项以及作为名字索引的字符串表。
 	 */
-	u32 num;
-	u32 size;
-	u32 addr;
-	u32 shndx;
+	u32_t num;
+	u32_t size;
+	u32_t addr;
+	u32_t shndx;
 
 	/**
 	 * 以下两项指出保存由BIOS提供的内存分布的缓冲区的地址和长度
 	 * mmap_addr是缓冲区的地址，mmap_length是缓冲区的总大小
 	 * 缓冲区由一个或者多个下面的大小/结构对 mmap_entry_t 组成
 	 */
-	u32 mmap_length;		
-	u32 mmap_addr;
+	u32_t mmap_length;		
+	u32_t mmap_addr;
 	
-	u32 drives_length; 	// 指出第一个驱动器结构的物理地址	
-	u32 drives_addr; 		// 指出第一个驱动器这个结构的大小
-	u32 config_table; 		// ROM 配置表
-	u32 boot_loader_name; 	// boot loader 的名字
-	u32 apm_table; 	    	// APM 表
-	u32 vbe_control_info;
-	u32 vbe_mode_info;
-	u32 vbe_mode;
-	u32 vbe_interface_seg;
-	u32 vbe_interface_off;
-	u32 vbe_interface_len;
+	u32_t drives_length; 	// 指出第一个驱动器结构的物理地址	
+	u32_t drives_addr; 		// 指出第一个驱动器这个结构的大小
+	u32_t config_table; 		// ROM 配置表
+	u32_t boot_loader_name; 	// boot loader 的名字
+	u32_t apm_table; 	    	// APM 表
+	u32_t vbe_control_info;
+	u32_t vbe_mode_info;
+	u32_t vbe_mode;
+	u32_t vbe_interface_seg;
+	u32_t vbe_interface_off;
+	u32_t vbe_interface_len;
 } *mboot_ptr;
 
 /**
@@ -58,12 +58,12 @@ struct multiboot_t {
  */
 
 struct mmap_entry_t {
-	u32 size; 		// 留意 size 是不含 size 自身变量的大小
-	u32 base_addr_low;
-	u32 base_addr_high;
-	u32 length_low;
-	u32 length_high;
-	u32 type;
+	u32_t size; 		// 留意 size 是不含 size 自身变量的大小
+	u32_t base_addr_low;
+	u32_t base_addr_high;
+	u32_t length_low;
+	u32_t length_high;
+	u32_t type;
 };
 
 #endif

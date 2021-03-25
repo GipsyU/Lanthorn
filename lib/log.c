@@ -1,7 +1,10 @@
 #include <arch/basic.h>
 #include <arch/uart.h>
 #include <log.h>
+#include <spinlock.h>
 #include <util.h>
+
+struct spinlock_t log_lock;
 
 static void itoa(int x, int redix)
 {
@@ -30,7 +33,7 @@ static void itoa(int x, int redix)
     return;
 }
 
-static void uitoa(u32 x, int redix)
+static void uitoa(u32_t x, int redix)
 {
     if (x == 0)
     {
@@ -57,7 +60,7 @@ static void console_put_str(const char *s)
     return;
 }
 
-void print(const char *fmt, ...)
+void printk(const char *fmt, ...)
 {
     char *args;
 
@@ -127,4 +130,23 @@ void print(const char *fmt, ...)
     va_end(args);
 
     return;
+}
+
+void print_regs(void)
+{   
+    u32_t eip, ebp, esp, eax, ebx, ecx, edx;
+    
+    asm volatile ("movl %%ebp, %0" : "=r" (ebp));
+    
+    asm volatile ("movl %%esp, %0" : "=r" (esp));
+    
+    asm volatile ("movl %%eax, %0" : "=r" (eax));
+    
+    asm volatile ("movl %%ebx, %0" : "=r" (ebx));
+    
+    asm volatile ("movl %%ecx, %0" : "=r" (ecx));
+    
+    asm volatile ("movl %%edx, %0" : "=r" (edx));
+    
+    printk("ebp: %p, esp: %p, eax: %p, ebx: %p, ecx: %p, edx: %p.\n", ebp, esp, eax, ebx, ecx, edx);
 }

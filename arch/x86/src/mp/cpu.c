@@ -5,8 +5,9 @@
 #include <log.h>
 #include <io.h>
 #include <arch/sysctrl.h>
+#include <spinlock.h>
 
-static struct cpu_t cpus[CONFIG_NR_CPU_MAX];
+static volatile struct cpu_t cpus[CONFIG_NR_CPU_MAX];
 
 static uint ncpu = 0;
 
@@ -38,6 +39,8 @@ int cpu_get(struct cpu_t **cpu, uint id)
 
 uint cpu_id(void)
 {
+    assert(intr_irq_state() == 0);
+
     uint lapicid = lapic_id();
 
     for (uint cpuid = 0; cpuid < ncpu; ++cpuid)
@@ -47,8 +50,17 @@ uint cpu_id(void)
             return cpuid;
         }
     }
-    
-    panic("cpu bug.\n");
+}
+
+int cpu_now(void)
+{
+    intr_irq_save();
+
+    int cpuid = cpu_id();
+
+    intr_irq_restore();
+
+    return cpuid;
 }
 
 struct task_t *cpu_get_task(uint cpuid)
@@ -58,7 +70,7 @@ struct task_t *cpu_get_task(uint cpuid)
 
 extern void lgdt(struct seg_t *seg, size_t size);
 
-extern void ltr(u32 sel);
+extern void ltr(u32_t sel);
 
 void cpu_set_task(uint cpuid, struct task_t *task)
 {
