@@ -262,20 +262,12 @@ int intr_irq_state(void)
 
 void intr_irq_enable(void)
 {
-    barrier();
-
     asm volatile("sti" : : : "memory");
-
-    barrier();
 }
 
 void intr_irq_disable(void)
 {
-    barrier();
-
     asm volatile("cli" : : : "memory");
-
-    barrier();
 }
 
 void intr_irq_restore(void)

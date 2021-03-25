@@ -10,8 +10,13 @@
 #include <syscall.h>
 #include <thread.h>
 #include <util.h>
-
+#include <idx_aclt.h>
 #include "proc.h"
+
+struct PROC_T
+{
+    struct idx_alct_t idx_alct;
+}PROC;
 
 struct proc_t proc_0;
 
@@ -27,7 +32,7 @@ static int p0_init(void)
 
     list_init(&proc_0.thread_ls);
 
-    int err = proc_rbt_insert(&proc_0, 0);
+    int err = idx_alct_new(&PROC.idx_alct, &proc_0, &proc_0.pid);
 
     return err;
 }
@@ -56,7 +61,9 @@ static int proc_new(struct proc_t **proc, char *name)
 
     if (err != E_OK) goto err2;
 
-    proc_rbt_insert(_proc, 1);
+    err = idx_alct_new(&PROC.idx_alct, _proc, &_proc->pid);
+
+    if (err != E_OK) goto err2;
 
     _proc->wait_t = NULL;
 
@@ -217,6 +224,11 @@ struct proc_t *proc_now(void)
     return thread->proc;
 }
 
+int proc_id(void)
+{
+    return proc_now()->pid;
+}
+
 // int proc_free(struct proc_t *proc)
 // {
 //     int err ;
@@ -359,15 +371,9 @@ extern char _binary_usr_test_elf_size[];
 
 int proc_init(void)
 {
-    int err = proc_rbt_init();
+    idx_aclt_init(&PROC.idx_alct);
 
-    if (err == E_OK)
-        info("init process rbt success.\n");
-
-    else
-        panic("init process rbt failed.\n");
-
-    err = p0_init();
+    int err = p0_init();
 
     if (err == E_OK)
         info("init process 0 success.\n");
@@ -402,8 +408,8 @@ int proc_init(void)
 
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
-    // err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
-    //                           NULL);
+    err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
+                              NULL);
 
     if (err == E_OK)
         info("init usr init process success.\n");

@@ -7,7 +7,7 @@
 #define PROC_NAME_MAX_LEN 32
 struct proc_t
 {
-    uint pid;
+    int pid;
     char name[PROC_NAME_MAX_LEN];
     uint rbt_node_sum;
     struct spin_rwlock_t lock;
@@ -21,13 +21,15 @@ struct proc_t
 
 struct thread_attr_t
 {
-    uint tid;
+    int tid;
     size_t stk_sz;
     addr_t arga;
     size_t argsz;
 };
 
 struct proc_t *proc_now(void);
+
+int proc_id(void);
 
 int proc_init(void);
 

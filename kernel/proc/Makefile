@@ -1,1 +1,1 @@
-obj-y := proc.o proc_rbt.o thread/
+obj-y := proc.o thread/

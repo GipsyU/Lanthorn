@@ -2,6 +2,7 @@
 #include <arch/intr.h>
 #include <arch/mmu.h>
 #include <error.h>
+#include <idx_aclt.h>
 #include <list.h>
 #include <log.h>
 #include <memory.h>
@@ -13,6 +14,12 @@
 #include <util.h>
 
 extern struct proc_t proc_0;
+
+struct THREAD_T
+{
+    struct idx_alct_t idx_alct;
+
+}THREAD;
 
 static void pre(void)
 {
@@ -101,13 +108,18 @@ struct thread_t *thread_now(void)
     return container_of(task, struct thread_t, task);
 }
 
+int thread_id(void)
+{
+    return thread_now()->tid;
+}
+
 static int thread_new(struct thread_t **res)
 {
     struct thread_t *thread = NULL;
 
     int err = kmalloc((addr_t *)&thread, sizeof(struct thread_t));
 
-    if (err != E_OK) return err;
+    if (err != E_OK) goto err1;
 
     thread->state = UNSCHDED;
 
@@ -115,8 +127,18 @@ static int thread_new(struct thread_t **res)
 
     thread->wake_sig = 0;
 
-    *res = thread;
+    err = idx_alct_new(&THREAD.idx_alct, thread, &thread->tid);
 
+    if (err != E_OK) goto err2;
+
+    if (res != NULL) *res = thread;
+
+    return err;
+
+err2:
+    kmfree(thread);
+
+err1:
     return err;
 }
 
@@ -344,6 +366,8 @@ int thread_init(void)
     syscall_register(SYS_thread_tid, thread_sys_tid, 1);
 
     syscall_register(SYS_thread_exit, thread_sys_exit, 0);
+
+    idx_aclt_init(&THREAD.idx_alct);
 
     int err = schd_init();
 

@@ -24,6 +24,7 @@ enum T_STATE
 struct thread_t
 {
     uint cpuid;
+    int tid;
     enum T_STATE state;
     addr_t ks_addr;
     size_t ks_size;
@@ -54,6 +55,8 @@ int thread_user_new(struct thread_t **thread, struct proc_t *proc, addr_t routin
 int thread_init(void);
 
 int thread_sleep(void);
+
+int thread_id(void);
 
 int thread_fork(struct thread_t *thread, struct proc_t *proc, struct thread_t **res);
 
