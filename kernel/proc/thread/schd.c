@@ -87,55 +87,49 @@ int schd_sleep(struct thread_t *thread, long wake_sig)
     return E_OK;
 }
 
+void schd_kill_mid_func(addr_t args)
+{
+    int cpuid = cpu_now();
+
+    cpu_set_task(cpuid, cpu_schd(cpuid));
+}
+
 int schd_kill(struct thread_t *thread)
 {
-    // spin_lock_irqsave(&scheduler.lock);
+    spin_lock_irqsave(&scheduler.lock);
 
-    // if (thread->state == KILLED)
-    // {
-    //     panic("killed twice.\n");
-    // }
-    // else if (thread->state == RUNNABEL || thread->state == SLEEPING)
-    // {
-    //     thread->state = KILLED;
+    if (thread->state == KILLED)
+    {
+        panic("killed twice.\n");
+    }
+    else if (thread->state == RUNNABEL || thread->state == SLEEPING)
+    {
+        thread->state = KILLED;
 
-    //     list_delete(&thread->schd_ln);
-    // }
-    // else if (thread->state == RUNNING)
-    // {
-    //     assert(thread == thread_now());
+        list_delete(&thread->schd_ln);
+    }
+    else if (thread->state == RUNNING)
+    {
+        assert(thread == thread_now());
 
-    //     uint cpuid = cpu_id();
+        uint cpuid = cpu_id();
 
-    //     thread->state = KILLED;
+        thread->state = KILLED;
 
-    //     int first = 1;
+        task_switch(&thread->task, cpu_schd(cpuid), schd_kill_mid_func, NULL);
 
-    //     // task_save(&thread->task);
+        panic("bug.\n");
+    }
+    else if (thread->state == UNSCHDED)
+    {
+        panic("schd error.\n");
+    }
+    else
+    {
+        panic("schd error.\n");
+    }
 
-    //     if (first)
-    //     {
-    //         first = 0;
-            
-    //         cpu_set_task(cpuid, cpu_schd(cpuid));
-
-    //         spin_unlock(&scheduler.lock);
-
-    //         // task_load(cpu_schd(cpuid));
-    //     }
-
-    //     panic("bug.\n");
-    // }
-    // else if (thread->state == UNSCHDED)
-    // {
-    //     panic("schd error.\n");
-    // }
-    // else
-    // {
-    //     panic("schd error.\n");
-    // }
-
-    // spin_unlock_irqrestore(&scheduler.lock);
+    spin_unlock_irqrestore(&scheduler.lock);
 
     return E_OK;
 }

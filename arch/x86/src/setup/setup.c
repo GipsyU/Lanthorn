@@ -111,7 +111,7 @@ static int setup_lp(void)
     }
     else
     {
-        info_early("cpu%d init task success.\n", cpuid);
+        // info_early("cpu%d init task success.\n", cpuid);
     }
 
     cpu_set_task(cpuid, cpu_schd(cpuid));
@@ -124,7 +124,7 @@ static int setup_lp(void)
     }
     else
     {
-        info_early("cpu%d init gdt success.\n", cpuid);
+        // info_early("cpu%d init gdt success.\n", cpuid);
     }
 
     err = intr_lpinit();
@@ -135,7 +135,7 @@ static int setup_lp(void)
     }
     else
     {
-        info_early("cpu%d init intr lp success.\n", cpuid);
+        // info_early("cpu%d init intr lp success.\n", cpuid);
     }
 
     err = lapic_init();
@@ -146,7 +146,7 @@ static int setup_lp(void)
     }
     else
     {
-        info_early("cpu%d init lapic success.\n", cpuid);
+        // info_early("cpu%d init lapic success.\n", cpuid);
     }
 
     return err;

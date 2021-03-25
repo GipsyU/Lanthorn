@@ -17,6 +17,9 @@ extern struct proc_t proc_0;
 static void pre(void)
 {
     info("usr thread begin\n");
+
+    spin_unlock(&scheduler.lock);
+
     intr_end();
 }
 

@@ -107,9 +107,12 @@ extern void lapic_eoi(void);
 
 void intr_hdl(volatile struct intr_regs_t *regs)
 {
-    assert(intr_irq_state() == 0);
+    if (regs->intrno != INTR_SYSCALL)
+    {
+        assert(intr_irq_state() == 0);
 
-    cpu_get_task(cpu_id())->ncli++;
+        cpu_get_task(cpu_id())->ncli++;
+    }
 
     assert (regs->intrno < NR_INTR && regs->intrno > 0)
 
@@ -117,6 +120,7 @@ void intr_hdl(volatile struct intr_regs_t *regs)
     {
         info("intrno: %d\n", regs->intrno);
     }
+
     int (*handler)(uint) = intr_table[regs->intrno];
 
     if (handler != NULL)
@@ -145,7 +149,12 @@ void intr_hdl(volatile struct intr_regs_t *regs)
         info("end intrno: %d\n", regs->intrno);
     }
 
-    cpu_get_task(cpu_id())->ncli--;
+    if (regs->intrno != INTR_SYSCALL)
+    {
+        assert(intr_irq_state() == 0);
+
+        cpu_get_task(cpu_id())->ncli--;
+    }
 
     lapic_eoi();
 
@@ -274,6 +283,8 @@ void intr_irq_restore(void)
     assert(cpu_get_task(cpu_id())->ncli > 0);
 
     cpu_get_task(cpu_id())->ncli--;
+
+    // info_early("p%p\n", cpu_get_task(cpu_id())->ncli);
     
     if (cpu_get_task(cpu_id())->ncli == 0) intr_irq_enable();
 }
@@ -283,4 +294,6 @@ void intr_irq_save(void)
     intr_irq_disable();
 
     cpu_get_task(cpu_id())->ncli++;
+
+    // info_early("p%p\n", cpu_get_task(cpu_id())->ncli);
 }

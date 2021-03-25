@@ -391,8 +391,8 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    // err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
-    //                           NULL);
+    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
+                              NULL);
 
     if (err == E_OK)
         info("init file service process success.\n");

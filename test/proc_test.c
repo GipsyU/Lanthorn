@@ -134,13 +134,13 @@ int proc_test(void)
 
     spin_init(&lock);
 
-    thread_kern_new(&proc_0, &t1, mutex_test_1, 0);
+    // thread_kern_new(&proc_0, &t1, mutex_test_1, 0);
 
-    thread_kern_new(&proc_0, &t2, mutex_test_2, 0);
+    // thread_kern_new(&proc_0, &t2, mutex_test_2, 0);
 
-    thread_kern_new(&proc_0, &t3, mutex_test_3, 0);
+    // thread_kern_new(&proc_0, &t3, mutex_test_3, 0);
 
-    thread_kern_new(&proc_0, &t4, mutex_test_4, 0);
+    // thread_kern_new(&proc_0, &t4, mutex_test_4, 0);
 
     // thread_kern_new(&proc_0, &t1, spinlock_test_1, 0);
 
