@@ -10,17 +10,22 @@ int main(int argc, char *argv[], char *envp[])
 
     struct srv_replyee_t replyee;
 
-    char *path;
+    char *path = argv[0];
+    
+    int err = E_OK;
 
-    int err = malloc((void *)&path, strlen(envp[0]) + strlen(argv[0]) + 1);
+    if (path[0] != '/') {
+        
+        err = malloc((void *)&path, strlen(envp[0]) + strlen(argv[0]) + 1);
 
-    if (err != E_OK) return err;
+        if (err != E_OK) return err;
+        
+        memcpy(path, envp[0], strlen(envp[0]));
+    
+        memcpy(path + strlen(envp[0]), argv[0], strlen(argv[0]));
 
-    memcpy(path, envp[0], strlen(envp[0]));
-
-    memcpy(path + strlen(envp[0]), argv[0], strlen(argv[0]));
-
-    path[strlen(envp[0]) + strlen(argv[0])] = 0;
+        path[strlen(envp[0]) + strlen(argv[0])] = 0;
+    }
 
     err = srv_call("fssrv/read", &replyee, path, strlen(path) + 1);
 
@@ -31,8 +36,6 @@ int main(int argc, char *argv[], char *envp[])
     char *res = replyee.cache;
 
     for (uint i = 0; i < replyee.sz[0]; ++i) printf("%c", res[i]);
-
-    printf("\n");
 
     return E_OK;
 }
