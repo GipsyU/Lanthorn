@@ -13,6 +13,8 @@ int main(int argc, char *argv[], char *envp[])
 
     if (err != E_OK) return err;
 
+    printf("PID\tNAME\n");
+
     for (int now = 0; info[now].pid; ++now)
     {
         printf("%d\t%s\n", info[now].pid, info[now].name);
