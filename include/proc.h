@@ -16,6 +16,7 @@ struct proc_t
     struct list_node_t thread_ls;
     struct um_t um;
     struct thread_t *wait_t;
+    struct list_node_t proc_ln;
     int *exit_state;
 };
 

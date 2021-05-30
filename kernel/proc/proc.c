@@ -2,6 +2,7 @@
 #include <arch/phyops.h>
 #include <elf.h>
 #include <error.h>
+#include <idx_aclt.h>
 #include <log.h>
 #include <memory.h>
 #include <proc.h>
@@ -10,13 +11,13 @@
 #include <syscall.h>
 #include <thread.h>
 #include <util.h>
-#include <idx_aclt.h>
 #include "proc.h"
 
 struct PROC_T
 {
     struct idx_alct_t idx_alct;
-}PROC;
+    struct list_node_t proc_ls;
+} PROC;
 
 struct proc_t proc_0;
 
@@ -66,6 +67,8 @@ static int proc_new(struct proc_t **proc, char *name)
     if (err != E_OK) goto err2;
 
     _proc->wait_t = NULL;
+
+    list_push_back(&PROC.proc_ls, &_proc->proc_ln);
 
     if (proc != NULL) *proc = _proc;
 
@@ -352,9 +355,53 @@ static int proc_sys_exit(int err)
         schd_run(proc->wait_t);
     }
 
+    list_delete(&proc->proc_ln);
+
     schd_kill(thread_now());
 
     panic("bug.\n");
+}
+
+struct proc_info_t
+{
+    int pid;
+    char name[PROC_NAME_MAX_LEN];
+};
+
+static int proc_sys_info(struct proc_info_t **info)
+{
+
+    int tot = 1;
+
+    list_rep(&PROC.proc_ls, p)
+    {
+        ++tot;
+    }
+
+    int now = 0;
+
+    struct proc_info_t *_info;
+
+    int err = umalloc(&proc_now()->um, (void *)&_info, sizeof(struct proc_info_t) * tot);
+
+    if (err != E_OK) return err;
+
+    list_rep(&PROC.proc_ls, p)
+    {
+        struct proc_t *proc = container_of(p, struct proc_t, proc_ln);
+
+        _info[now].pid = proc->pid;
+
+        memcpy(_info[now].name, proc->name, sizeof(proc->name));
+
+        ++now;
+    }
+
+    _info[now].pid = 0;
+
+    *info = _info;
+
+    return E_OK;
 }
 
 extern char _binary_usr_init_elf_start[];
@@ -372,6 +419,8 @@ extern char _binary_usr_test_elf_size[];
 int proc_init(void)
 {
     idx_aclt_init(&PROC.idx_alct);
+
+    list_init(&PROC.proc_ls);
 
     int err = p0_init();
 
@@ -397,15 +446,6 @@ int proc_init(void)
     // else
     //     panic("init device service process failed.\n");
 
-    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
-                              NULL);
-
-    if (err == E_OK)
-        info("init file service process success.\n");
-
-    else
-        panic("init file service process failed.\n");
-
     // err = proc_create_from_mm("test", _binary_usr_test_elf_start, _binary_usr_test_elf_size);
 
     err = proc_create_from_mm("usr_init_proc", _binary_usr_init_elf_start, _binary_usr_init_elf_size, NULL, NULL, NULL,
@@ -417,13 +457,22 @@ int proc_init(void)
     else
         panic("init usr init process failed.\n");
 
-    assert(err == E_OK);
+    err = proc_create_from_mm("file_service", _binary_usr_fssrv_elf_start, _binary_usr_fssrv_elf_size, NULL, NULL, NULL,
+                              NULL);
+
+    if (err == E_OK)
+        info("init file service process success.\n");
+
+    else
+        panic("init file service process failed.\n");
 
     syscall_register(SYS_fork, proc_fork, 1);
 
     syscall_register(SYS_proc_create, proc_sys_create, 3);
 
     syscall_register(SYS_proc_exit, proc_sys_exit, 1);
+
+    syscall_register(SYS_proc_info, proc_sys_info, 1);
 
     return err;
 }

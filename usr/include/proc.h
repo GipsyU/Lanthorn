@@ -18,6 +18,12 @@ struct proc_create_attr_t
     int iswait;
 };
 
+struct proc_info_t
+{
+    int pid;
+    char name[PROC_NAME_MAX_LEN];
+};
+
 struct proc_create_res_t
 {
     int err;
@@ -32,6 +38,8 @@ int thread_create(uint *tid, addr_t routine, uint nparam, ...);
 int proc_exit(int err);
 
 int thread_exit(void);
+
+int proc_info(struct proc_info_t **info);
 
 int thread_tid(uint *tid);
 

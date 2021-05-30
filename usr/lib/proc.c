@@ -28,6 +28,11 @@ int thread_exit(void)
     return syscall(SYS_thread_exit);
 }
 
+int proc_info(struct proc_info_t **info)
+{
+    return syscall(SYS_proc_info, info);
+}
+
 int thread_tid(uint *tid)
 {
     return syscall(SYS_thread_tid, tid);
