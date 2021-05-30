@@ -6,9 +6,9 @@ int main(void)
 {
     struct srv_replyee_t replyee;
 
-    // uint type = 0;
+    uint type = 0;
 
-    // int err = srv_call("fssrv/create", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"), &type, sizeof(uint), s, sizeof(s));
+    int err = srv_call("fssrv/create", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"), &type, sizeof(uint), NULL, 0);
 
     // srv_call("fssrv/read", &replyee, "/lib/2.txt", sizeof("/lib/2.txt"));
     
@@ -24,11 +24,11 @@ int main(void)
     
     // printf("%s", replyee.cache);
 
-    int err = srv_call("fssrv/subfile", &replyee, "/lib/", sizeof("/lib/"));
+    // int err = srv_call("fssrv/subfile", &replyee, "/lib/", sizeof("/lib/"));
 
-    printf("%s %s\n", strerror(err), strerror(replyee.err));
+    // printf("%s %s\n", strerror(err), strerror(replyee.err));
 
-    printf("%s\n", replyee.cache);
+    // printf("%s\n", replyee.cache);
 
     return 0;
 }

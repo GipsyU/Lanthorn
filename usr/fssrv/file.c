@@ -160,12 +160,16 @@ int file_find(char *name, struct file_t **res)
     return err;
 }
 
-int file_create(char *name, uint type, addr_t addr, size_t size)
+int file_create(char *name, addr_t addr, size_t size)
 {
 
     if (name[0] != '/') return E_INVAL;
 
-    if (name[strlen(name) - 1] == '/' && type == FILE_ENTITY) return E_INVAL;
+    int type;
+
+    if (name[strlen(name) - 1] == '/') type = FILE_DIR;
+
+    else type = FILE_ENTITY;
 
     name = path_cut(name);
 

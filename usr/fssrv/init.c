@@ -23,7 +23,7 @@ static int load_file(void)
 
         printf("%d\n", file->size);
 
-        file_create(file->name, FILE_ENTITY, (addr_t)file + sizeof(struct init_file_t), file->size);
+        file_create(file->name, (addr_t)file + sizeof(struct init_file_t), file->size);
 
         struct file_t *_file;
 
@@ -39,7 +39,7 @@ int init(void)
 
     srv_register("fssrv/read", 1);
 
-    srv_register("fssrv/create", 3);
+    srv_register("fssrv/create", 1);
 
     srv_register("fssrv/delete", 1);
 

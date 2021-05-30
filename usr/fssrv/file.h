@@ -36,7 +36,7 @@ extern struct file_t *root_file;
 
 int init(void);
 
-int file_create(char *name, uint type, addr_t addr, size_t size);
+int file_create(char *name, addr_t addr, size_t size);
 
 int file_read(char *name, addr_t *addr, size_t *size);
 

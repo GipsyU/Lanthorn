@@ -32,11 +32,7 @@ static void service_create_hdl(addr_t args)
 
     char *path = callee->cache;
 
-    uint *type = callee->cache + callee->sz[0];
-
-    addr_t addr = callee->cache + callee->sz[0] + callee->sz[1];
-
-    int err = file_create(path, *type, addr, callee->sz[2]);
+    int err = file_create(path, NULL, NULL);
 
     srv_reply(callee->sid, err, 0);
 
