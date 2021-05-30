@@ -6,4 +6,6 @@ int file_create(char *name);
 
 int file_delete(char *name);
 
+int file_write(char *name, addr_t addr, size_t size);
+
 #endif

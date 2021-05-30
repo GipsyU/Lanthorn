@@ -26,6 +26,21 @@ static void service_read_hdl(addr_t args)
     thread_exit();
 }
 
+static void service_write_hdl(addr_t args)
+{
+    struct srv_callee_t *callee = (void *)args;
+
+    char *path = callee->cache;
+
+    addr_t addr = callee->cache + callee->sz[0];
+
+    int err = file_write(path, addr, callee->sz[1]);
+
+    srv_reply(callee->sid, err, 0);
+
+    thread_exit();
+}
+
 static void service_create_hdl(addr_t args)
 {
     struct srv_callee_t *callee = (void *)args;
@@ -137,6 +152,10 @@ static void service_listen(char *subsrv, addr_t routine)
 void service_enable(void)
 {
     int err = thread_create(NULL, service_listen, 2, "read", service_read_hdl);
+    
+    if (err != E_OK) panic("bug\n");
+
+    err = thread_create(NULL, service_listen, 2, "write", service_write_hdl);
 
     if (err != E_OK) panic("bug\n");
 

@@ -258,7 +258,22 @@ int file_read(char *name, addr_t *addr, size_t *size)
 
     *size = file->size;
 
-    return 0;
+    return err;
+}
+
+int file_write(char *name, addr_t addr, size_t size)
+{
+    struct file_t *file;
+
+    int err = file_find(name, &file);
+
+    if (err != E_OK) return err;
+
+    file->data = addr;
+
+    file->size = size;
+    
+    return err;
 }
 
 int file_subfile(char *name, addr_t *addr, size_t *size)

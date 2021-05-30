@@ -39,6 +39,8 @@ int init(void)
 
     srv_register("fssrv/read", 1);
 
+    srv_register("fssrv/write", 2);
+
     srv_register("fssrv/create", 1);
 
     srv_register("fssrv/delete", 1);

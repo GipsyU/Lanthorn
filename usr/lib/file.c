@@ -24,3 +24,15 @@ int file_delete(char *name)
 
     return replyee.err;
 }
+
+
+int file_write(char *name, addr_t addr, size_t size)
+{
+    struct srv_replyee_t replyee;
+
+    int err = srv_call("fssrv/write", &replyee, name, strlen(name) + 1, addr, size);
+
+    if (err != E_OK) return err;
+
+    return replyee.err;
+}

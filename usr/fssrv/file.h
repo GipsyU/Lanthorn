@@ -40,6 +40,8 @@ int file_create(char *name, addr_t addr, size_t size);
 
 int file_read(char *name, addr_t *addr, size_t *size);
 
+int file_write(char *name, addr_t addr, size_t size);
+
 int file_delete(char *name);
 
 int file_info(char *name);
