@@ -2,6 +2,8 @@
 #define _USR_LOG_H_
 #include <stdio.h>
 #include <sysctrl.h>
+#include <syscall.h>
+
 #define info(...)                                                                                                      \
     do                                                                                                                 \
     {                                                                                                                  \

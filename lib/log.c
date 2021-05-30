@@ -6,6 +6,8 @@
 
 struct spinlock_t log_lock;
 
+int log_on = 1;
+
 static void itoa(int x, int redix)
 {
     if (x == 0)

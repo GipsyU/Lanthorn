@@ -52,6 +52,11 @@ int com_intr(uint unused)
 
     return E_OK;
 }
+extern int log_on;
+static int tmp_log(int flag)
+{
+    if (flag == 0) log_on = 0;
+}
 
 int tmp_init(void)
 {
@@ -60,6 +65,10 @@ int tmp_init(void)
     if (err != E_OK) return err;
 
     err = syscall_register(SYS_read, tmp_read, 1);
+
+    if (err != E_OK) return err;
+
+    err = syscall_register(SYS_log, tmp_log, 1);
 
     if (err != E_OK) return err;
 
