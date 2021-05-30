@@ -13,3 +13,14 @@ int file_create(char *name)
 
     return replyee.err;
 }
+
+int file_delete(char *name)
+{
+    struct srv_replyee_t replyee;
+
+    int err = srv_call("fssrv/delete", &replyee, name, strlen(name) + 1);
+
+    if (err != E_OK) return err;
+
+    return replyee.err;
+}
