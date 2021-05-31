@@ -362,12 +362,6 @@ static int proc_sys_exit(int err)
     panic("bug.\n");
 }
 
-struct proc_info_t
-{
-    int pid;
-    char name[PROC_NAME_MAX_LEN];
-};
-
 static int proc_sys_info(struct proc_info_t **info)
 {
 

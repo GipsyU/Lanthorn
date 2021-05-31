@@ -55,3 +55,8 @@ int srv_unregister(char *name)
 {
     return syscall(SYS_srv_unregister);
 }
+
+int srv_info(struct srv_info_t **info)
+{
+    return syscall(SYS_srv_info, info);
+}

@@ -28,6 +28,12 @@ struct thread_attr_t
     size_t argsz;
 };
 
+struct proc_info_t
+{
+    int pid;
+    char name[PROC_NAME_MAX_LEN];
+};
+
 struct proc_t *proc_now(void);
 
 int proc_id(void);

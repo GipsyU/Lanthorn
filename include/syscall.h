@@ -20,6 +20,7 @@ enum SYS_CALL
     SYS_srv_reply,
     SYS_srv_register,
     SYS_srv_unregister,
+    SYS_srv_info,
     SYS_msg_send,
     SYS_msg_recieve,
     SYS_msg_read,

@@ -202,7 +202,7 @@ static int srv_call(char *name, addr_t *param, struct srv_replyee_t *replyee, ui
 
         else
             err = umalloc(&proc_now()->um, &replyee->cache, sz);
-        
+
         if (err != E_OK) return err;
 
         err = msg_read(retmsgid, replyee->cache, sizeof(reply), sz);
@@ -330,6 +330,49 @@ static int srv_sys_called(char *name, struct srv_callee_t *srvcalled)
     return srv_called(name, srvcalled);
 }
 
+struct srv_info_t
+{
+    char name[MAX_SRV_NAME_LEN];
+    struct proc_info_t proc_info;
+};
+
+static int srv_sys_info(struct srv_info_t **info)
+{
+    spin_read_lock(&SRV.rbt_rwlock);
+
+    int tot = 1;
+
+    rbt_rep(&SRV.srv_rbt, p)
+    {
+        ++tot;
+    }
+
+    struct srv_info_t *_info;
+
+    int err = umalloc(&proc_now()->um, (void *)&_info, tot * sizeof(struct srv_info_t));
+
+    if (err != E_OK) return err;
+
+    int now = 0;
+
+    rbt_rep(&SRV.srv_rbt, p)
+    {
+        struct srv_t *srv = container_of(p, struct srv_t, rbt_node);
+
+        memcpy(_info[now].name, srv->name, sizeof(srv->name));
+
+        memcpy(_info[now].proc_info.name, srv->owner->name, sizeof(srv->owner->name));
+
+        _info[now].proc_info.pid = srv->owner->pid;
+    }
+
+    _info[now].proc_info.pid = 0;
+
+    spin_read_unlock(&SRV.rbt_rwlock);
+
+    *info = _info;
+}
+
 int srv_init(void)
 {
     spin_rwlock_init(&SRV.rbt_rwlock);
@@ -341,6 +384,8 @@ int srv_init(void)
     syscall_register(SYS_srv_reply, srv_sys_reply, 1);
 
     syscall_register(SYS_srv_register, srv_sys_register, 2);
+
+    syscall_register(SYS_srv_info, srv_sys_info, 1);
 
     return E_OK;
 }
