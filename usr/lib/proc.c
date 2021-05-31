@@ -57,3 +57,8 @@ int proc_exit(int err)
 {
     return syscall(SYS_proc_exit, err);
 }
+
+int proc_kill(int pid)
+{
+    return syscall(SYS_proc_kill, pid);
+}

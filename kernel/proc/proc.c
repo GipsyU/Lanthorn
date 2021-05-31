@@ -398,6 +398,28 @@ static int proc_sys_info(struct proc_info_t **info)
     return E_OK;
 }
 
+static int proc_sys_kill(int pid)
+{
+    if (proc_now()->pid == pid) return E_INVAL;
+
+    struct proc_t *proc;
+
+    int err = idx_alct_find(&PROC.idx_alct, pid, (void *)&proc);
+
+    if (err != E_OK) return err;
+
+    list_rep_s(&proc->thread_ls, p)
+    {
+        struct thread_t *t = container_of(p, struct thread_t, proc_ln);
+
+        if (t->state != KILLED) schd_kill(t);
+    }
+
+    list_delete(&proc->proc_ln);
+
+    return err;
+}
+
 extern char _binary_usr_init_elf_start[];
 extern char _binary_usr_init_elf_size[];
 
@@ -467,6 +489,8 @@ int proc_init(void)
     syscall_register(SYS_proc_exit, proc_sys_exit, 1);
 
     syscall_register(SYS_proc_info, proc_sys_info, 1);
+
+    syscall_register(SYS_proc_kill, proc_sys_kill, 1);
 
     return err;
 }

@@ -227,6 +227,8 @@ static int srv_called(char *name, struct srv_callee_t *srvcalled)
 
     int err = rbt_find(&SRV.srv_rbt, name, &srv);
 
+    spin_read_unlock(&SRV.rbt_rwlock);
+
     if (err != E_OK) goto ret1;
 
     if ((err = (srv->owner != proc_now() ? E_INVAL : err)) != E_OK) goto ret1;
@@ -265,8 +267,6 @@ static int srv_called(char *name, struct srv_callee_t *srvcalled)
     srvcalled->arg_sz = srvcall.arg_sz;
 
 ret1:
-    spin_read_unlock(&SRV.rbt_rwlock);
-
     return err;
 }
 
@@ -364,6 +364,8 @@ static int srv_sys_info(struct srv_info_t **info)
         memcpy(_info[now].proc_info.name, srv->owner->name, sizeof(srv->owner->name));
 
         _info[now].proc_info.pid = srv->owner->pid;
+
+        ++now;
     }
 
     _info[now].proc_info.pid = 0;
@@ -371,6 +373,8 @@ static int srv_sys_info(struct srv_info_t **info)
     spin_read_unlock(&SRV.rbt_rwlock);
 
     *info = _info;
+
+    return E_OK;
 }
 
 int srv_init(void)

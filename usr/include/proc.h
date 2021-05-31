@@ -47,4 +47,6 @@ int thread_block(uint tid);
 
 int thread_wake(uint tid);
 
+int proc_kill(int pid);
+
 #endif

@@ -15,6 +15,10 @@ int main(int argc, char *argv[])
 
     while (proc_create("/bin/keyboard.elf", &attr, NULL) != E_OK);
 
+    memcpy(attr.name, "helloworld", sizeof("helloworld"));
+
+    while (proc_create("/bin/helloworld.elf", &attr, NULL) != E_OK);
+
     memcpy(attr.name, "shell", sizeof("shell"));
 
     while (proc_create("/bin/shell.elf", &attr, NULL) != E_OK);

@@ -2,7 +2,13 @@
 
 int main(int argc, char *argv[])
 {
-    printf("Hello World Lanthron.\n");
+
+    while (1)
+    {
+        printf("Hello World Lanthron.\n");
+        unsigned int t = 800000000;
+        while (t--);
+    }
 
     return 0;
 }
