@@ -10,6 +10,8 @@ extern int cmd_cd(char *parse[], char *pwd);
 
 extern int cmd_pwd(char *parse[], char *pwd);
 
+extern int cmd_back(char *parse[], char *pwd);
+
 static void get_cmd(char cmd[], char *args[])
 {
     cmd[0] = '\0';
@@ -63,6 +65,13 @@ static int inner_cmd(char *parse[], char *pwd)
         return E_OK;
     }
 
+    if (strcmp(parse[0], "&") == 0)
+    {
+        int err = cmd_back(parse, pwd);
+
+        return err;
+    }
+
     return E_NOTFOUND;
 }
 
@@ -82,9 +91,13 @@ int main(void)
 
         get_cmd(cmd, parse);
 
-        get_elf_path(parse, path);
+        int err = inner_cmd(parse, pwd);
 
-        if (inner_cmd(parse, pwd) == E_OK) continue;
+        if (err == E_OK) continue;
+
+        if (err != E_NOTFOUND) printf("shell exec filed, err = %s.\n", strerror(err));
+
+        get_elf_path(parse, path);
 
         struct proc_create_attr_t attr;
 
@@ -104,7 +117,7 @@ int main(void)
 
         struct proc_create_res_t res;
 
-        int err = proc_create(path, &attr, &res);
+        err = proc_create(path, &attr, &res);
 
         if (err != E_OK) printf("shell exec filed, err = %s.\n", strerror(err));
 
